@@ -1,0 +1,1293 @@
+/* Uniform public banner text sizing */
+:root {
+    --miu-banner-title-size: clamp(1.42rem, 2.05vw, 1.95rem);
+    --miu-banner-breadcrumb-size: 15px;
+    --miu-banner-description-size: 15px;
+    --miu-banner-bg: #123f55;
+    --miu-banner-pad-y-top: 24px;
+    --miu-banner-pad-y-bottom: 22px;
+    --miu-banner-container: 1480px;
+    --miu-banner-min-height: 118px;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero),
+.tour-page-hero,
+.hotel-page-hero,
+.article-page-hero,
+.detail-hero,
+.book-hero,
+.tour-act-hero,
+.act-index-hero,
+.hotel-detail-hero,
+.car-rental-hero,
+.car-detail-hero,
+.article-detail-hero,
+.ab-hero,
+.account-page-hero {
+    min-height: var(--miu-banner-min-height) !important;
+    height: auto !important;
+    box-sizing: border-box !important;
+    background: var(--miu-banner-bg) !important;
+    background-image: none !important;
+    background-color: var(--miu-banner-bg) !important;
+    background-size: auto !important;
+    background-position: center !important;
+    padding-top: var(--miu-banner-pad-y-top) !important;
+    padding-bottom: var(--miu-banner-pad-y-bottom) !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero)::before,
+.tour-page-hero::before,
+.hotel-page-hero::before,
+.article-page-hero::before,
+.detail-hero .overlay,
+.book-hero .overlay,
+.tour-act-hero::before,
+.act-index-hero::before,
+.hotel-detail-hero .overlay,
+.car-rental-hero::before,
+.car-detail-hero::before,
+.ab-hero::before,
+.account-page-hero::before {
+    display: none !important;
+    background: none !important;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero) > .container,
+.tour-page-hero > .container,
+.hotel-page-hero > .container,
+.article-page-hero > .container,
+.detail-hero .hero-inner,
+.book-hero .hero-inner,
+.tour-act-hero > .container,
+.act-index-hero > .container,
+.hotel-detail-hero > .container,
+.car-rental-hero > .container,
+.car-detail-hero > .container,
+.article-detail-hero > .container,
+.ab-hero > .container,
+.account-page-hero > .container {
+    width: min(100% - 28px, var(--miu-banner-container)) !important;
+    max-width: var(--miu-banner-container) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero) .slider-text,
+.tour-page-hero .slider-text,
+.hotel-page-hero .slider-text,
+.article-page-hero .slider-text,
+.account-page-hero .slider-text {
+    min-height: 0 !important;
+    padding: 0 !important;
+    align-items: center !important;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero) .ftco-animate.pb-5,
+.tour-page-hero .ftco-animate.pb-5,
+.hotel-page-hero .ftco-animate.pb-5,
+.article-page-hero .ftco-animate.pb-5,
+.account-page-hero .ftco-animate.pb-5 {
+    padding-bottom: 0 !important;
+}
+
+.detail-hero .hero-inner,
+.book-hero .hero-inner,
+.tour-act-hero__inner,
+.act-index-hero__inner,
+.hotel-detail-hero .hero-inner,
+.car-detail-hero__inner,
+.ab-hero-content {
+    padding: 0 !important;
+    text-align: left !important;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero) h1.bread,
+.tour-page-hero h1.bread,
+.hotel-page-hero h1.bread,
+.article-page-hero h1.bread,
+.detail-hero h1,
+.book-hero h1,
+.tour-act-hero h1,
+.act-index-hero h1,
+.hotel-detail-hero h1,
+.car-rental-hero h1,
+.car-detail-hero h1,
+.article-detail-title,
+.ab-hero-content h1 {
+    font-size: var(--miu-banner-title-size) !important;
+    font-weight: 900 !important;
+    line-height: 1.12 !important;
+    letter-spacing: 0 !important;
+    color: #fff !important;
+    margin: 0 !important;
+    text-shadow: none !important;
+    white-space: normal !important;
+}
+
+.hero-wrap.hero-wrap-2:not(.home-hero) .breadcrumbs,
+.hero-wrap.hero-wrap-2:not(.home-hero) .breadcrumbs a,
+.hero-wrap.hero-wrap-2:not(.home-hero) .breadcrumbs span,
+.tour-page-hero .breadcrumbs,
+.tour-page-hero .breadcrumbs a,
+.tour-page-hero .breadcrumbs span,
+.hotel-page-hero .breadcrumbs,
+.hotel-page-hero .breadcrumbs a,
+.hotel-page-hero .breadcrumbs span,
+.article-page-hero .breadcrumbs,
+.article-page-hero .breadcrumbs a,
+.article-page-hero .breadcrumbs span,
+.detail-hero .breadcrumbs,
+.detail-hero .breadcrumbs a,
+.book-hero .breadcrumbs,
+.book-hero .breadcrumbs a,
+.tour-act-breadcrumb,
+.tour-act-breadcrumb a,
+.act-index-hero .breadcrumbs,
+.act-index-hero .breadcrumbs a,
+.act-index-hero .breadcrumbs span,
+.hd-breadcrumb,
+.hd-breadcrumb li,
+.hd-breadcrumb li a,
+.car-rental-hero .breadcrumbs,
+.car-rental-hero .breadcrumbs a,
+.car-rental-hero .breadcrumbs span,
+.car-detail-hero__inner > p,
+.car-detail-hero__inner > p a,
+.article-detail-breadcrumb,
+.article-detail-breadcrumb a,
+.ab-hero-content .breadcrumbs,
+.ab-hero-content .breadcrumbs a,
+.ab-hero-content .breadcrumbs span {
+    font-size: var(--miu-banner-breadcrumb-size) !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    letter-spacing: 0 !important;
+    color: #fff !important;
+    margin-top: 10px !important;
+    margin-bottom: 12px !important;
+    text-decoration: none !important;
+}
+
+.tour-act-hero__inner > p,
+.act-index-hero__inner > p:not(.breadcrumbs),
+.car-rental-hero__copy > p:not(.breadcrumbs),
+.article-detail-meta,
+.article-detail-meta span {
+    font-size: var(--miu-banner-description-size) !important;
+    line-height: 1.7 !important;
+    color: rgba(255,255,255,.86) !important;
+}
+
+.article-detail-meta i {
+    color: #fff !important;
+}
+
+.hd-breadcrumb {
+    margin-bottom: 12px !important;
+}
+
+@media (max-width: 575px) {
+    :root {
+        --miu-banner-title-size: clamp(1.25rem, 5.4vw, 1.55rem);
+        --miu-banner-breadcrumb-size: 14px;
+        --miu-banner-description-size: 14px;
+    }
+}
+
+/* Match the Tour list, Hotel list, and Hotel detail banner metrics. */
+.tour-page-hero,
+.hotel-page-hero,
+.hotel-detail-hero {
+    min-height: var(--miu-banner-min-height) !important;
+    padding-top: var(--miu-banner-pad-y-top) !important;
+    padding-bottom: var(--miu-banner-pad-y-bottom) !important;
+}
+
+.tour-page-hero h1.bread,
+.hotel-page-hero h1.bread,
+.hotel-detail-hero h1 {
+    font-size: var(--miu-banner-title-size) !important;
+    line-height: 1.15 !important;
+    margin: 0 !important;
+}
+
+.tour-page-hero .breadcrumbs,
+.tour-page-hero .breadcrumbs a,
+.tour-page-hero .breadcrumbs span,
+.hotel-page-hero .breadcrumbs,
+.hotel-page-hero .breadcrumbs a,
+.hotel-page-hero .breadcrumbs span,
+.hotel-detail-hero .hd-breadcrumb,
+.hotel-detail-hero .hd-breadcrumb li,
+.hotel-detail-hero .hd-breadcrumb li a {
+    font-size: 15px !important;
+    line-height: 1.4 !important;
+    margin-top: 10px !important;
+    margin-bottom: 8px !important;
+}
+
+.hotel-detail-location {
+    display: flex !important;
+    align-items: center !important;
+    gap: 6px !important;
+    color: rgba(255,255,255,.78) !important;
+    font-size: 14px !important;
+    font-weight: 600 !important;
+    line-height: 1.4 !important;
+    margin: 0 !important;
+}
+
+@media (max-width: 575px) {
+    .tour-page-hero,
+    .hotel-page-hero,
+    .hotel-detail-hero {
+        min-height: 104px !important;
+        padding-top: 20px !important;
+        padding-bottom: 18px !important;
+    }
+
+    .tour-page-hero h1.bread,
+    .hotel-page-hero h1.bread,
+    .hotel-detail-hero h1 {
+        font-size: var(--miu-banner-title-size) !important;
+        line-height: 1.18 !important;
+    }
+
+    .tour-page-hero .breadcrumbs,
+    .tour-page-hero .breadcrumbs a,
+    .tour-page-hero .breadcrumbs span,
+    .hotel-page-hero .breadcrumbs,
+    .hotel-page-hero .breadcrumbs a,
+    .hotel-page-hero .breadcrumbs span,
+    .hotel-detail-hero .hd-breadcrumb,
+    .hotel-detail-hero .hd-breadcrumb li,
+    .hotel-detail-hero .hd-breadcrumb li a {
+        font-size: 14px !important;
+    }
+
+    .hotel-detail-location {
+        font-size: 13px !important;
+    }
+}
+
+/* Shared Tour-style search pill for service and article listing banners. */
+.tour-page-hero > .container,
+.hotel-page-hero > .container,
+.article-page-hero > .container {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 1fr) minmax(440px, 600px) !important;
+    gap: 20px !important;
+    align-items: center !important;
+}
+
+.car-rental-hero__inner {
+    display: grid !important;
+    grid-template-columns: minmax(320px, 1fr) minmax(440px, 600px) !important;
+    gap: 20px !important;
+    align-items: center !important;
+}
+
+.tour-page-hero .search-wrap-modern,
+.hotel-page-hero .search-wrap-modern,
+.car-rental-hero .search-wrap-modern,
+.car-rental-hero .car-filter,
+.article-page-hero .search-wrap-modern,
+.article-page-hero .article-search-card {
+    width: 100% !important;
+    max-width: 600px !important;
+    justify-self: end !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+.tour-page-hero .home-search-pill,
+.hotel-page-hero .home-search-pill,
+.car-rental-hero .home-search-pill,
+.article-page-hero .home-search-pill {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.tour-hero-copy,
+.hotel-hero-copy,
+.article-page-hero__copy,
+.car-rental-hero__copy {
+    margin-bottom: 0 !important;
+    align-self: center !important;
+}
+
+.tour-page-hero .home-search-pill__form,
+.hotel-page-hero .home-search-pill__form,
+.car-rental-hero .home-search-pill__form,
+.article-page-hero .home-search-pill__form {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .82fr) 52px !important;
+    align-items: stretch !important;
+    min-height: 60px !important;
+    padding: 8px 8px 8px 26px !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    border: 0 !important;
+    border-radius: 999px !important;
+    background: #fff !important;
+    box-shadow: 0 18px 50px rgba(15, 23, 42, .18) !important;
+    overflow: hidden !important;
+}
+
+.hotel-page-hero .home-search-pill__form--hotel {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .9fr) 52px !important;
+}
+
+.car-rental-hero .home-search-pill__form--car {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .8fr) 52px !important;
+}
+
+.article-page-hero .home-search-pill__form--article {
+    grid-template-columns: minmax(0, 1fr) 52px !important;
+}
+
+.article-page-hero > .container {
+    grid-template-columns: minmax(320px, 1fr) minmax(360px, 520px) !important;
+}
+
+.article-page-hero .search-wrap-modern,
+.article-page-hero .article-search-card {
+    max-width: 520px !important;
+}
+
+.article-page-hero .home-search-pill__form--article {
+    grid-template-columns: minmax(0, 1fr) 46px !important;
+    min-height: 54px !important;
+    padding: 7px 7px 7px 20px !important;
+}
+
+.article-page-hero .home-search-pill__label {
+    font-size: 12px !important;
+    margin-bottom: 3px !important;
+}
+
+.article-page-hero .home-search-pill__label i {
+    font-size: 15px !important;
+}
+
+.article-page-hero .home-search-pill__control input {
+    height: 22px !important;
+    min-height: 22px !important;
+    font-size: 14px !important;
+    color: #2b3035 !important;
+}
+
+.article-page-hero .home-search-pill__control input::placeholder {
+    color: #9aa3ad !important;
+    opacity: 1 !important;
+}
+
+.article-page-hero .home-search-pill__btn {
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    font-size: 17px !important;
+}
+
+.tour-page-hero .home-search-pill__field,
+.hotel-page-hero .home-search-pill__field,
+.car-rental-hero .home-search-pill__field,
+.article-page-hero .home-search-pill__field {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 0 20px 0 0 !important;
+    margin: 0 20px 0 0 !important;
+    border-right: 1px solid #e3e6eb !important;
+    background: transparent !important;
+}
+
+.article-page-hero .home-search-pill__field {
+    border-right: 1px solid #e3e6eb !important;
+}
+
+.tour-page-hero .home-search-pill__label,
+.hotel-page-hero .home-search-pill__label,
+.car-rental-hero .home-search-pill__label,
+.article-page-hero .home-search-pill__label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    color: #586166 !important;
+    font-size: 12.5px !important;
+    font-weight: 850 !important;
+    line-height: 1.2 !important;
+    margin: 0 0 4px !important;
+    white-space: nowrap !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+.tour-page-hero .home-search-pill__label i,
+.hotel-page-hero .home-search-pill__label i,
+.car-rental-hero .home-search-pill__label i,
+.article-page-hero .home-search-pill__label i {
+    color: #4e5559 !important;
+    font-size: 15px !important;
+}
+
+.tour-page-hero .home-search-pill__control,
+.hotel-page-hero .home-search-pill__control,
+.car-rental-hero .home-search-pill__control,
+.article-page-hero .home-search-pill__control {
+    position: relative !important;
+    min-width: 0 !important;
+}
+
+.tour-page-hero .home-search-pill__control::after,
+.hotel-page-hero .home-search-pill__control::after,
+.car-rental-hero .home-search-pill__control::after,
+.article-page-hero .home-search-pill__control::after {
+    content: "\f107" !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #a6a29d !important;
+    font-family: "FontAwesome" !important;
+    font-size: 17px !important;
+    pointer-events: none !important;
+}
+
+.tour-page-hero .home-search-pill__control input,
+.tour-page-hero .home-search-pill__control select,
+.hotel-page-hero .home-search-pill__control input,
+.hotel-page-hero .home-search-pill__control select,
+.car-rental-hero .home-search-pill__control input,
+.car-rental-hero .home-search-pill__control select,
+.article-page-hero .home-search-pill__control input {
+    width: 100% !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    color: #080808 !important;
+    background: transparent !important;
+    font-size: 14.5px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    padding: 0 26px 0 0 !important;
+    appearance: none !important;
+    box-shadow: none !important;
+}
+
+.tour-page-hero .home-search-pill__control input::placeholder,
+.hotel-page-hero .home-search-pill__control input::placeholder,
+.car-rental-hero .home-search-pill__control input::placeholder,
+.article-page-hero .home-search-pill__control input::placeholder {
+    color: #080808 !important;
+    opacity: 1 !important;
+}
+
+.tour-page-hero .home-search-pill__btn,
+.hotel-page-hero .home-search-pill__btn,
+.car-rental-hero .home-search-pill__btn,
+.article-page-hero .home-search-pill__btn {
+    width: 46px !important;
+    height: 46px !important;
+    min-width: 46px !important;
+    min-height: 46px !important;
+    align-self: center !important;
+    justify-self: end !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    color: #fff !important;
+    background: #ee5224 !important;
+    box-shadow: none !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+    transition: background .2s ease, transform .2s ease !important;
+}
+
+.tour-page-hero .home-search-pill__btn:hover,
+.hotel-page-hero .home-search-pill__btn:hover,
+.car-rental-hero .home-search-pill__btn:hover,
+.article-page-hero .home-search-pill__btn:hover {
+    background: #dc481d !important;
+    transform: translateY(-1px) !important;
+}
+
+@media (max-width: 1199px) {
+    .tour-page-hero > .container,
+    .hotel-page-hero > .container,
+    .article-page-hero > .container,
+    .car-rental-hero__inner {
+        display: block !important;
+    }
+
+    .tour-hero-copy,
+    .hotel-hero-copy,
+    .article-page-hero__copy,
+    .car-rental-hero__copy {
+        margin-bottom: 18px !important;
+    }
+
+    .tour-page-hero .search-wrap-modern,
+    .hotel-page-hero .search-wrap-modern,
+    .car-rental-hero .search-wrap-modern,
+    .car-rental-hero .car-filter,
+    .article-page-hero .search-wrap-modern,
+    .article-page-hero .article-search-card {
+        max-width: none !important;
+    }
+
+    .tour-page-hero .home-search-pill__form,
+    .hotel-page-hero .home-search-pill__form,
+    .car-rental-hero .home-search-pill__form,
+    .article-page-hero .home-search-pill__form {
+        grid-template-columns: 1fr 1fr 56px !important;
+        min-height: 60px !important;
+        padding-left: 20px !important;
+    }
+
+    .hotel-page-hero .home-search-pill__form--hotel,
+    .car-rental-hero .home-search-pill__form--car {
+        grid-template-columns: 1fr 1fr 56px !important;
+    }
+
+    .car-rental-hero .home-search-pill__form--car {
+        grid-template-columns: 1fr 1fr 56px !important;
+    }
+
+    .article-page-hero .home-search-pill__form--article {
+        grid-template-columns: minmax(0, 1fr) 56px !important;
+    }
+
+    .tour-page-hero .home-search-pill__field,
+    .hotel-page-hero .home-search-pill__field,
+    .car-rental-hero .home-search-pill__field,
+    .article-page-hero .home-search-pill__field {
+        padding-right: 18px !important;
+        margin-right: 18px !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .tour-page-hero .home-search-pill__form,
+    .hotel-page-hero .home-search-pill__form,
+    .car-rental-hero .home-search-pill__form,
+    .article-page-hero .home-search-pill__form,
+    .hotel-page-hero .home-search-pill__form--hotel,
+    .car-rental-hero .home-search-pill__form--car,
+    .article-page-hero .home-search-pill__form--article {
+        grid-template-columns: 1fr !important;
+        min-height: 0 !important;
+        border-radius: 18px !important;
+        padding: 14px !important;
+        gap: 10px !important;
+    }
+
+    .tour-page-hero .home-search-pill__btn,
+    .hotel-page-hero .home-search-pill__btn,
+    .car-rental-hero .home-search-pill__btn,
+    .article-page-hero .home-search-pill__btn {
+        width: 100% !important;
+        height: 44px !important;
+        border-radius: 999px !important;
+        font-size: 17px !important;
+    }
+
+    .tour-page-hero .home-search-pill__field,
+    .hotel-page-hero .home-search-pill__field,
+    .car-rental-hero .home-search-pill__field,
+    .article-page-hero .home-search-pill__field {
+        padding: 0 0 14px !important;
+        margin: 0 0 14px !important;
+        border-right: 0 !important;
+        border-bottom: 1px solid #e3e6eb !important;
+    }
+
+    .tour-page-hero .home-search-pill__field:last-of-type,
+    .hotel-page-hero .home-search-pill__field:last-of-type,
+    .car-rental-hero .home-search-pill__field:last-of-type,
+    .article-page-hero .home-search-pill__field:last-of-type {
+        margin-bottom: 0 !important;
+    }
+}
+
+.home-search-section .home-search-pill__control input::placeholder,
+.tour-page-hero .home-search-pill__control input::placeholder,
+.hotel-page-hero .home-search-pill__control input::placeholder,
+.car-rental-hero .home-search-pill__control input::placeholder,
+.article-page-hero .home-search-pill__control input::placeholder {
+    color: #a8b0ba !important;
+    opacity: 1 !important;
+}
+
+.home-search-section .home-search-pill__control:has(input)::after,
+.tour-page-hero .home-search-pill__control:has(input)::after,
+.hotel-page-hero .home-search-pill__control:has(input)::after,
+.car-rental-hero .home-search-pill__control:has(input)::after,
+.article-page-hero .home-search-pill__control:has(input)::after {
+    content: none !important;
+    display: none !important;
+}
+
+.home-search-section .home-search-pill__control input,
+.tour-page-hero .home-search-pill__control input,
+.hotel-page-hero .home-search-pill__control input,
+.car-rental-hero .home-search-pill__control input,
+.article-page-hero .home-search-pill__control input {
+    padding: 0 !important;
+}
+
+/* Compact common blue banners for hub pages such as About, Service, and Experience. */
+.exp-hero,
+.miu-page-banner {
+    background: var(--miu-banner-bg) !important;
+    padding-top: var(--miu-banner-pad-y-top) !important;
+    padding-bottom: var(--miu-banner-pad-y-bottom) !important;
+    min-height: var(--miu-banner-min-height) !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    align-items: center !important;
+}
+
+.exp-breadcrumb,
+.exp-breadcrumb a,
+.miu-page-banner .breadcrumbs,
+.miu-page-banner .breadcrumbs a,
+.miu-page-banner .breadcrumbs span {
+    color: rgba(255, 255, 255, .92) !important;
+    font-size: var(--miu-banner-breadcrumb-size) !important;
+    font-weight: 700 !important;
+    line-height: 1.4 !important;
+    margin-top: 10px !important;
+    margin-bottom: 8px !important;
+    text-decoration: none !important;
+}
+
+.exp-banner-title,
+.miu-page-banner-title {
+    color: #ffffff !important;
+    font-size: var(--miu-banner-title-size) !important;
+    font-weight: 900 !important;
+    line-height: 1.12 !important;
+    margin: 0 !important;
+    letter-spacing: 0 !important;
+}
+
+@media (max-width: 575px) {
+    .exp-hero,
+    .miu-page-banner {
+        padding-top: 20px !important;
+        padding-bottom: 18px !important;
+    }
+}
+
+/* Search bars moved out of blue banners for cleaner header spacing. */
+.banner-search-section {
+    background: #ffffff !important;
+    border-bottom: 1px solid #edf2f7 !important;
+    padding: 18px 0 10px !important;
+}
+
+.banner-search-section > .container {
+    width: min(100% - 44px, var(--miu-banner-container)) !important;
+    max-width: var(--miu-banner-container) !important;
+    margin-left: auto !important;
+    margin-right: auto !important;
+}
+
+.banner-search-section .search-wrap-modern,
+.banner-search-section .article-search-card,
+.banner-search-section .car-filter {
+    width: 100% !important;
+    max-width: 760px !important;
+    margin: 0 0 0 auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+.banner-search-section.article-banner-search .search-wrap-modern,
+.banner-search-section.article-banner-search .article-search-card {
+    max-width: 560px !important;
+}
+
+.banner-search-section .home-search-pill {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.banner-search-section .home-search-pill__form {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1fr) minmax(0, .82fr) 56px !important;
+    align-items: stretch !important;
+    min-height: 64px !important;
+    padding: 8px 8px 8px 28px !important;
+    margin: 0 !important;
+    gap: 0 !important;
+    border: 1px solid #e6edf4 !important;
+    border-radius: 999px !important;
+    background: #ffffff !important;
+    box-shadow: 0 12px 32px rgba(15, 23, 42, .08) !important;
+    overflow: hidden !important;
+}
+
+.banner-search-section .home-search-pill__form--hotel {
+    grid-template-columns: minmax(0, 1.08fr) minmax(0, .92fr) 56px !important;
+}
+
+.banner-search-section .home-search-pill__form--car {
+    grid-template-columns: minmax(0, 1.1fr) minmax(0, .8fr) 56px !important;
+}
+
+.banner-search-section .home-search-pill__form--article {
+    grid-template-columns: minmax(0, 1fr) 56px !important;
+}
+
+.banner-search-section .home-search-pill__field {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 0 22px 0 0 !important;
+    margin: 0 22px 0 0 !important;
+    border-right: 1px solid #e3e6eb !important;
+    background: transparent !important;
+}
+
+.banner-search-section .home-search-pill__label {
+    display: flex !important;
+    align-items: center !important;
+    gap: 7px !important;
+    color: #586166 !important;
+    font-size: 13px !important;
+    font-weight: 850 !important;
+    line-height: 1.2 !important;
+    margin: 0 0 4px !important;
+    white-space: nowrap !important;
+    text-transform: none !important;
+    letter-spacing: 0 !important;
+}
+
+.banner-search-section .home-search-pill__label i {
+    color: #4e5559 !important;
+    font-size: 16px !important;
+}
+
+.banner-search-section .home-search-pill__control {
+    position: relative !important;
+    min-width: 0 !important;
+}
+
+.banner-search-section .home-search-pill__control::after {
+    content: "\f107" !important;
+    position: absolute !important;
+    right: 0 !important;
+    top: 50% !important;
+    transform: translateY(-50%) !important;
+    color: #a6a29d !important;
+    font-family: "FontAwesome" !important;
+    font-size: 17px !important;
+    pointer-events: none !important;
+}
+
+.banner-search-section .home-search-pill__control:has(input)::after {
+    content: none !important;
+    display: none !important;
+}
+
+.banner-search-section .home-search-pill__control input,
+.banner-search-section .home-search-pill__control select {
+    width: 100% !important;
+    height: 24px !important;
+    min-height: 24px !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    outline: 0 !important;
+    color: #111827 !important;
+    background: transparent !important;
+    font-size: 14.5px !important;
+    font-weight: 500 !important;
+    line-height: 1.2 !important;
+    padding: 0 26px 0 0 !important;
+    appearance: none !important;
+    box-shadow: none !important;
+}
+
+.banner-search-section .home-search-pill__control input {
+    padding: 0 !important;
+}
+
+.banner-search-section .home-search-pill__control input::placeholder {
+    color: #a8b0ba !important;
+    opacity: 1 !important;
+}
+
+.banner-search-section .home-search-pill__btn {
+    width: 48px !important;
+    height: 48px !important;
+    min-width: 48px !important;
+    min-height: 48px !important;
+    align-self: center !important;
+    justify-self: end !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    justify-content: center !important;
+    padding: 0 !important;
+    border: 0 !important;
+    border-radius: 50% !important;
+    color: #ffffff !important;
+    background: #ee5224 !important;
+    box-shadow: none !important;
+    font-size: 18px !important;
+    line-height: 1 !important;
+    cursor: pointer !important;
+}
+
+.banner-search-section + .tour-list-section,
+.banner-search-section + .hotel-list-section,
+.banner-search-section + .car-rental-section,
+.banner-search-section + .article-hero-news,
+.banner-search-section + .article-list-section {
+    padding-top: 18px !important;
+}
+
+@media (max-width: 767px) {
+    .banner-search-section {
+        padding: 14px 0 8px !important;
+    }
+
+    .banner-search-section > .container {
+        width: min(100% - 24px, var(--miu-banner-container)) !important;
+    }
+
+    .banner-search-section .home-search-pill__form,
+    .banner-search-section .home-search-pill__form--hotel,
+    .banner-search-section .home-search-pill__form--car,
+    .banner-search-section .home-search-pill__form--article {
+        grid-template-columns: 1fr !important;
+        min-height: 0 !important;
+        border-radius: 18px !important;
+        padding: 14px !important;
+        gap: 10px !important;
+    }
+
+    .banner-search-section .home-search-pill__field {
+        padding: 0 0 12px !important;
+        margin: 0 0 12px !important;
+        border-right: 0 !important;
+        border-bottom: 1px solid #e3e6eb !important;
+    }
+
+    .banner-search-section .home-search-pill__field:last-of-type {
+        margin-bottom: 0 !important;
+    }
+
+    .banner-search-section .home-search-pill__btn {
+        width: 100% !important;
+        height: 44px !important;
+        border-radius: 999px !important;
+    }
+}
+
+/* ================================================================
+   PUBLIC PAGE RHYTHM — đồng bộ nền và khoảng cách các trang nội dung
+   ================================================================ */
+:root {
+    --miu-page-soft: #eef3f8;
+    --miu-page-section-top: 24px;
+    --miu-page-section-bottom: 30px;
+}
+
+.banner-search-section,
+.tour-list-section,
+.hotel-list-section,
+.car-rental-section,
+.detail-section,
+.tour-act-section,
+.act-index-section,
+.hotel-detail-body,
+.car-detail,
+.article-hero-news,
+.article-tools-section,
+.article-list-section,
+.article-detail-body,
+.hub-page,
+.hub-hero,
+.hub-section,
+.exp-hub,
+.exp-intro,
+.exp-section {
+    background: var(--miu-page-soft) !important;
+    background-image: none !important;
+}
+
+.banner-search-section {
+    padding-top: 12px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 0 !important;
+}
+
+.banner-search-section + .tour-list-section,
+.banner-search-section + .hotel-list-section,
+.banner-search-section + .car-rental-section,
+.banner-search-section + .article-hero-news,
+.banner-search-section + .article-list-section {
+    padding-top: 16px !important;
+}
+
+.tour-list-section,
+.hotel-list-section,
+.car-rental-section,
+.detail-section,
+.tour-act-section,
+.act-index-section,
+.hotel-detail-body,
+.car-detail,
+.article-list-section,
+.article-detail-body,
+.hub-section,
+.exp-section {
+    padding-top: var(--miu-page-section-top) !important;
+    padding-bottom: var(--miu-page-section-bottom) !important;
+}
+
+.article-hero-news {
+    padding-top: 22px !important;
+    padding-bottom: 20px !important;
+}
+
+.article-tools-section {
+    padding-top: 0 !important;
+    padding-bottom: 14px !important;
+}
+
+.hub-hero,
+.exp-intro {
+    padding-top: 28px !important;
+    padding-bottom: 30px !important;
+    border-bottom: 0 !important;
+}
+
+.hub-section + .hub-section,
+.exp-section + .exp-section {
+    border-top: 0 !important;
+}
+
+.tour-list-section .row > [class*="col-"],
+.hotel-list-section .row > [class*="col-"],
+.car-rental-section .row > [class*="col-"],
+.act-tour-grid > *,
+.service-feature-grid > *,
+.exp-article-grid > * {
+    margin-bottom: 16px !important;
+}
+
+.tours-count-bar,
+.hotels-count-bar,
+.car-count-bar,
+.article-result-bar {
+    margin-bottom: 14px !important;
+    padding-top: 8px !important;
+    padding-bottom: 10px !important;
+    border-bottom: 0 !important;
+}
+
+.hub-section-head,
+.exp-section-head,
+.article-feature-head {
+    margin-bottom: 18px !important;
+}
+
+.service-overview {
+    margin-top: 24px !important;
+}
+
+.exp-hero-guides {
+    margin-top: 24px !important;
+}
+
+.content-card,
+.hd-section-card,
+.car-panel,
+.article-sidebar-box,
+.summary-card {
+    margin-bottom: 18px !important;
+}
+
+.section-label,
+.hd-section-title,
+.car-section-title {
+    margin-bottom: 12px !important;
+}
+
+.article-feature-grid,
+.service-feature-grid,
+.exp-article-grid,
+.act-tour-grid {
+    gap: 16px !important;
+}
+
+@media (max-width: 767px) {
+    :root {
+        --miu-page-section-top: 20px;
+        --miu-page-section-bottom: 24px;
+    }
+
+    .banner-search-section {
+        padding-top: 10px !important;
+        padding-bottom: 8px !important;
+    }
+
+    .hub-hero,
+    .exp-intro {
+        padding-top: 22px !important;
+        padding-bottom: 24px !important;
+    }
+
+    .article-hero-news {
+        padding-top: 20px !important;
+        padding-bottom: 18px !important;
+    }
+
+    .hub-section-head,
+    .exp-section-head,
+    .article-feature-head {
+        margin-bottom: 14px !important;
+    }
+}
+
+/* Account pages: thông tin tài khoản, tour đã đặt, đổi mật khẩu, tạo tài khoản */
+.account-wrap,
+.reg-wrap {
+    min-height: auto !important;
+    background: var(--miu-page-soft) !important;
+    background-image: none !important;
+    padding-top: var(--miu-page-section-top) !important;
+    padding-bottom: var(--miu-page-section-bottom) !important;
+}
+
+.account-page-hero + .account-wrap,
+.account-page-hero + .reg-wrap {
+    padding-top: 22px !important;
+}
+
+.account-layout {
+    gap: 22px !important;
+}
+
+.reg-wrap {
+    align-items: flex-start !important;
+}
+
+.account-wrap .account-card,
+.account-wrap .user-sidebar,
+.account-wrap .av-section,
+.account-wrap .pwd-hint,
+.account-wrap .tour-table tbody tr,
+.account-wrap .empty-state,
+.reg-wrap .reg-card,
+.reg-wrap .reg-body,
+.reg-wrap .rg-terms {
+    background: #ffffff !important;
+    background-image: none !important;
+}
+
+@media (max-width: 767px) {
+    .account-page-hero + .account-wrap,
+    .account-page-hero + .reg-wrap {
+        padding-top: 18px !important;
+    }
+
+    .account-layout {
+        gap: 16px !important;
+    }
+}
+
+/* Tour list search: keep all filters in one horizontal row on desktop/tablet. */
+.banner-search-section.tour-banner-search {
+    padding: 18px 0 20px !important;
+    border-bottom: 0 !important;
+}
+
+.banner-search-section.tour-banner-search > .container {
+    width: min(100% - 44px, 1480px) !important;
+    max-width: 1480px !important;
+}
+
+.banner-search-section.tour-banner-search .search-wrap-modern {
+    width: 100% !important;
+    max-width: 1280px !important;
+    margin: 0 auto !important;
+    padding: 0 !important;
+    background: transparent !important;
+    border: 0 !important;
+    border-radius: 0 !important;
+    box-shadow: none !important;
+    overflow: visible !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill {
+    width: 100% !important;
+    margin: 0 !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill__form {
+    display: grid !important;
+    grid-template-columns: minmax(0, 1.35fr) minmax(0, .9fr) minmax(0, 1fr) minmax(0, .85fr) 58px !important;
+    align-items: stretch !important;
+    min-height: 82px !important;
+    width: 100% !important;
+    padding: 12px 12px 12px 30px !important;
+    gap: 0 !important;
+    border: 1px solid #e6edf4 !important;
+    border-radius: 30px !important;
+    background: #ffffff !important;
+    box-shadow: 0 18px 46px rgba(15, 23, 42, .1) !important;
+    overflow: visible !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill__field {
+    display: flex !important;
+    flex-direction: column !important;
+    justify-content: center !important;
+    min-width: 0 !important;
+    padding: 0 18px 0 0 !important;
+    margin: 0 18px 0 0 !important;
+    border-right: 1px solid #e3e6eb !important;
+    border-bottom: 0 !important;
+    background: transparent !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill__label {
+    gap: 7px !important;
+    color: #4b5563 !important;
+    font-size: 13px !important;
+    margin: 0 0 8px !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill__control input,
+.banner-search-section.tour-banner-search .home-search-pill__control select {
+    height: 28px !important;
+    min-height: 28px !important;
+    color: #111827 !important;
+    font-size: 15.5px !important;
+    font-weight: 650 !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill__control input::placeholder {
+    color: #a8b0ba !important;
+}
+
+.banner-search-section.tour-banner-search .home-search-pill__btn {
+    grid-column: auto !important;
+    width: 58px !important;
+    height: 58px !important;
+    min-width: 58px !important;
+    min-height: 58px !important;
+    border-radius: 50% !important;
+    font-size: 22px !important;
+    box-shadow: 0 12px 22px rgba(238, 82, 36, .26) !important;
+}
+
+@media (min-width: 768px) and (max-width: 1199px) {
+    .banner-search-section.tour-banner-search > .container {
+        width: min(100% - 28px, 1480px) !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__form {
+        grid-template-columns: minmax(0, 1.25fr) minmax(0, .82fr) minmax(0, .95fr) minmax(0, .82fr) 48px !important;
+        min-height: 68px !important;
+        padding: 10px 10px 10px 18px !important;
+        border-radius: 999px !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__field {
+        padding: 0 10px 0 0 !important;
+        margin: 0 10px 0 0 !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__label {
+        gap: 5px !important;
+        font-size: 11.5px !important;
+        margin-bottom: 5px !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__label i {
+        font-size: 13px !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__control input,
+    .banner-search-section.tour-banner-search .home-search-pill__control select {
+        height: 24px !important;
+        min-height: 24px !important;
+        font-size: 13px !important;
+        padding-right: 20px !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__control::after {
+        font-size: 14px !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__btn {
+        width: 48px !important;
+        height: 48px !important;
+        min-width: 48px !important;
+        min-height: 48px !important;
+        font-size: 18px !important;
+    }
+}
+
+@media (max-width: 767px) {
+    .banner-search-section.tour-banner-search {
+        padding: 12px 0 12px !important;
+    }
+
+    .banner-search-section.tour-banner-search > .container {
+        width: min(100% - 24px, 1480px) !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__form {
+        grid-template-columns: 1fr !important;
+        min-height: 0 !important;
+        padding: 16px !important;
+        border-radius: 18px !important;
+        gap: 0 !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__field {
+        padding: 0 0 13px !important;
+        margin: 0 0 13px !important;
+        border-right: 0 !important;
+        border-bottom: 1px solid #e3e6eb !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__field:last-of-type {
+        margin-bottom: 0 !important;
+    }
+
+    .banner-search-section.tour-banner-search .home-search-pill__btn {
+        width: 100% !important;
+        height: 48px !important;
+        min-height: 48px !important;
+        border-radius: 12px !important;
+        font-size: 18px !important;
+    }
+}

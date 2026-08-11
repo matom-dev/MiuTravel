@@ -1,0 +1,118 @@
+.floating-contact {
+    position: fixed;
+    right: 22px;
+    top: 70%;
+    z-index: 9998;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    transform: translateY(-50%);
+}
+
+.floating-contact__btn {
+    position: relative;
+    --floating-contact-ring: rgba(34, 149, 238, .22);
+    width: 58px;
+    height: 58px;
+    border: 0;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #ffffff;
+    text-decoration: none;
+    box-shadow: 0 10px 24px rgba(15, 23, 42, .18);
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+
+.floating-contact__btn::before {
+    content: "";
+    position: absolute;
+    inset: -9px;
+    border-radius: inherit;
+    background: var(--floating-contact-ring);
+    z-index: -1;
+}
+
+.floating-contact__btn:hover {
+    color: #ffffff;
+    text-decoration: none;
+    transform: translateY(-2px);
+    box-shadow: 0 14px 30px rgba(15, 23, 42, .24);
+}
+
+.floating-contact__btn i {
+    font-size: 25px;
+    line-height: 1;
+}
+
+.floating-contact__btn--mail,
+.floating-contact__btn--zalo {
+    background: #2295ee;
+    --floating-contact-ring: rgba(34, 149, 238, .28);
+}
+
+.floating-contact__btn--phone {
+    background: #ef1717;
+    --floating-contact-ring: rgba(239, 23, 23, .28);
+}
+
+.floating-contact__btn--messenger {
+    background: linear-gradient(135deg, #1d8cff 12%, #7a4dff 52%, #ff3aa8 100%);
+    --floating-contact-ring: rgba(34, 149, 238, .28);
+}
+
+.floating-contact__zalo-text {
+    width: 32px;
+    height: 32px;
+    border-radius: 10px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(255, 255, 255, .18);
+    color: #ffffff;
+    font-size: 12px;
+    font-weight: 900;
+    letter-spacing: -.4px;
+}
+
+.floating-contact__messenger-mark {
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    color: #6c4dff;
+    font-size: 18px;
+    font-weight: 900;
+    font-style: italic;
+    line-height: 1;
+}
+
+@media (max-width: 767px) {
+    .floating-contact {
+        right: 12px;
+        gap: 15px;
+    }
+
+    .floating-contact__btn {
+        width: 48px;
+        height: 48px;
+    }
+
+    .floating-contact__btn::before {
+        inset: -7px;
+    }
+
+    .floating-contact__btn i {
+        font-size: 21px;
+    }
+
+    .floating-contact__zalo-text {
+        width: 28px;
+        height: 28px;
+        font-size: 11px;
+    }
+}
