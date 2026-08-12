@@ -28,11 +28,11 @@
                 <div class="card-body">
                     <form action="" method="GET" class="admin-search-form">
                         <div class="row align-items-end">
-                            <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                                 <label class="text-muted" style="font-size: 13px;">Tiêu đề bài viết</label>
                                 <input type="text" name="a_title" value="{{ Request::get('a_title') }}" class="form-control" placeholder="Nhập tiêu đề...">
                             </div>
-                            <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                                 <label class="text-muted" style="font-size: 13px;">Danh mục</label>
                                 <select class="form-control custom-select" name="a_category_id">
                                     <option value="">-- Tất cả danh mục --</option>
@@ -53,7 +53,25 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-sm-12 col-md-4 admin-search-actions">
+                            <div class="col-sm-12 col-md-2 mb-3 mb-md-0">
+                                <label class="text-muted" style="font-size: 13px;">Trạng thái</label>
+                                <select name="a_active" class="form-control custom-select">
+                                    <option value="">Tất cả</option>
+                                    @foreach($actives as $key => $item)
+                                        <option value="{{ $key }}" {{ (string) Request::get('a_active') === (string) $key ? 'selected' : '' }}>{{ $item }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-2 mb-3 mb-md-0">
+                                <label class="text-muted" style="font-size: 13px;">Sắp xếp</label>
+                                <select name="sort" class="form-control custom-select">
+                                    <option value="latest" {{ Request::get('sort', 'latest') === 'latest' ? 'selected' : '' }}>Mới nhất</option>
+                                    <option value="oldest" {{ Request::get('sort') === 'oldest' ? 'selected' : '' }}>Cũ nhất</option>
+                                    <option value="title_asc" {{ Request::get('sort') === 'title_asc' ? 'selected' : '' }}>Tiêu đề A-Z</option>
+                                    <option value="title_desc" {{ Request::get('sort') === 'title_desc' ? 'selected' : '' }}>Tiêu đề Z-A</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-2 admin-search-actions">
                                 <button type="submit" class="btn btn-primary admin-search-btn"><i class="fas fa-filter mr-1"></i> Lọc dữ liệu</button>
                                 <a href="{{ route('article.index') }}" class="btn btn-secondary admin-reset-btn"><i class="fas fa-sync-alt mr-1"></i> Làm mới</a>
                             </div>
@@ -141,7 +159,7 @@
                 @if($articles->hasPages())
                     <div class="card-footer bg-white border-0">
                         <div class="float-right">
-                            {{ $articles->appends($query = '')->links() }}
+                            {{ $articles->appends(request()->query())->links() }}
                         </div>
                     </div>
                 @endif

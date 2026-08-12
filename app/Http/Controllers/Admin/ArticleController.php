@@ -7,8 +7,6 @@ use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Category;
 use App\Http\Requests\ArticleRequest;
-use Illuminate\Support\Facades\File;
-use Illuminate\Support\Str;
 
 class ArticleController extends Controller
 {
@@ -48,7 +46,22 @@ class ArticleController extends Controller
             
         }
 
-        $articles = $articles->orderByDesc('id')->paginate(NUMBER_PAGINATION);
+        if ($request->filled('a_active') && array_key_exists((int) $request->a_active, Article::ACTIVES)) {
+            $articles->where('a_active', (int) $request->a_active);
+        }
+
+        $sort = $request->input('sort', 'latest');
+        if ($sort === 'oldest') {
+            $articles->orderBy('id');
+        } elseif ($sort === 'title_asc') {
+            $articles->orderBy('a_title');
+        } elseif ($sort === 'title_desc') {
+            $articles->orderByDesc('a_title');
+        } else {
+            $articles->orderByDesc('id');
+        }
+
+        $articles = $articles->paginate(NUMBER_PAGINATION)->withQueryString();
         return view('admin.article.index', compact('articles'));
     }
 
@@ -133,9 +146,11 @@ class ArticleController extends Controller
 
         $album = $article->a_album_images ? $article->a_album_images : [];
         if (isset($album[$index])) {
+            $removedImage = $album[$index];
             array_splice($album, $index, 1);
             $article->a_album_images = array_values($album);
             $article->save();
+            delete_uploaded_image($removedImage);
         }
 
         return redirect()->back()->with('success', 'Đã xóa ảnh khỏi album');
@@ -144,25 +159,17 @@ class ArticleController extends Controller
     public function uploadInlineImage(Request $request)
     {
         $request->validate([
-            'image' => 'required|image|mimes:jpeg,jpg,png,gif,webp|max:5120',
+            'image' => 'required|image|mimes:jpeg,jpg,png,webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
         ]);
 
-        $file = $request->file('image');
-        $extension = strtolower($file->getClientOriginalExtension());
-        $originalName = pathinfo($file->getClientOriginalName(), PATHINFO_FILENAME);
-        $name = Str::slug($originalName) ?: Str::random(12);
-        $filename = date('Y-m-d__') . $name . '-' . Str::random(8) . '.' . $extension;
-        $directory = 'uploads/' . date('Y/m/d');
-        $path = public_path($directory);
+        $image = upload_image('image', 'article-inline');
 
-        if (!File::exists($path)) {
-            File::makeDirectory($path, 0777, true);
+        if (($image['code'] ?? 0) !== 1) {
+            return response()->json(['message' => 'Tệp ảnh không hợp lệ'], 422);
         }
 
-        $file->move($path, $filename);
-
         return response()->json([
-            'url' => asset($directory . '/' . $filename),
+            'url' => asset($image['path_img']),
         ]);
     }
 

@@ -292,7 +292,40 @@
 </style>
 @stop
 @section('seo')
-<meta name="description" content="{{ the_excerpt(strip_tags($hotel->h_description), 155) }}">
+@php
+    $hotelSeoDescription = the_excerpt(strip_tags($hotel->h_description ?: $hotel->h_content ?: $hotel->h_name), 155);
+    $hotelSeoImage = $hotel->h_image ? asset(pare_url_file($hotel->h_image)) : asset('admin/dist/img/no-image.png');
+    $hotelSeoUrl = route('hotel.detail', ['id' => $hotel->id, 'slug' => safeTitle($hotel->h_name)]);
+    $hotelSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Hotel',
+        'name' => $hotel->h_name,
+        'description' => $hotelSeoDescription,
+        'image' => $hotelSeoImage,
+        'url' => $hotelSeoUrl,
+        'address' => [
+            '@type' => 'PostalAddress',
+            'streetAddress' => $hotel->h_address,
+        ],
+    ];
+
+    if ($hotel->h_star_rating) {
+        $hotelSchema['starRating'] = [
+            '@type' => 'Rating',
+            'ratingValue' => (int) $hotel->h_star_rating,
+            'bestRating' => 5,
+        ];
+    }
+@endphp
+<meta name="description" content="{{ $hotelSeoDescription }}">
+<link rel="canonical" href="{{ $hotelSeoUrl }}">
+<meta property="og:type" content="place">
+<meta property="og:title" content="{{ $hotel->h_name }} | Miu Travel">
+<meta property="og:description" content="{{ $hotelSeoDescription }}">
+<meta property="og:image" content="{{ $hotelSeoImage }}">
+<meta property="og:url" content="{{ $hotelSeoUrl }}">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{!! json_encode($hotelSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
 @stop
 
 @section('content')

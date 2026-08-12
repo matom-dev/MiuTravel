@@ -308,6 +308,41 @@
 </style>
 @stop
 @section('seo')
+@php
+    $articleSeoDescription = the_excerpt(strip_tags($article->a_description ?: $article->a_content ?: $article->a_title), 155);
+    $articleSeoImage = $article->a_avatar ? asset(pare_url_file($article->a_avatar)) : asset('admin/dist/img/no-image.png');
+    $articleSeoUrl = route('articles.detail', ['id' => $article->id, 'slug' => safeTitle($article->a_title)]);
+    $articleSchema = [
+        '@context' => 'https://schema.org',
+        '@type' => 'Article',
+        'headline' => $article->a_title,
+        'description' => $articleSeoDescription,
+        'image' => [$articleSeoImage],
+        'datePublished' => optional($article->created_at)->toAtomString(),
+        'dateModified' => optional($article->updated_at)->toAtomString(),
+        'author' => [
+            '@type' => 'Person',
+            'name' => optional($article->user)->name ?: 'Miu Travel',
+        ],
+        'publisher' => [
+            '@type' => 'Organization',
+            'name' => 'Miu Travel',
+        ],
+        'mainEntityOfPage' => [
+            '@type' => 'WebPage',
+            '@id' => $articleSeoUrl,
+        ],
+    ];
+@endphp
+<meta name="description" content="{{ $articleSeoDescription }}">
+<link rel="canonical" href="{{ $articleSeoUrl }}">
+<meta property="og:type" content="article">
+<meta property="og:title" content="{{ $article->a_title }} | Miu Travel">
+<meta property="og:description" content="{{ $articleSeoDescription }}">
+<meta property="og:image" content="{{ $articleSeoImage }}">
+<meta property="og:url" content="{{ $articleSeoUrl }}">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{!! json_encode($articleSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
 @stop
 @section('content')
 <section class="article-detail-hero">

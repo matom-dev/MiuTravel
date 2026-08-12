@@ -3,8 +3,12 @@
 namespace Tests\Feature;
 
 use App\Models\AppNotification;
+use App\Models\AdminAuditLog;
+use App\Models\BookingStatusHistory;
 use App\Models\BookTour;
 use App\Models\Location;
+use App\Models\Permission;
+use App\Models\Role;
 use App\Models\Tour;
 use App\Models\User;
 use App\Services\BookingService;
@@ -53,6 +57,13 @@ class BookingServiceTest extends TestCase
         $this->assertDatabaseHas('app_notifications', [
             'receiver_guard' => 'admins',
             'type' => 'booking_created',
+        ]);
+        $this->assertDatabaseHas('booking_status_histories', [
+            'book_tour_id' => $result['book']->id,
+            'old_status' => null,
+            'new_status' => BookTour::STATUS_PENDING,
+            'changed_by' => $user->id,
+            'changed_guard' => 'users',
         ]);
     }
 
@@ -144,9 +155,9 @@ class BookingServiceTest extends TestCase
             'b_status' => 1,
         ]);
 
-        $result = app(BookingService::class)->changeStatus($booking, 2);
+        $result = app(BookingService::class)->changeStatus($booking, BookTour::STATUS_CONFIRMED);
 
-        $this->assertSame(2, (int) $result['bookTour']->b_status);
+        $this->assertSame(BookTour::STATUS_CONFIRMED, (int) $result['bookTour']->b_status);
         $this->assertSame('email', $result['mail']['view']);
         $this->assertSame(0, (int) $tour->fresh()->t_follow);
         $this->assertSame(7, (int) $tour->fresh()->t_number_registered);
@@ -161,6 +172,11 @@ class BookingServiceTest extends TestCase
         $this->assertStringContainsString('Tổng tiền tạm tính', $notification->message);
         $this->assertSame($result['bookTour']->b_end_date->format('Y-m-d'), $notification->data['end_date']);
         $this->assertSame($result['bookTour']->total_price, (int) $notification->data['total_price']);
+        $this->assertDatabaseHas('booking_status_histories', [
+            'book_tour_id' => $booking->id,
+            'old_status' => BookTour::STATUS_PENDING,
+            'new_status' => BookTour::STATUS_CONFIRMED,
+        ]);
     }
 
     public function test_booking_emails_show_flexible_departure_summary(): void
@@ -207,11 +223,95 @@ class BookingServiceTest extends TestCase
             'b_status' => 1,
         ]);
 
-        $result = app(BookingService::class)->changeStatus($booking, 5);
+        $result = app(BookingService::class)->changeStatus($booking, BookTour::STATUS_CANCELLED);
 
-        $this->assertSame(5, (int) $result['bookTour']->b_status);
+        $this->assertSame(BookTour::STATUS_CANCELLED, (int) $result['bookTour']->b_status);
         $this->assertSame('emailhuy', $result['mail']['view']);
         $this->assertSame(0, (int) $tour->fresh()->t_follow);
+    }
+
+    public function test_it_supports_full_valid_booking_status_transition_flow(): void
+    {
+        $user = User::factory()->create();
+        $tour = $this->createTour([
+            't_follow' => 1,
+            't_number_registered' => 0,
+        ]);
+        $booking = $this->createBooking($tour, $user, [
+            'b_number_adults' => 1,
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+
+        app(BookingService::class)->changeStatus($booking, BookTour::STATUS_CONFIRMED);
+        app(BookingService::class)->changeStatus($booking->fresh(), BookTour::STATUS_PAID);
+        app(BookingService::class)->changeStatus($booking->fresh(), BookTour::STATUS_COMPLETED);
+
+        $this->assertSame(BookTour::STATUS_COMPLETED, (int) $booking->fresh()->b_status);
+        $this->assertSame([
+            BookTour::STATUS_CONFIRMED,
+            BookTour::STATUS_PAID,
+            BookTour::STATUS_COMPLETED,
+        ], BookingStatusHistory::where('book_tour_id', $booking->id)->whereNotNull('old_status')->pluck('new_status')->all());
+    }
+
+    public function test_it_prevents_overbooking_when_capacity_is_configured(): void
+    {
+        $this->expectException(\DomainException::class);
+        $this->expectExceptionMessage('Tour không còn đủ chỗ cho số khách yêu cầu');
+
+        $user = User::factory()->create();
+        $tour = $this->createTour([
+            't_number_guests' => 3,
+            't_number_registered' => 1,
+            't_follow' => 1,
+        ]);
+
+        app(BookingService::class)->createForTour($tour->id, $user, $this->bookingPayload([
+            'b_number_adults' => 2,
+        ]));
+    }
+
+    public function test_admin_can_filter_booking_by_customer_and_status_and_audit_status_change(): void
+    {
+        Mail::fake();
+
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['quan-ly-dat-tour', 'xoa-va-cap-nhat-trang-thai']);
+        $user = User::factory()->create(['name' => 'Tran Customer', 'email' => 'customer@example.com', 'phone' => '0901234567']);
+        $tour = $this->createTour(['t_follow' => 1]);
+        $booking = $this->createBooking($tour, $user, [
+            'b_name' => 'Tran Customer',
+            'b_email' => 'customer@example.com',
+            'b_phone' => '0901234567',
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+        $this->createBooking($tour, User::factory()->create(), [
+            'b_name' => 'Other Guest',
+            'b_status' => BookTour::STATUS_CANCELLED,
+        ]);
+
+        $this->actingAs($admin, 'admins')
+            ->get(route('book.tour.index', [
+                'customer' => 'Customer',
+                'b_status' => BookTour::STATUS_PENDING,
+            ]))
+            ->assertOk()
+            ->assertSee('Tran Customer')
+            ->assertDontSee('Other Guest');
+
+        $this->actingAs($admin, 'admins')
+            ->patch(route('book.tour.update.status', [
+                'status' => BookTour::STATUS_CONFIRMED,
+                'id' => $booking->id,
+            ]))
+            ->assertRedirect(route('book.tour.index'));
+
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'actor_id' => $admin->id,
+            'action' => 'booking.status_updated',
+            'subject_type' => BookTour::class,
+            'subject_id' => $booking->id,
+        ]);
     }
 
     public function test_it_rejects_invalid_status_transition(): void
@@ -223,7 +323,26 @@ class BookingServiceTest extends TestCase
         $tour = $this->createTour();
         $booking = $this->createBooking($tour, $user, ['b_status' => 1]);
 
-        app(BookingService::class)->changeStatus($booking, 3);
+        app(BookingService::class)->changeStatus($booking, BookTour::STATUS_PAID);
+    }
+
+    private function grantPermissions(User $user, array $permissionNames): void
+    {
+        $role = Role::create([
+            'name' => 'booking-admin-' . $user->id,
+            'display_name' => 'Booking admin',
+        ]);
+
+        foreach ($permissionNames as $permissionName) {
+            $permission = Permission::create([
+                'name' => $permissionName,
+                'display_name' => $permissionName,
+            ]);
+
+            $role->permissionRole()->attach($permission->id);
+        }
+
+        $user->userRole()->attach($role->id);
     }
 
     private function createTour(array $attributes = []): Tour

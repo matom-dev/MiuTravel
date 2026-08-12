@@ -2,25 +2,69 @@
 
 namespace App\Services;
 
+use HTMLPurifier;
+use HTMLPurifier_Config;
+use Illuminate\Support\Facades\File;
+
 class RichTextSanitizer
 {
-    private const ALLOWED_TAGS = '<p><br><strong><b><em><i><u><ul><ol><li><blockquote><h2><h3><h4><a><img><figure><figcaption><table><thead><tbody><tr><th><td><span><div>';
-
     public function clean(?string $html): ?string
     {
         if ($html === null || trim($html) === '') {
             return $html;
         }
 
-        $html = preg_replace('#<(script|style|iframe|object|embed|form|input|button)[^>]*>.*?</\1>#is', '', $html);
-        $html = strip_tags($html, self::ALLOWED_TAGS);
+        return trim($this->purifier()->purify($html));
+    }
 
-        // Drop event handlers and dangerous URI schemes while keeping editor HTML usable.
-        $html = preg_replace('/\s+on[a-z]+\s*=\s*(["\']).*?\1/iu', '', $html);
-        $html = preg_replace('/\s+on[a-z]+\s*=\s*[^\s>]+/iu', '', $html);
-        $html = preg_replace('/(href|src)\s*=\s*(["\'])\s*javascript:.*?\2/iu', '$1="#"', $html);
-        $html = preg_replace('/(href|src)\s*=\s*(["\'])\s*data:text\/html.*?\2/iu', '$1="#"', $html);
+    private function purifier(): HTMLPurifier
+    {
+        static $purifier;
 
-        return trim($html);
+        if ($purifier instanceof HTMLPurifier) {
+            return $purifier;
+        }
+
+        $cachePath = storage_path('framework/cache/htmlpurifier');
+        File::ensureDirectoryExists($cachePath);
+
+        $config = HTMLPurifier_Config::createDefault();
+        $config->set('Core.Encoding', 'UTF-8');
+        $config->set('HTML.Doctype', 'HTML 4.01 Transitional');
+        $config->set('Cache.SerializerPath', $cachePath);
+        $config->set('URI.AllowedSchemes', [
+            'http' => true,
+            'https' => true,
+            'mailto' => true,
+        ]);
+        $config->set('HTML.Allowed', implode(',', [
+            'p',
+            'br',
+            'strong',
+            'b',
+            'em',
+            'i',
+            'u',
+            'ul',
+            'ol',
+            'li',
+            'blockquote',
+            'h2',
+            'h3',
+            'h4',
+            'a[href|title|target|rel]',
+            'img[src|alt|title|width|height]',
+            'table',
+            'thead',
+            'tbody',
+            'tr',
+            'th',
+            'td',
+            'span',
+            'div',
+        ]));
+        $config->set('Attr.AllowedFrameTargets', ['_blank']);
+
+        return $purifier = new HTMLPurifier($config);
     }
 }

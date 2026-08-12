@@ -2,7 +2,8 @@
 
 namespace App\Services;
 
-use App\Models\AppNotification;
+use App\Jobs\CreateAppNotification;
+use App\Models\BookingStatusHistory;
 use App\Models\BookTour;
 use App\Models\Tour;
 use App\Models\TourSchedule;
@@ -22,6 +23,8 @@ class BookingService
             }
 
             $guestCount = $this->guestCount($data);
+            $this->ensureCapacity($tour, $guestCount);
+
             $adultPrice = $this->discountedPrice($tour->t_price_adults, $tour->t_sale);
             $childPrice = $this->discountedPrice($tour->t_price_children, $tour->t_sale);
             $startDate = Carbon::parse($data['b_start_date'])->startOfDay();
@@ -31,7 +34,7 @@ class BookingService
                 'b_tour_id' => $tour->id,
                 'b_tour_schedule_id' => null,
                 'b_user_id' => $user->id,
-                'b_status' => 1,
+                'b_status' => BookTour::STATUS_PENDING,
                 'b_start_date' => $startDate->format('Y-m-d H:i:s'),
                 'b_end_date' => $endDate->format('Y-m-d H:i:s'),
                 'b_price_adults' => $adultPrice,
@@ -43,7 +46,9 @@ class BookingService
             $tour->t_follow = (int) $tour->t_follow + $guestCount;
             $tour->save();
 
-            AppNotification::create([
+            $this->recordStatusHistory($book, null, BookTour::STATUS_PENDING, $user, 'users', 'Khách tạo booking');
+
+            CreateAppNotification::dispatch([
                 'receiver_guard' => 'admins',
                 'type' => 'booking_created',
                 'title' => 'Có đơn đặt tour mới',
@@ -96,15 +101,24 @@ class BookingService
             $schedule = $this->lockedSchedule($bookTour, $tour);
             $guestCount = $this->guestCount($bookTour->toArray());
 
-            if ($newStatus === 2) {
+            if ($newStatus === BookTour::STATUS_CONFIRMED) {
                 $this->confirmSeats($tour, $schedule, $guestCount);
             }
 
-            if ($newStatus === 5) {
+            if ($newStatus === BookTour::STATUS_CANCELLED) {
                 $this->releaseSeats($tour, $schedule, $guestCount, $currentStatus);
             }
 
-            AppNotification::create([
+            $this->recordStatusHistory(
+                $bookTour,
+                $currentStatus,
+                $newStatus,
+                auth('admins')->user(),
+                auth('admins')->check() ? 'admins' : null,
+                'Cập nhật trạng thái booking'
+            );
+
+            CreateAppNotification::dispatch([
                 'receiver_guard' => 'users',
                 'receiver_id' => $bookTour->b_user_id,
                 'type' => 'booking_status_updated',
@@ -152,7 +166,7 @@ class BookingService
 
     private function releaseSeats(Tour $tour, ?TourSchedule $schedule, int $guestCount, int $currentStatus): void
     {
-        if ($currentStatus === 1) {
+        if ($currentStatus === BookTour::STATUS_PENDING) {
             if ($schedule) {
                 $schedule->ts_follow = max(0, (int) $schedule->ts_follow - $guestCount);
                 $schedule->save();
@@ -196,6 +210,39 @@ class BookingService
         return (int) $price - ((int) $price * (int) $sale / 100);
     }
 
+    private function ensureCapacity(Tour $tour, int $guestCount): void
+    {
+        $capacity = (int) $tour->t_number_guests;
+
+        if ($capacity <= 0) {
+            return;
+        }
+
+        $reserved = (int) $tour->t_number_registered + (int) $tour->t_follow;
+
+        if ($reserved + $guestCount > $capacity) {
+            throw new \DomainException('Tour không còn đủ chỗ cho số khách yêu cầu');
+        }
+    }
+
+    private function recordStatusHistory(
+        BookTour $booking,
+        ?int $oldStatus,
+        int $newStatus,
+        ?User $actor = null,
+        ?string $guard = null,
+        ?string $note = null
+    ): void {
+        BookingStatusHistory::create([
+            'book_tour_id' => $booking->id,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+            'changed_by' => $actor ? $actor->id : null,
+            'changed_guard' => $guard,
+            'note' => $note,
+        ]);
+    }
+
     private function expectedEndDate(Carbon $startDate, Tour $tour): Carbon
     {
         $durationDays = $tour->effective_duration_days;
@@ -206,9 +253,9 @@ class BookingService
     private function mailForStatus(int $status): ?array
     {
         return [
-            2 => ['view' => 'email', 'subject' => 'Xác nhận booking'],
-            3 => ['view' => 'emailtt', 'subject' => 'Xác nhận thanh toán'],
-            5 => ['view' => 'emailhuy', 'subject' => 'Xác nhận HUỶ BOOKING'],
+            BookTour::STATUS_CONFIRMED => ['view' => 'email', 'subject' => 'Xác nhận booking'],
+            BookTour::STATUS_PAID => ['view' => 'emailtt', 'subject' => 'Xác nhận thanh toán'],
+            BookTour::STATUS_CANCELLED => ['view' => 'emailhuy', 'subject' => 'Xác nhận HUỶ BOOKING'],
         ][$status] ?? null;
     }
 }

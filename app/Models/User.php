@@ -6,12 +6,11 @@ use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
-use Shanmuga\LaravelEntrust\Traits\LaravelEntrustUserTrait;
 
 
 class User extends Authenticatable
 {
-    use HasFactory, Notifiable, LaravelEntrustUserTrait;
+    use HasFactory, Notifiable;
 
     /**
      * The attributes that are mass assignable.
@@ -52,6 +51,30 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Role::class, 'role_user', 'user_id', 'role_id');
     }
+
+    public function roles()
+    {
+        return $this->userRole();
+    }
+
+    public function can($permissions, $arguments = [])
+    {
+        if (is_string($permissions)) {
+            $permissions = preg_split('/[|,]/', $permissions) ?: [];
+        }
+
+        $permissions = array_filter(array_map('trim', (array) $permissions));
+
+        if ($permissions === []) {
+            return false;
+        }
+
+        return $this->userRole()
+            ->whereHas('permissionRole', function ($query) use ($permissions) {
+                $query->whereIn('name', $permissions);
+            })
+            ->exists();
+    }
+
     public $timestamps = true;
 }
-

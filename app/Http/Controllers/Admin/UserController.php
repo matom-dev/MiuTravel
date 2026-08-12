@@ -7,10 +7,13 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRequest;
 use App\Models\User;
 use App\Models\Role;
+use App\Services\AdminAuditLogger;
 
 class UserController extends Controller
 {
-    public function __construct(Role $role)
+    protected $auditLogger;
+
+    public function __construct(Role $role, AdminAuditLogger $auditLogger)
     {
         view()->share([
             'user_active' => 'active',
@@ -19,6 +22,8 @@ class UserController extends Controller
         view()->composer(['admin.user.*'], function ($view) use ($role) {
             $view->with('roles', $role->all());
         });
+
+        $this->auditLogger = $auditLogger;
     }
     /**
      * Display a listing of the resource.
@@ -89,6 +94,10 @@ class UserController extends Controller
             if ($user->save()) {
                 \DB::table('role_user')->insert(['role_id'=> $request->role, 'user_id'=> $user->id]);
             }
+            $this->auditLogger->log('user.created', $user, [
+                'role_id' => (int) $request->role,
+                'status' => (int) $user->status,
+            ], $request);
 
             \DB::commit();
             return redirect()->back()->with('success','Thêm mới thành công');
@@ -150,9 +159,15 @@ class UserController extends Controller
                     $user->avatar = $image['name'];
             }
             if ($user->save()) {
+                $oldRole = \DB::table('role_user')->where('user_id', $id)->value('role_id');
                 \DB::table('role_user')->where('user_id', $id)->delete();
                 \DB::table('role_user')->insert(['role_id'=> $request->role, 'user_id'=> $user->id]);
             }
+            $this->auditLogger->log('user.updated', $user, [
+                'old_role_id' => isset($oldRole) ? (int) $oldRole : null,
+                'new_role_id' => (int) $request->role,
+                'status' => (int) $user->status,
+            ], $request);
 
             \DB::commit();
             return redirect()->back()->with('success','Chỉnh sửa thành công');
@@ -177,6 +192,10 @@ class UserController extends Controller
         }
         \DB::beginTransaction();
         try {
+            $this->auditLogger->log('user.deleted', $user, [
+                'email' => $user->email,
+                'status' => (int) $user->status,
+            ]);
             $user->delete();
             \DB::commit();
             return redirect()->back()->with('success','Đã xóa thành công');

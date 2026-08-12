@@ -77,23 +77,48 @@ class HomeController extends Controller
       ]
   ];
 
-  $month = $request->select_month ? $request->select_month : date('m');
-  $year = $request->select_year ? $request->select_year : date('Y');
-  $listDay = Date::getListDayInMonth($month, $year);
+  $validatedDashboardFilters = $request->validate([
+      'select_month' => 'nullable|integer|between:1,12',
+      'select_year' => 'nullable|integer|between:2020,2035',
+      'date_from' => 'nullable|date',
+      'date_to' => 'nullable|date|after_or_equal:date_from',
+  ]);
+  $month = $validatedDashboardFilters['select_month'] ?? date('m');
+  $year = $validatedDashboardFilters['select_year'] ?? date('Y');
+  $selectedDateFrom = $validatedDashboardFilters['date_from'] ?? null;
+  $selectedDateTo = $validatedDashboardFilters['date_to'] ?? null;
+
+  if ($selectedDateFrom && $selectedDateTo) {
+      $chartDateFrom = \Carbon\Carbon::parse($selectedDateFrom)->startOfDay();
+      $chartDateTo = \Carbon\Carbon::parse($selectedDateTo)->startOfDay();
+      $listDay = [];
+      foreach (\Carbon\CarbonPeriod::create($chartDateFrom, $chartDateTo) as $periodDay) {
+          $listDay[] = $periodDay->toDateString();
+      }
+  } else {
+      $chartDateFrom = \Carbon\Carbon::create((int) $year, (int) $month, 1)->startOfDay();
+      $chartDateTo = (clone $chartDateFrom)->endOfMonth()->startOfDay();
+      $listDay = Date::getListDayInMonth($month, $year);
+  }
+
+  $applyDashboardDateScope = function ($query) use ($chartDateFrom, $chartDateTo) {
+      return $query->whereDate('created_at', '>=', $chartDateFrom->toDateString())
+          ->whereDate('created_at', '<=', $chartDateTo->toDateString());
+  };
 
   //Thống kê số lượng người lớn hàng đặt tour
-  $revenueTransactionMonth = BookTour::whereMonth('created_at', $month)->whereYear('created_at', $year)
+  $revenueTransactionMonth = $applyDashboardDateScope(BookTour::query())
       ->select(\DB::raw('sum(b_number_adults) as totalMoney'), \DB::raw('DATE(created_at) day'))
       ->groupBy('day')
       ->get()->toArray();
 
   // Thống kê khối lượng trẻ em đặt tour
-  $revenueTransactionMonthDefault = BookTour::whereMonth('created_at', $month)->whereYear('created_at', $year)
+  $revenueTransactionMonthDefault = $applyDashboardDateScope(BookTour::query())
       ->select(\DB::raw('(sum(b_number_children)+sum(b_number_child6)+sum(b_number_child2)) as totalMoney'), \DB::raw('DATE(created_at) day'))
       ->groupBy('day')
       ->get()->toArray();
   //thống kê doanh thu
-  $money = BookTour::whereIn('b_status', [3, 4])->whereMonth('created_at', $month)->whereYear('created_at', $year)
+  $money = $applyDashboardDateScope(BookTour::whereIn('b_status', [3, 4]))
   ->select(\DB::raw('(sum(b_price_adults*b_number_adults)+sum(b_price_children*b_number_children)+sum(b_price_child6*b_number_child6)+sum(b_price_child2*b_number_child2)) as totalMoney'), \DB::raw('DATE(created_at) day'))
   ->groupBy('day')
   ->get()->toArray();
@@ -225,6 +250,8 @@ class HomeController extends Controller
       'latestComments' => $latestComments,
       'totalRevenueMonth' => $totalRevenueMonth,
       'totalGuestsMonth' => $totalGuestsMonth,
+      'selectedDateFrom' => $selectedDateFrom,
+      'selectedDateTo' => $selectedDateTo,
       'statusTransaction'          => json_encode($statusTransaction),
       'listDay'                    => json_encode($listDay),
       'arrRevenueTransactionMonth' => json_encode($arrRevenueTransactionMonth),

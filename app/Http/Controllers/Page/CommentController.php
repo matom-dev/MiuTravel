@@ -31,7 +31,7 @@ class CommentController extends Controller
 
         $validator = Validator::make($request->all(), [
             'checkin_images' => 'nullable|array|max:5',
-            'checkin_images.*' => 'image|mimes:jpg,jpeg,png,webp|max:5120',
+            'checkin_images.*' => 'image|mimes:jpg,jpeg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
         ], [
             'checkin_images.max' => 'Chỉ được tải tối đa 5 ảnh check-in',
             'checkin_images.*.image' => 'Tệp tải lên phải là hình ảnh',

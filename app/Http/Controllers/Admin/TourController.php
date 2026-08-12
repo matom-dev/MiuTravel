@@ -8,6 +8,7 @@ use App\Models\Tour;
 use App\Models\Location;
 use App\Models\TourGuide;
 use App\Http\Requests\TourRequest;
+use App\Services\AdminAuditLogger;
 
 class TourController extends Controller
 {
@@ -17,7 +18,9 @@ class TourController extends Controller
     /**
      * HomeController constructor.
      */
-    public function __construct(Tour $tour, Location $location)
+    protected $auditLogger;
+
+    public function __construct(Tour $tour, Location $location, AdminAuditLogger $auditLogger)
     {
         view()->share([
             'tour_active' => 'active',
@@ -31,6 +34,7 @@ class TourController extends Controller
         });
 
         $this->tour = $tour;
+        $this->auditLogger = $auditLogger;
     }
 
     /**
@@ -50,7 +54,18 @@ class TourController extends Controller
             $tours->where('t_status', (int) $request->t_status);
         }
 
-        $tours = $tours->orderByDesc('id')->paginate(NUMBER_PAGINATION);
+        $sort = $request->input('sort', 'latest');
+        if ($sort === 'oldest') {
+            $tours->orderBy('id');
+        } elseif ($sort === 'price_asc') {
+            $tours->orderBy('t_price_adults');
+        } elseif ($sort === 'price_desc') {
+            $tours->orderByDesc('t_price_adults');
+        } else {
+            $tours->orderByDesc('id');
+        }
+
+        $tours = $tours->paginate(NUMBER_PAGINATION)->withQueryString();
         return view('admin.tour.index', compact('tours'));
     }
 
@@ -76,7 +91,11 @@ class TourController extends Controller
         //
         \DB::beginTransaction();
         try {
-            $this->tour->createOrUpdate($request);
+            $tour = $this->tour->createOrUpdate($request);
+            $this->auditLogger->log('tour.created', $tour, [
+                'title' => $tour->t_title,
+                'status' => (int) $tour->t_status,
+            ], $request);
             \DB::commit();
             return redirect()->back()->with('success', 'Lưu dữ liệu thành công');
         } catch (\Exception $exception) {
@@ -115,7 +134,11 @@ class TourController extends Controller
         //
         \DB::beginTransaction();
         try {
-            $this->tour->createOrUpdate($request, $id);
+            $tour = $this->tour->createOrUpdate($request, $id);
+            $this->auditLogger->log('tour.updated', $tour, [
+                'title' => $tour->t_title,
+                'status' => (int) $tour->t_status,
+            ], $request);
             \DB::commit();
             return redirect()->back()->with('success', 'Lưu dữ liệu thành công');
         } catch (\Exception $exception) {
@@ -140,10 +163,12 @@ class TourController extends Controller
 
         $album = $tour->t_anbum_image ? $tour->t_anbum_image : [];
         if (isset($album[$index])) {
+            $removedImage = $album[$index];
             array_splice($album, $index, 1);
             // Gán array trực tiếp, $casts => 'array' sẽ tự json_encode khi lưu
             $tour->t_anbum_image = array_values($album);
             $tour->save();
+            delete_uploaded_image($removedImage);
         }
 
         return redirect()->back()->with('success', 'Đã xóa ảnh khỏi album');
@@ -164,6 +189,10 @@ class TourController extends Controller
         }
 
         try {
+            $this->auditLogger->log('tour.deleted', $tour, [
+                'title' => $tour->t_title,
+                'status' => (int) $tour->t_status,
+            ]);
             $tour->delete();
             return redirect()->back()->with('success', 'Xóa thành công');
         } catch (\Exception $exception) {

@@ -4,18 +4,20 @@ namespace App\Http\Controllers\Admin;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Jobs\SendBookingStatusMail;
 use App\Models\BookTour;
 use App\Models\Tour;
 use App\Models\TourSchedule;
+use App\Services\AdminAuditLogger;
 use App\Services\BookingService;
-use Mail;
 
 class BookTourController extends Controller
 {
     protected $bookTour;
     protected $bookingService;
+    protected $auditLogger;
 
-    public function __construct(BookTour $bookTour, Tour $tour, BookingService $bookingService)
+    public function __construct(BookTour $bookTour, Tour $tour, BookingService $bookingService, AdminAuditLogger $auditLogger)
     {
         view()->share([
             'book_tour_active' => 'active',
@@ -29,6 +31,7 @@ class BookTourController extends Controller
 
         $this->bookTour = $bookTour;
         $this->bookingService = $bookingService;
+        $this->auditLogger = $auditLogger;
     }
 
     public function index(Request $request)
@@ -59,6 +62,22 @@ class BookTourController extends Controller
         }
         if ($request->b_phone) {
             $bookTours->where('b_phone', 'like', '%' . $request->b_phone . '%');
+        }
+        if ($request->b_user_id) {
+            $bookTours->where('b_user_id', (int) $request->b_user_id);
+        }
+        if ($request->customer) {
+            $customer = $request->customer;
+            $bookTours->where(function ($query) use ($customer) {
+                $query->where('b_name', 'like', '%' . $customer . '%')
+                    ->orWhere('b_email', 'like', '%' . $customer . '%')
+                    ->orWhere('b_phone', 'like', '%' . $customer . '%')
+                    ->orWhereHas('user', function ($userQuery) use ($customer) {
+                        $userQuery->where('name', 'like', '%' . $customer . '%')
+                            ->orWhere('email', 'like', '%' . $customer . '%')
+                            ->orWhere('phone', 'like', '%' . $customer . '%');
+                    });
+            });
         }
         if ($request->b_start_date) {
             $bookTours->whereDate('b_start_date', $request->b_start_date);
@@ -126,6 +145,10 @@ class BookTourController extends Controller
             }
 
             $bookTour->delete();
+            $this->auditLogger->log('booking.deleted', $bookTour, [
+                'tour_id' => $bookTour->b_tour_id,
+                'status' => (int) $bookTour->b_status,
+            ]);
             \DB::commit();
 
             return redirect()->back()->with('success', 'Xóa thành công');
@@ -146,7 +169,12 @@ class BookTourController extends Controller
 
         try {
             $result = $this->bookingService->changeStatus($bookTour, $newStatus);
-            $this->sendStatusMail($result);
+            $this->dispatchStatusMail($result);
+            $this->auditLogger->log('booking.status_updated', $result['bookTour'], [
+                'old_status' => $bookTour->b_status,
+                'new_status' => $newStatus,
+                'tour_id' => $result['tour']->id,
+            ]);
 
             return redirect()->route('book.tour.index')->with('success', 'Cập nhật trạng thái thành công');
         } catch (\DomainException $exception) {
@@ -156,25 +184,17 @@ class BookTourController extends Controller
         }
     }
 
-    private function sendStatusMail(array $result): void
+    private function dispatchStatusMail(array $result): void
     {
         if (!$result['mail'] || !$result['user']) {
             return;
         }
 
-        try {
-            $user = $result['user'];
-            $bookTour = $result['bookTour'];
-            $tour = $result['tour'];
-            $mailuser = $user->email;
-            $mail = $result['mail'];
-
-            Mail::send($mail['view'], compact('user', 'bookTour', 'tour'), function ($email) use ($mailuser, $mail) {
-                $email->subject($mail['subject']);
-                $email->to($mailuser);
-            });
-        } catch (\Exception $mailException) {
-            // Không rollback dữ liệu nếu gửi mail lỗi.
-        }
+        SendBookingStatusMail::dispatch(
+            $result['user']->id,
+            $result['bookTour']->id,
+            $result['tour']->id,
+            $result['mail']
+        );
     }
 }

@@ -3,12 +3,12 @@
 namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
-use Shanmuga\LaravelEntrust\Models\EntrustRole;
-use Illuminate\Support\Facades\Config;
+use Illuminate\Database\Eloquent\Model;
 
-class Role extends EntrustRole
+class Role extends Model
 {
     use HasFactory;
+
     protected $table = 'roles';
     public $timestamps = true;
 
@@ -23,7 +23,6 @@ class Role extends EntrustRole
 
     public function users()
     {
-        return $this->belongsToMany(Config::get('auth.providers.users.model'), Config::get('entrust.tables.role_user'), Config::get('entrust.foreign_keys.role'), Config::get('entrust.foreign_keys.user'));
-
+        return $this->belongsToMany(User::class, 'role_user', 'role_id', 'user_id');
     }
 }

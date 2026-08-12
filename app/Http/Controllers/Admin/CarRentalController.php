@@ -77,9 +77,11 @@ class CarRentalController extends Controller
 
         $album = $carRental->cr_album_images ?: [];
         if (isset($album[$index])) {
+            $removedImage = $album[$index];
             array_splice($album, $index, 1);
             $carRental->cr_album_images = array_values($album);
             $carRental->save();
+            delete_uploaded_image($removedImage);
         }
 
         return redirect()->back()->with('success', 'Đã xóa ảnh khỏi album');

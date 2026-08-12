@@ -652,7 +652,53 @@
 }
 </style>
 @stop
-@section('seo')@stop
+@section('seo')
+@php
+    $tourSeoDescription = the_excerpt(strip_tags($tour->t_description ?: $tour->t_content ?: $tour->t_title), 155);
+    $tourSeoImage = $tour->t_image ? asset(pare_url_file($tour->t_image)) : asset('admin/dist/img/no-image.png');
+    $tourSeoUrl = route('tour.detail', ['id' => $tour->id, 'slug' => safeTitle($tour->t_title)]);
+    $tourSeoPrice = max(0, (int) ($tour->t_price_adults - ($tour->t_price_adults * $tour->t_sale / 100)));
+    $tourSchema = [
+        '@context' => 'https://schema.org',
+        '@graph' => [
+            [
+                '@type' => 'Product',
+                'name' => $tour->t_title,
+                'description' => $tourSeoDescription,
+                'image' => [$tourSeoImage],
+                'brand' => [
+                    '@type' => 'Brand',
+                    'name' => 'Miu Travel',
+                ],
+                'offers' => [
+                    '@type' => 'Offer',
+                    'url' => $tourSeoUrl,
+                    'priceCurrency' => 'VND',
+                    'price' => $tourSeoPrice,
+                    'availability' => $tour->is_bookable ? 'https://schema.org/InStock' : 'https://schema.org/SoldOut',
+                ],
+            ],
+            [
+                '@type' => 'BreadcrumbList',
+                'itemListElement' => [
+                    ['@type' => 'ListItem', 'position' => 1, 'name' => 'Trang chủ', 'item' => route('page.home')],
+                    ['@type' => 'ListItem', 'position' => 2, 'name' => 'Tours', 'item' => route('tour')],
+                    ['@type' => 'ListItem', 'position' => 3, 'name' => $tour->t_title, 'item' => $tourSeoUrl],
+                ],
+            ],
+        ],
+    ];
+@endphp
+<meta name="description" content="{{ $tourSeoDescription }}">
+<link rel="canonical" href="{{ $tourSeoUrl }}">
+<meta property="og:type" content="product">
+<meta property="og:title" content="{{ $tour->t_title }}">
+<meta property="og:description" content="{{ $tourSeoDescription }}">
+<meta property="og:image" content="{{ $tourSeoImage }}">
+<meta property="og:url" content="{{ $tourSeoUrl }}">
+<meta name="twitter:card" content="summary_large_image">
+<script type="application/ld+json">{!! json_encode($tourSchema, JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES) !!}</script>
+@stop
 @section('content')
 @php
     $tourGuides = $tour->t_guides ?: [];

@@ -76,6 +76,11 @@
                     </div>
                     <div class="row mt-3">
                         <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                            <label class="text-muted" style="font-size: 13px;">Khách hàng</label>
+                            <input type="text" name="customer" value="{{ Request::get('customer') }}" class="form-control"
+                                placeholder="Tên, email hoặc SĐT...">
+                        </div>
+                        <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                             <label class="text-muted" style="font-size: 13px;">Số điện thoại</label>
                             <input type="text" name="b_phone" value="{{ Request::get('b_phone') }}" class="form-control"
                                 placeholder="Nhập SĐT...">

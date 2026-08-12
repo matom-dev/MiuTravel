@@ -2122,17 +2122,25 @@
         </div>
 
         {{-- Tour grid: render server-side trang 1, các trang sau dùng AJAX --}}
-        <div class="row" id="home-tour-grid">
-            @if($tours->count() > 0)
-                @foreach($tours as $tour)
-                    @include('page.common.itemTour', ['tour' => $tour, 'showTourIntro' => true])
-                @endforeach
-            @else
-                <div class="col-12 text-center py-5" style="color:#94a3b8;">
-                    <i class="fa fa-compass" style="font-size:3rem;opacity:.3;"></i>
-                    <p class="mt-3">Chưa có tour nào.</p>
-                </div>
-            @endif
+        <div class="home-tour-grid-shell" id="home-tour-grid-shell">
+            <div class="home-tour-loading" id="home-tour-loading" role="status" aria-live="polite">
+                <span class="home-tour-loading__box">
+                    <i class="fa fa-spinner fa-spin" aria-hidden="true"></i>
+                    Đang tải tour...
+                </span>
+            </div>
+            <div class="row" id="home-tour-grid" aria-busy="false">
+                @if($tours->count() > 0)
+                    @foreach($tours as $tour)
+                        @include('page.common.itemTour', ['tour' => $tour, 'showTourIntro' => true])
+                    @endforeach
+                @else
+                    <div class="col-12 text-center py-5" style="color:#94a3b8;">
+                        <i class="fa fa-compass" style="font-size:3rem;opacity:.3;"></i>
+                        <p class="mt-3">Chưa có tour nào.</p>
+                    </div>
+                @endif
+            </div>
         </div>
 
         {{-- Pagination UI --}}
@@ -2754,6 +2762,45 @@
         margin-left: -7px;
         margin-right: -7px;
         margin-bottom: 0;
+        position: relative;
+        transition: opacity .18s ease;
+    }
+
+    .home-tour-grid-shell {
+        position: relative;
+    }
+
+    .home-tour-loading {
+        position: absolute;
+        inset: 0;
+        z-index: 4;
+        display: none;
+        align-items: center;
+        justify-content: center;
+        min-height: 220px;
+        border-radius: 8px;
+        background: rgba(248, 250, 252, .82);
+        color: #334155;
+        font-weight: 800;
+    }
+
+    .home-tour-loading__box {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        padding: 12px 16px;
+        border-radius: 8px;
+        background: #fff;
+        box-shadow: 0 12px 28px rgba(15, 23, 42, .12);
+    }
+
+    .home-tour-grid-shell.is-loading .home-tour-loading {
+        display: flex;
+    }
+
+    .home-tour-grid-shell.is-loading #home-tour-grid {
+        opacity: .35;
+        pointer-events: none;
     }
 
     #home-tour-grid>[class*="col-"] {
@@ -2893,16 +2940,29 @@
         var currentPage = 1;
 
         var $grid = $('#home-tour-grid');
+        var $gridShell = $('#home-tour-grid-shell');
         var $pagination = $('#home-tour-pagination');
         var $prev = $('#htp-prev button');
         var $next = $('#htp-next button');
+        var isLoading = false;
+
+        function setLoading(isActive) {
+            isLoading = isActive;
+            $gridShell.toggleClass('is-loading', isActive);
+            $grid.attr('aria-busy', isActive ? 'true' : 'false');
+            $pagination.find('.htp-btn').prop('disabled', isActive);
+
+            if (!isActive) {
+                $prev.prop('disabled', currentPage <= 1);
+                $next.prop('disabled', currentPage >= totalPages);
+            }
+        }
 
         /* ── Gọi AJAX lấy tours theo trang ── */
         function loadPage(page) {
-            if (page < 1 || page > totalPages) return;
+            if (isLoading || page < 1 || page > totalPages) return;
 
-            /* Loading skeleton */
-            $grid.css({ opacity: 0.4, pointerEvents: 'none' });
+            setLoading(true);
 
             $.ajax({
                 url: AJAX_URL,
@@ -2911,7 +2971,6 @@
                 success: function (res) {
                     /* Render tours */
                     $grid.html(res.html || '<div class="col-12 text-center py-5" style="color:#94a3b8;"><i class="fa fa-compass" style="font-size:3rem;opacity:.3;"></i><p class="mt-3">Không có tour nào.</p></div>');
-                    $grid.css({ opacity: 1, pointerEvents: '' });
 
                     currentPage = res.currentPage;
 
@@ -2921,17 +2980,16 @@
                         $(this).find('.htp-btn').toggleClass('htp-btn--active', p === currentPage);
                     });
 
-                    /* Prev / Next */
-                    $prev.prop('disabled', currentPage <= 1);
-                    $next.prop('disabled', currentPage >= totalPages);
-
                     /* Scroll lên đầu section */
                     $('html, body').animate({
                         scrollTop: $('#home-tours-section').offset().top - 80
                     }, 400);
                 },
                 error: function () {
-                    $grid.css({ opacity: 1, pointerEvents: '' });
+                    $grid.html('<div class="col-12 text-center py-5" style="color:#b91c1c;"><i class="fa fa-exclamation-circle" style="font-size:2rem;"></i><p class="mt-3">Không tải được danh sách tour. Vui lòng thử lại.</p></div>');
+                },
+                complete: function () {
+                    setLoading(false);
                 }
             });
         }

@@ -93,6 +93,28 @@ if (!function_exists('upload_multiple_images')) {
     }
 }
 
+if (!function_exists('delete_uploaded_image')) {
+    function delete_uploaded_image($image, $folder = '')
+    {
+        app(\App\Services\MediaUploadService::class)->deleteImage($image, $folder);
+    }
+}
+
+if (!function_exists('thumbnail_url_file')) {
+    function thumbnail_url_file($image, $folder = '')
+    {
+        if (!$image) {
+            return pare_url_file($image, $folder);
+        }
+
+        $path = pare_url_file($image, $folder);
+        $path = ltrim($path, '/');
+        $directory = dirname($path);
+
+        return '/' . trim($directory . '/thumbnails/' . basename($path), '/');
+    }
+}
+
 if (!function_exists('pare_url_file')) {
     function pare_url_file($image, $folder = '')
     {

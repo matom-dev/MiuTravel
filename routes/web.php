@@ -31,8 +31,8 @@ Route::group(['namespace' => 'Admin', 'prefix' => 'admin'], function() {
 
     Route::group(['namespace' => 'Auth'], function() {
         Route::get('/login', 'LoginController@login')->name('admin.login');
-        Route::post('/login', 'LoginController@postLogin');
-        Route::post('/logout', 'LoginController@logout')->name('admin.logout');
+        Route::post('/login', 'LoginController@postLogin')->middleware('throttle:5,1');
+        Route::post('/logout', 'LoginController@logout')->name('admin.logout')->middleware('throttle:20,1');
         Route::get('/forgot/password', 'ForgotPasswordController@forgotPassword')->name('admin.forgot.password');
     });
 
@@ -185,14 +185,14 @@ Route::group(['namespace' => 'Page'], function() {
 
     Route::group(['namespace' => 'Auth'], function() {
         Route::get('/dang-nhap.html', 'LoginController@login')->name('page.user.account');
-        Route::post('/account/login', 'LoginController@postLogin')->name('account.login');
+        Route::post('/account/login', 'LoginController@postLogin')->name('account.login')->middleware('throttle:5,1');
         Route::get('/dang-ky-tai-khoan.html', 'RegisterController@register')->name('user.register');
-        Route::post('/account/register', 'RegisterController@postRegister')->name('post.account.register');
-        Route::post('/dang-xuat.html', 'LoginController@logout')->name('page.user.logout');
+        Route::post('/account/register', 'RegisterController@postRegister')->name('post.account.register')->middleware('throttle:3,1');
+        Route::post('/dang-xuat.html', 'LoginController@logout')->name('page.user.logout')->middleware('throttle:20,1');
         Route::get('/quen-mat-khau.html', 'ForgotPasswordController@showLinkRequestForm')->name('page.user.forgot.password');
-        Route::post('/quen-mat-khau.html', 'ForgotPasswordController@sendResetLinkEmail')->name('page.user.password.email');
+        Route::post('/quen-mat-khau.html', 'ForgotPasswordController@sendResetLinkEmail')->name('page.user.password.email')->middleware('throttle:3,1');
         Route::get('/dat-lai-mat-khau/{token}.html', 'ResetPasswordController@showResetForm')->name('password.reset');
-        Route::post('/dat-lai-mat-khau.html', 'ResetPasswordController@reset')->name('page.user.password.update');
+        Route::post('/dat-lai-mat-khau.html', 'ResetPasswordController@reset')->name('page.user.password.update')->middleware('throttle:5,1');
         Route::post('/thong-bao/da-doc/{id?}', 'NotificationController@markAsRead')->name('page.notifications.read');
     });
 
@@ -215,7 +215,7 @@ Route::group(['namespace' => 'Page'], function() {
     Route::get('/tin-tuc/{id}/{slug}.html', 'ArticleController@detail')->name('articles.detail');
     Route::get('/ve-chung-toi.html', 'HomeController@about')->name('about.us');
     Route::get('/lien-he.html', 'HomeController@contact')->name('contact.index');
-    Route::post('/lien-he.html', 'HomeController@sendContact')->name('contact.send');
+    Route::post('/lien-he.html', 'HomeController@sendContact')->name('contact.send')->middleware('throttle:3,1');
     Route::get('/tour.html', 'TourController@index')->name('tour');
     Route::get('book-tour/{id}/{slug}.html', 'TourController@bookTour')->name('book.tour');
     Route::post('book/tour/{id}', 'TourController@postBookTour')->name('post.book.tour')->middleware('throttle:5,1');

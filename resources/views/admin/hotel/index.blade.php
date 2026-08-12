@@ -22,6 +22,44 @@
         <div class="container-fluid">
             <div class="row">
                 <div class="col-12">
+                    <div class="card shadow-sm mb-4">
+                        <div class="card-header border-0 bg-white pb-0">
+                            <h3 class="card-title font-weight-bold text-muted"><i class="fas fa-search mr-1"></i> Tìm kiếm khách sạn</h3>
+                        </div>
+                        <div class="card-body">
+                            <form action="" method="GET" class="admin-search-form">
+                                <div class="row align-items-end">
+                                    <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
+                                        <label class="text-muted" style="font-size: 13px;">Tên hoặc địa chỉ</label>
+                                        <input type="text" name="h_name" value="{{ Request::get('h_name') }}" class="form-control" placeholder="Nhập tên khách sạn, khu vực...">
+                                    </div>
+                                    <div class="col-sm-12 col-md-2 mb-3 mb-md-0">
+                                        <label class="text-muted" style="font-size: 13px;">Trạng thái</label>
+                                        <select name="h_status" class="form-control custom-select">
+                                            <option value="">Tất cả</option>
+                                            @foreach($status as $key => $item)
+                                                <option value="{{ $key }}" {{ (string) Request::get('h_status') === (string) $key ? 'selected' : '' }}>{{ $item }}</option>
+                                            @endforeach
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-12 col-md-2 mb-3 mb-md-0">
+                                        <label class="text-muted" style="font-size: 13px;">Sắp xếp</label>
+                                        <select name="sort" class="form-control custom-select">
+                                            <option value="latest" {{ Request::get('sort', 'latest') === 'latest' ? 'selected' : '' }}>Mới nhất</option>
+                                            <option value="oldest" {{ Request::get('sort') === 'oldest' ? 'selected' : '' }}>Cũ nhất</option>
+                                            <option value="name_asc" {{ Request::get('sort') === 'name_asc' ? 'selected' : '' }}>Tên A-Z</option>
+                                            <option value="name_desc" {{ Request::get('sort') === 'name_desc' ? 'selected' : '' }}>Tên Z-A</option>
+                                        </select>
+                                    </div>
+                                    <div class="col-sm-12 col-md-4 admin-search-actions">
+                                        <button type="submit" class="btn btn-primary admin-search-btn"><i class="fas fa-filter mr-1"></i> Lọc dữ liệu</button>
+                                        <a href="{{ route('hotel.index') }}" class="btn btn-secondary admin-reset-btn"><i class="fas fa-sync-alt mr-1"></i> Xóa lọc</a>
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                    </div>
+
                     <div class="card shadow-sm border-0 mb-4">
                         <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
                             <h5 class="card-title font-weight-bold text-muted mb-0"><i class="fas fa-bed mr-1"></i> Quản lý thông tin kết nối khách sạn</h5>

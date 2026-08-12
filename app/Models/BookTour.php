@@ -11,26 +11,32 @@ class BookTour extends Model
     protected $table = 'book_tours';
     public $timestamps = true;
 
+    public const STATUS_PENDING = 1;
+    public const STATUS_CONFIRMED = 2;
+    public const STATUS_PAID = 3;
+    public const STATUS_COMPLETED = 4;
+    public const STATUS_CANCELLED = 5;
+
     const STATUS = [
-        1 => 'Chờ xác nhận',
-        2 => 'Đã xác nhận',
-        3 => 'Đã thanh toán',
-        4 => 'Hoàn tất',
-        5 => 'Đã hủy',
+        self::STATUS_PENDING => 'Chờ xác nhận',
+        self::STATUS_CONFIRMED => 'Đã xác nhận',
+        self::STATUS_PAID => 'Đã thanh toán',
+        self::STATUS_COMPLETED => 'Hoàn tất',
+        self::STATUS_CANCELLED => 'Đã hủy',
     ];
     const CLASS_STATUS = [
-        1 => 'btn-secondary',
-        2 => 'btn-info',
-        3 => 'btn-success',
-        4 => 'btn-warning',
-        5 => 'btn-danger',
+        self::STATUS_PENDING => 'btn-secondary',
+        self::STATUS_CONFIRMED => 'btn-info',
+        self::STATUS_PAID => 'btn-success',
+        self::STATUS_COMPLETED => 'btn-warning',
+        self::STATUS_CANCELLED => 'btn-danger',
     ];
     const ALLOWED_TRANSITIONS = [
-        1 => [2, 5],
-        2 => [3, 5],
-        3 => [4, 5],
-        4 => [],
-        5 => [],
+        self::STATUS_PENDING => [self::STATUS_CONFIRMED, self::STATUS_CANCELLED],
+        self::STATUS_CONFIRMED => [self::STATUS_PAID, self::STATUS_CANCELLED],
+        self::STATUS_PAID => [self::STATUS_COMPLETED, self::STATUS_CANCELLED],
+        self::STATUS_COMPLETED => [],
+        self::STATUS_CANCELLED => [],
     ];
 
     protected $fillable = ['b_tour_id', 'b_tour_schedule_id', 'b_user_id', 'b_name', 'b_email', 'b_phone', 'b_address', 'b_start_date', 'b_end_date', 'b_note', 'b_number_adults', 'b_number_children','b_price_adults','b_price_children','b_number_child6','b_number_child2','b_price_child6','b_price_child2','b_status'];
@@ -53,6 +59,11 @@ class BookTour extends Model
     public function schedule()
     {
         return $this->belongsTo(TourSchedule::class, 'b_tour_schedule_id', 'id');
+    }
+
+    public function statusHistories()
+    {
+        return $this->hasMany(BookingStatusHistory::class, 'book_tour_id');
     }
 
     public function getTotalGuestsAttribute()

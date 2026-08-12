@@ -31,7 +31,7 @@ class UpdateInfoAccountRequest extends FormRequest
             'email' => 'required|email|max:191|unique:users,email,'.$userId,
             'phone' => 'required',
             'address' => 'required',
-            'images' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'images' => 'nullable|image|mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
         ];
     }
 

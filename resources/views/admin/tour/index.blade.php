@@ -42,7 +42,16 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-sm-12 col-md-6 admin-search-actions">
+                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                                <label class="text-muted" style="font-size: 13px;">Sắp xếp</label>
+                                <select name="sort" class="form-control custom-select">
+                                    <option value="latest" {{ Request::get('sort', 'latest') === 'latest' ? 'selected' : '' }}>Mới nhất</option>
+                                    <option value="oldest" {{ Request::get('sort') === 'oldest' ? 'selected' : '' }}>Cũ nhất</option>
+                                    <option value="price_asc" {{ Request::get('sort') === 'price_asc' ? 'selected' : '' }}>Giá tăng dần</option>
+                                    <option value="price_desc" {{ Request::get('sort') === 'price_desc' ? 'selected' : '' }}>Giá giảm dần</option>
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-3 admin-search-actions">
                                 <button type="submit" class="btn btn-primary admin-search-btn"><i class="fas fa-filter mr-1"></i> Tìm kiếm</button>
                                 <a href="{{ route('tour.index') }}" class="btn btn-secondary admin-reset-btn"><i class="fas fa-sync-alt mr-1"></i> Xóa lọc</a>
                             </div>
@@ -151,7 +160,7 @@
                 @if($tours->hasPages())
                     <div class="card-footer bg-white border-0">
                         <div class="float-right">
-                            {{ $tours->appends($query = '')->links() }}
+                            {{ $tours->appends(request()->query())->links() }}
                         </div>
                     </div>
                 @endif

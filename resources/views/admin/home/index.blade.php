@@ -698,9 +698,16 @@
                                 <option value="{{$i}}" {{ (Request::get('select_year') ?? $year) == $i ? 'selected' : '' }}>Năm {{$i}}</option>
                             @endfor
                         </select>
+                        <input type="date" name="date_from" value="{{ $selectedDateFrom }}" class="form-control form-control-sm mr-2" title="Từ ngày">
+                        <input type="date" name="date_to" value="{{ $selectedDateTo }}" class="form-control form-control-sm mr-2" title="Đến ngày">
                         <button type="submit" class="btn btn-primary btn-sm admin-search-btn">
                             <i class="fas fa-filter"></i> Lọc
                         </button>
+                        @if($selectedDateFrom || $selectedDateTo)
+                            <a href="{{ route('admin.home') }}" class="btn btn-outline-secondary btn-sm ml-2">
+                                <i class="fas fa-sync-alt"></i> Xóa
+                            </a>
+                        @endif
                     </form>
                 </div>
                 <div class="card-body pt-0 pt-md-2 dashboard-chart-body">

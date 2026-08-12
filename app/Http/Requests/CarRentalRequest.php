@@ -24,9 +24,9 @@ class CarRentalRequest extends FormRequest
             'cr_phone' => ['nullable', 'required_if:cr_status,1', 'string', 'max:30', 'regex:/^[0-9+().\s-]{8,30}$/'],
             'cr_address' => 'nullable|string|max:255',
             'cr_content' => ['nullable', 'required_if:cr_status,1', 'string'],
-            'images' => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'images' => 'nullable|image|mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
             'album_images' => 'nullable|array',
-            'album_images.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
+            'album_images.*' => 'image|mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
         ];
     }
 

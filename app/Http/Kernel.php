@@ -64,6 +64,6 @@ class Kernel extends HttpKernel
         'verified' => \Illuminate\Auth\Middleware\EnsureEmailIsVerified::class,
         'admins' => \App\Http\Middleware\CheckLoginAdmin::class,
         'users' => \App\Http\Middleware\CheckLoginUser::class,
-        'permission' => \Zizaco\Entrust\Middleware\EntrustPermission::class,
+        'permission' => \App\Http\Middleware\CheckPermission::class,
     ];
 }

@@ -40,6 +40,18 @@
 
     <!-- ══ Content Wrapper ══ -->
     <div class="content-wrapper">
+        @if($errors->any())
+            <div class="container-fluid pt-3">
+                <div class="alert alert-danger shadow-sm mb-0" role="alert">
+                    <strong><i class="fas fa-exclamation-circle mr-1"></i> Vui lòng kiểm tra lại thông tin.</strong>
+                    <ul class="mb-0 mt-2 pl-3">
+                        @foreach($errors->all() as $error)
+                            <li>{{ $error }}</li>
+                        @endforeach
+                    </ul>
+                </div>
+            </div>
+        @endif
         @yield('content')
     </div>
 

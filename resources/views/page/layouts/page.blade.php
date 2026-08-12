@@ -1,11 +1,17 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="vi">
 <head>
     <title>@yield('title', 'Mạng bán TOUR DU LỊCH trực tuyến hàng đầu Việt Vam | Miu Travel')</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
     <meta name="csrf-token" content="{{ csrf_token() }}">
+    @hasSection('seo')
+        @yield('seo')
+    @else
+        <meta name="description" content="Miu Travel cung cấp tour du lịch, khách sạn, thuê xe và kinh nghiệm du lịch Việt Nam với thông tin rõ ràng, dễ đặt lịch.">
+    @endif
     @include('page.common.head')
+    @stack('structured_data')
     @yield('style')
     <link rel="stylesheet" href="{{ asset('page/css/banner-uniform.css') }}?v={{ filemtime(public_path('page/css/banner-uniform.css')) }}">
     <link rel="stylesheet" href="{{ asset('page/css/floating-contact.css') }}?v={{ filemtime(public_path('page/css/floating-contact.css')) }}">

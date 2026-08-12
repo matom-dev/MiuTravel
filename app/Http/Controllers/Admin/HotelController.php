@@ -27,10 +27,35 @@ class HotelController extends Controller
      *
      * @return \Illuminate\Http\Response
      */
-    public function index()
+    public function index(Request $request)
     {
         //
-        $hotels = Hotel::orderByDesc('id')->paginate(NUMBER_PAGINATION);
+        $hotels = Hotel::query();
+
+        if ($request->filled('h_name')) {
+            $keyword = trim((string) $request->h_name);
+            $hotels->where(function ($query) use ($keyword) {
+                $query->where('h_name', 'like', '%'.$keyword.'%')
+                    ->orWhere('h_address', 'like', '%'.$keyword.'%');
+            });
+        }
+
+        if ($request->filled('h_status') && array_key_exists((int) $request->h_status, Hotel::STATUS)) {
+            $hotels->where('h_status', (int) $request->h_status);
+        }
+
+        $sort = $request->input('sort', 'latest');
+        if ($sort === 'oldest') {
+            $hotels->orderBy('id');
+        } elseif ($sort === 'name_asc') {
+            $hotels->orderBy('h_name');
+        } elseif ($sort === 'name_desc') {
+            $hotels->orderByDesc('h_name');
+        } else {
+            $hotels->orderByDesc('id');
+        }
+
+        $hotels = $hotels->paginate(NUMBER_PAGINATION)->withQueryString();
         return view('admin.hotel.index', compact('hotels'));
     }
 
@@ -120,9 +145,11 @@ class HotelController extends Controller
 
         $album = $hotel->h_anbum_image ? $hotel->h_anbum_image : [];
         if (isset($album[$index])) {
+            $removedImage = $album[$index];
             array_splice($album, $index, 1);
             $hotel->h_anbum_image = array_values($album);
             $hotel->save();
+            delete_uploaded_image($removedImage);
         }
 
         return redirect()->back()->with('success', 'Đã xóa ảnh khỏi album');

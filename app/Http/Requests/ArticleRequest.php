@@ -29,9 +29,9 @@ class ArticleRequest extends FormRequest
             'a_title' => 'required | max:191 | unique:articles,a_title,'.$this->id,
             'a_category_id' => 'required',
             'a_content' => ['nullable', 'required_if:a_active,1', 'string'],
-            'images'  => 'nullable|image|mimes:jpeg,jpg,png,webp|max:5120',
+            'images'  => 'nullable|image|mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
             'album_images' => 'nullable|array',
-            'album_images.*' => 'image|mimes:jpeg,jpg,png,webp|max:5120',
+            'album_images.*' => 'image|mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
         ];
     }
 
