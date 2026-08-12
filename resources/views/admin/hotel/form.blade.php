@@ -1,5 +1,8 @@
 @php
     $selectedAmenities = old('h_amenities', isset($hotel) ? ($hotel->h_amenities ?? []) : []);
+    $selectedRoomFacilities = old('h_room_facilities', isset($hotel) ? ($hotel->h_room_facilities ?? []) : []);
+    $selectedPropertyPolicies = old('h_property_policies', isset($hotel) ? ($hotel->h_property_policies ?? []) : []);
+    $selectedMealPlans = old('h_meal_plans', isset($hotel) ? ($hotel->h_meal_plans ?? []) : []);
     $selectedSuitableFor = old('h_suitable_for', isset($hotel) ? ($hotel->h_suitable_for ?? []) : []);
 @endphp
 <div class="container-fluid">
@@ -83,6 +86,48 @@
                                                 name="h_suitable_for[]" value="{{ $key }}"
                                                 {{ in_array($key, $selectedSuitableFor, true) ? 'checked' : '' }}>
                                             <label class="custom-control-label font-weight-normal" for="suitable-{{ $key }}">{{ $label }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="row mb-4">
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="form-group mb-0">
+                                    <label class="control-label font-weight-bold text-muted d-block">Tiện nghi phòng</label>
+                                    @foreach(\App\Models\Hotel::ROOM_FACILITIES as $key => $label)
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="room-facility-{{ $key }}"
+                                                name="h_room_facilities[]" value="{{ $key }}"
+                                                {{ in_array($key, $selectedRoomFacilities, true) ? 'checked' : '' }}>
+                                            <label class="custom-control-label font-weight-normal" for="room-facility-{{ $key }}">{{ $label }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="col-md-4 mb-3 mb-md-0">
+                                <div class="form-group mb-0">
+                                    <label class="control-label font-weight-bold text-muted d-block">Chính sách lưu trú</label>
+                                    @foreach(\App\Models\Hotel::PROPERTY_POLICIES as $key => $label)
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="property-policy-{{ $key }}"
+                                                name="h_property_policies[]" value="{{ $key }}"
+                                                {{ in_array($key, $selectedPropertyPolicies, true) ? 'checked' : '' }}>
+                                            <label class="custom-control-label font-weight-normal" for="property-policy-{{ $key }}">{{ $label }}</label>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group mb-0">
+                                    <label class="control-label font-weight-bold text-muted d-block">Bữa ăn & dịch vụ</label>
+                                    @foreach(\App\Models\Hotel::MEAL_PLANS as $key => $label)
+                                        <div class="custom-control custom-checkbox mb-2">
+                                            <input type="checkbox" class="custom-control-input" id="meal-plan-{{ $key }}"
+                                                name="h_meal_plans[]" value="{{ $key }}"
+                                                {{ in_array($key, $selectedMealPlans, true) ? 'checked' : '' }}>
+                                            <label class="custom-control-label font-weight-normal" for="meal-plan-{{ $key }}">{{ $label }}</label>
                                         </div>
                                     @endforeach
                                 </div>

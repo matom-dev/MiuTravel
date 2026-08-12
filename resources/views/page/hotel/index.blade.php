@@ -799,6 +799,15 @@
                         @foreach($selectedFilters['amenities'] as $value)
                             <div class="hotel-filter-chip">{{ \App\Models\Hotel::AMENITIES[$value] }}</div>
                         @endforeach
+                        @foreach($selectedFilters['room_facilities'] as $value)
+                            <div class="hotel-filter-chip">{{ \App\Models\Hotel::ROOM_FACILITIES[$value] }}</div>
+                        @endforeach
+                        @foreach($selectedFilters['property_policies'] as $value)
+                            <div class="hotel-filter-chip">{{ \App\Models\Hotel::PROPERTY_POLICIES[$value] }}</div>
+                        @endforeach
+                        @foreach($selectedFilters['meal_plans'] as $value)
+                            <div class="hotel-filter-chip">{{ \App\Models\Hotel::MEAL_PLANS[$value] }}</div>
+                        @endforeach
                         @foreach($selectedFilters['suitable_for'] as $value)
                             <div class="hotel-filter-chip">{{ \App\Models\Hotel::SUITABLE_FOR[$value] }}</div>
                         @endforeach

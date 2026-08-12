@@ -99,6 +99,9 @@ class HotelDirectoryTest extends TestCase
             'h_accommodation_type' => 'resort',
             'h_star_rating' => 5,
             'h_amenities' => ['near_beach', 'pool', 'wifi'],
+            'h_room_facilities' => ['private_bathroom', 'sea_view'],
+            'h_property_policies' => ['front_desk_24h', 'pay_at_property'],
+            'h_meal_plans' => ['breakfast_included'],
             'h_suitable_for' => ['family', 'couple'],
         ]);
         $this->createHotel($location, [
@@ -106,6 +109,9 @@ class HotelDirectoryTest extends TestCase
             'h_accommodation_type' => 'hotel',
             'h_star_rating' => 3,
             'h_amenities' => ['wifi', 'parking'],
+            'h_room_facilities' => ['tv'],
+            'h_property_policies' => ['non_smoking_rooms'],
+            'h_meal_plans' => [],
             'h_suitable_for' => ['business'],
         ]);
 
@@ -113,6 +119,9 @@ class HotelDirectoryTest extends TestCase
             'types' => ['resort'],
             'stars' => [5],
             'amenities' => ['pool', 'wifi'],
+            'room_facilities' => ['private_bathroom'],
+            'property_policies' => ['front_desk_24h', 'pay_at_property'],
+            'meal_plans' => ['breakfast_included'],
             'suitable_for' => ['family'],
         ]))
             ->assertOk()
@@ -120,9 +129,19 @@ class HotelDirectoryTest extends TestCase
             ->assertDontSee('Khach san Trung Tam')
             ->assertSee('Bộ lọc khách sạn')
             ->assertSee('Tiện nghi phổ biến')
+            ->assertSee('Tiện nghi phòng')
+            ->assertSee('Chính sách lưu trú')
+            ->assertSee('Bữa ăn & dịch vụ', false)
             ->assertSee('Phù hợp với')
+            ->assertSee('Phòng tắm riêng')
+            ->assertSee('Lễ tân 24 giờ')
+            ->assertSee('Bao gồm bữa sáng')
+            ->assertSee('Sắp xếp theo: Mới cập nhật')
             ->assertSee('hotel-card__verified-amenities', false)
             ->assertSee('name="amenities[]"', false)
+            ->assertSee('name="room_facilities[]"', false)
+            ->assertSee('name="property_policies[]"', false)
+            ->assertSee('name="meal_plans[]"', false)
             ->assertSee('id="hotel-filter-form"', false)
             ->assertDontSee('Áp dụng bộ lọc');
     }
@@ -160,6 +179,9 @@ class HotelDirectoryTest extends TestCase
         $this->assertStringNotContainsString('name="h_location_id"', $html);
         $this->assertStringContainsString('name="h_accommodation_type"', $html);
         $this->assertStringContainsString('name="h_amenities[]"', $html);
+        $this->assertStringContainsString('name="h_room_facilities[]"', $html);
+        $this->assertStringContainsString('name="h_property_policies[]"', $html);
+        $this->assertStringContainsString('name="h_meal_plans[]"', $html);
         $this->assertStringContainsString('name="h_suitable_for[]"', $html);
         $this->assertStringNotContainsString('name="h_price"', $html);
         $this->assertSame(1, substr_count($html, 'name="h_content"'));
@@ -233,6 +255,9 @@ class HotelDirectoryTest extends TestCase
             'h_accommodation_type' => 'hotel',
             'h_star_rating' => null,
             'h_amenities' => [],
+            'h_room_facilities' => [],
+            'h_property_policies' => [],
+            'h_meal_plans' => [],
             'h_suitable_for' => [],
             'h_description' => '<p>Thong tin luu tru.</p>',
             'h_content' => '<p>Noi dung khach san.</p>',

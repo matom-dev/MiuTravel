@@ -2,7 +2,7 @@
     $isRelated = isset($itemHotel) && $itemHotel === 'item-related-tour';
     $hotelContext = array_filter(request()->only([
         'destination', 'check_in', 'check_out', 'adults', 'children', 'rooms',
-        'types', 'stars', 'amenities', 'suitable_for'
+        'types', 'stars', 'amenities', 'room_facilities', 'property_policies', 'meal_plans', 'suitable_for'
     ]), function ($value) {
         return $value !== null && $value !== '';
     });
@@ -10,12 +10,20 @@
     if ($hotelContext) {
         $hotelDetailUrl .= '?'.http_build_query($hotelContext);
     }
-    $visibleHotelAmenities = array_slice(array_values(array_filter(
-        $hotel->h_amenities ?? [],
-        function ($amenity) {
-            return isset(\App\Models\Hotel::AMENITIES[$amenity]);
+    $visibleHotelTags = [];
+    foreach ([
+        [\App\Models\Hotel::AMENITIES, $hotel->h_amenities ?? []],
+        [\App\Models\Hotel::ROOM_FACILITIES, $hotel->h_room_facilities ?? []],
+        [\App\Models\Hotel::PROPERTY_POLICIES, $hotel->h_property_policies ?? []],
+        [\App\Models\Hotel::MEAL_PLANS, $hotel->h_meal_plans ?? []],
+    ] as $tagGroup) {
+        foreach ($tagGroup[1] as $tagKey) {
+            if (isset($tagGroup[0][$tagKey])) {
+                $visibleHotelTags[] = $tagGroup[0][$tagKey];
+            }
         }
-    )), 0, 3);
+    }
+    $visibleHotelTags = array_slice(array_values(array_unique($visibleHotelTags)), 0, 3);
 @endphp
 
 @if($isRelated)
@@ -81,10 +89,10 @@
                     <p class="hotel-card__desc">{!! the_excerpt(strip_tags($hotel->h_description), 90) !!}</p>
                 @endif
 
-                @if($visibleHotelAmenities)
+                @if($visibleHotelTags)
                     <div class="hotel-card__verified-amenities">
-                        @foreach($visibleHotelAmenities as $amenity)
-                            <span><i class="fa fa-check-circle"></i>{{ \App\Models\Hotel::AMENITIES[$amenity] }}</span>
+                        @foreach($visibleHotelTags as $tagLabel)
+                            <span><i class="fa fa-check-circle"></i>{{ $tagLabel }}</span>
                         @endforeach
                     </div>
                 @endif

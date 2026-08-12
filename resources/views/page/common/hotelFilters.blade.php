@@ -87,6 +87,60 @@
         </div>
 
         <div class="hotel-filter-group">
+            <h3>Tiện nghi phòng</h3>
+            @foreach(\App\Models\Hotel::ROOM_FACILITIES as $key => $label)
+                @php
+                    $checked = in_array($key, $selectedFilters['room_facilities'], true);
+                    $count = $filterCounts['room_facilities'][$key] ?? 0;
+                @endphp
+                <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
+                    <span>
+                        <input type="checkbox" name="room_facilities[]" value="{{ $key }}"
+                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        {{ $label }}
+                    </span>
+                    <small>{{ $count }}</small>
+                </label>
+            @endforeach
+        </div>
+
+        <div class="hotel-filter-group">
+            <h3>Chính sách lưu trú</h3>
+            @foreach(\App\Models\Hotel::PROPERTY_POLICIES as $key => $label)
+                @php
+                    $checked = in_array($key, $selectedFilters['property_policies'], true);
+                    $count = $filterCounts['property_policies'][$key] ?? 0;
+                @endphp
+                <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
+                    <span>
+                        <input type="checkbox" name="property_policies[]" value="{{ $key }}"
+                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        {{ $label }}
+                    </span>
+                    <small>{{ $count }}</small>
+                </label>
+            @endforeach
+        </div>
+
+        <div class="hotel-filter-group">
+            <h3>Bữa ăn & dịch vụ</h3>
+            @foreach(\App\Models\Hotel::MEAL_PLANS as $key => $label)
+                @php
+                    $checked = in_array($key, $selectedFilters['meal_plans'], true);
+                    $count = $filterCounts['meal_plans'][$key] ?? 0;
+                @endphp
+                <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
+                    <span>
+                        <input type="checkbox" name="meal_plans[]" value="{{ $key }}"
+                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        {{ $label }}
+                    </span>
+                    <small>{{ $count }}</small>
+                </label>
+            @endforeach
+        </div>
+
+        <div class="hotel-filter-group">
             <h3>Phù hợp với</h3>
             @foreach(\App\Models\Hotel::SUITABLE_FOR as $key => $label)
                 @php

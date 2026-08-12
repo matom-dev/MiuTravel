@@ -29,6 +29,12 @@ class HotelController extends Controller
             'stars.*' => 'integer|between:1,5',
             'amenities' => 'nullable|array',
             'amenities.*' => ['string', Rule::in(array_keys(Hotel::AMENITIES))],
+            'room_facilities' => 'nullable|array',
+            'room_facilities.*' => ['string', Rule::in(array_keys(Hotel::ROOM_FACILITIES))],
+            'property_policies' => 'nullable|array',
+            'property_policies.*' => ['string', Rule::in(array_keys(Hotel::PROPERTY_POLICIES))],
+            'meal_plans' => 'nullable|array',
+            'meal_plans.*' => ['string', Rule::in(array_keys(Hotel::MEAL_PLANS))],
             'suitable_for' => 'nullable|array',
             'suitable_for.*' => ['string', Rule::in(array_keys(Hotel::SUITABLE_FOR))],
         ], [
@@ -54,6 +60,9 @@ class HotelController extends Controller
             'types' => array_values(array_unique($validated['types'] ?? [])),
             'stars' => array_values(array_unique(array_map('intval', $validated['stars'] ?? []))),
             'amenities' => array_values(array_unique($validated['amenities'] ?? [])),
+            'room_facilities' => array_values(array_unique($validated['room_facilities'] ?? [])),
+            'property_policies' => array_values(array_unique($validated['property_policies'] ?? [])),
+            'meal_plans' => array_values(array_unique($validated['meal_plans'] ?? [])),
             'suitable_for' => array_values(array_unique($validated['suitable_for'] ?? [])),
         ];
 
@@ -67,6 +76,18 @@ class HotelController extends Controller
 
         foreach ($selectedFilters['amenities'] as $amenity) {
             $hotels->where('h_amenities', 'like', '%"'.$amenity.'"%');
+        }
+
+        foreach ($selectedFilters['room_facilities'] as $facility) {
+            $hotels->where('h_room_facilities', 'like', '%"'.$facility.'"%');
+        }
+
+        foreach ($selectedFilters['property_policies'] as $policy) {
+            $hotels->where('h_property_policies', 'like', '%"'.$policy.'"%');
+        }
+
+        foreach ($selectedFilters['meal_plans'] as $mealPlan) {
+            $hotels->where('h_meal_plans', 'like', '%"'.$mealPlan.'"%');
         }
 
         if ($selectedFilters['suitable_for']) {
@@ -146,6 +167,9 @@ class HotelController extends Controller
             'h_accommodation_type',
             'h_star_rating',
             'h_amenities',
+            'h_room_facilities',
+            'h_property_policies',
+            'h_meal_plans',
             'h_suitable_for',
         ]);
 
@@ -159,6 +183,21 @@ class HotelController extends Controller
             'amenities' => collect(Hotel::AMENITIES)->mapWithKeys(function ($label, $key) use ($hotels) {
                 return [$key => $hotels->filter(function ($hotel) use ($key) {
                     return in_array($key, $hotel->h_amenities ?? [], true);
+                })->count()];
+            })->all(),
+            'room_facilities' => collect(Hotel::ROOM_FACILITIES)->mapWithKeys(function ($label, $key) use ($hotels) {
+                return [$key => $hotels->filter(function ($hotel) use ($key) {
+                    return in_array($key, $hotel->h_room_facilities ?? [], true);
+                })->count()];
+            })->all(),
+            'property_policies' => collect(Hotel::PROPERTY_POLICIES)->mapWithKeys(function ($label, $key) use ($hotels) {
+                return [$key => $hotels->filter(function ($hotel) use ($key) {
+                    return in_array($key, $hotel->h_property_policies ?? [], true);
+                })->count()];
+            })->all(),
+            'meal_plans' => collect(Hotel::MEAL_PLANS)->mapWithKeys(function ($label, $key) use ($hotels) {
+                return [$key => $hotels->filter(function ($hotel) use ($key) {
+                    return in_array($key, $hotel->h_meal_plans ?? [], true);
                 })->count()];
             })->all(),
             'suitable_for' => collect(Hotel::SUITABLE_FOR)->mapWithKeys(function ($label, $key) use ($hotels) {

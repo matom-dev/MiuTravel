@@ -101,6 +101,9 @@ trait CreatesTestSchema
                 $table->string('h_accommodation_type', 30)->default('hotel');
                 $table->unsignedTinyInteger('h_star_rating')->nullable();
                 $table->json('h_amenities')->nullable();
+                $table->json('h_room_facilities')->nullable();
+                $table->json('h_property_policies')->nullable();
+                $table->json('h_meal_plans')->nullable();
                 $table->json('h_suitable_for')->nullable();
                 $table->longText('h_description')->nullable();
                 $table->longText('h_content')->nullable();

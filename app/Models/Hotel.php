@@ -39,6 +39,33 @@ class Hotel extends Model
         'air_conditioning' => 'Điều hòa',
     ];
 
+    const ROOM_FACILITIES = [
+        'private_bathroom' => 'Phòng tắm riêng',
+        'balcony' => 'Ban công',
+        'sea_view' => 'Tầm nhìn biển',
+        'kitchen' => 'Bếp/bếp nhỏ',
+        'bathtub' => 'Bồn tắm',
+        'tv' => 'TV',
+        'minibar' => 'Minibar',
+        'soundproof' => 'Cách âm',
+    ];
+
+    const PROPERTY_POLICIES = [
+        'front_desk_24h' => 'Lễ tân 24 giờ',
+        'free_cancellation' => 'Có chính sách hủy linh hoạt',
+        'pay_at_property' => 'Thanh toán tại nơi lưu trú',
+        'no_prepayment' => 'Không cần trả trước',
+        'airport_shuttle' => 'Đưa đón sân bay',
+        'non_smoking_rooms' => 'Phòng không hút thuốc',
+    ];
+
+    const MEAL_PLANS = [
+        'breakfast_included' => 'Bao gồm bữa sáng',
+        'restaurant_on_site' => 'Có nhà hàng',
+        'room_service' => 'Dịch vụ phòng',
+        'half_board' => 'Có gói nửa bữa',
+    ];
+
     const SUITABLE_FOR = [
         'family' => 'Gia đình',
         'couple' => 'Cặp đôi',
@@ -56,6 +83,9 @@ class Hotel extends Model
         'h_accommodation_type',
         'h_star_rating',
         'h_amenities',
+        'h_room_facilities',
+        'h_property_policies',
+        'h_meal_plans',
         'h_suitable_for',
         'h_description',
         'h_content',
@@ -68,6 +98,9 @@ class Hotel extends Model
         'h_anbum_image' => 'array',
         'h_star_rating' => 'integer',
         'h_amenities' => 'array',
+        'h_room_facilities' => 'array',
+        'h_property_policies' => 'array',
+        'h_meal_plans' => 'array',
         'h_suitable_for' => 'array',
     ];
 
@@ -140,6 +173,9 @@ class Hotel extends Model
         $params['h_content'] = $sanitizedContent;
         $params['h_description'] = Str::limit($plainContent, 320, '');
         $params['h_amenities'] = array_values($request->input('h_amenities', []));
+        $params['h_room_facilities'] = array_values($request->input('h_room_facilities', []));
+        $params['h_property_policies'] = array_values($request->input('h_property_policies', []));
+        $params['h_meal_plans'] = array_values($request->input('h_meal_plans', []));
         $params['h_suitable_for'] = array_values($request->input('h_suitable_for', []));
 
         // Upload ảnh đại diện
