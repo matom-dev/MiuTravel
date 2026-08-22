@@ -28,15 +28,33 @@
                 <div class="card-body">
                     <form action="" method="GET" class="admin-search-form">
                         <div class="row align-items-end">
-                            <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                                 <label class="text-muted" style="font-size: 13px;">Tên người bình luận</label>
                                 <input type="text" name="name" value="{{ Request::get('name') }}" class="form-control" placeholder="Nhập tên người dùng...">
                             </div>
-                            <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                                 <label class="text-muted" style="font-size: 13px;">Email</label>
                                 <input type="text" name="email" value="{{ Request::get('email') }}" class="form-control" placeholder="Nhập email...">
                             </div>
-                            <div class="col-sm-12 col-md-4 admin-search-actions">
+                            <div class="col-sm-12 col-md-2 mb-3 mb-md-0">
+                                <label class="text-muted" style="font-size: 13px;">Trạng thái</label>
+                                <select name="status" class="form-control">
+                                    <option value="">Tất cả</option>
+                                    @foreach($status as $key => $label)
+                                        <option value="{{ $key }}" {{ (string) Request::get('status') === (string) $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-2 mb-3 mb-md-0">
+                                <label class="text-muted" style="font-size: 13px;">Điểm sao</label>
+                                <select name="rating" class="form-control">
+                                    <option value="">Tất cả</option>
+                                    @for($star = 5; $star >= 1; $star--)
+                                        <option value="{{ $star }}" {{ (string) Request::get('rating') === (string) $star ? 'selected' : '' }}>{{ $star }} sao</option>
+                                    @endfor
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-2 admin-search-actions">
                                 <button type="submit" class="btn btn-primary admin-search-btn"><i class="fas fa-filter mr-1"></i> Lọc dữ liệu</button>
                                 <a href="{{ route('comment.index') }}" class="btn btn-secondary admin-reset-btn"><i class="fas fa-sync-alt mr-1"></i> Xóa lọc</a>
                             </div>
@@ -56,7 +74,8 @@
                             <tr>
                                 <th width="5%" class="text-center">STT</th>
                                 <th width="25%">Người bình luận</th>
-                                <th width="45%">Nội dung</th>
+                                <th width="40%">Nội dung</th>
+                                <th class="text-center">Sao</th>
                                 <th class="text-center">Trạng Thái</th>
                                 @if(Auth::guard('admins')->user()->can(['full-quyen-quan-ly']))
                                     <th width="10%" class="text-center">Hành Động</th>
@@ -107,6 +126,13 @@
                                                     <i class="fas fa-external-link-alt ml-1" style="font-size: 10px;"></i>
                                                 </a>
                                             @endif
+                                            @if($comment->cm_rating)
+                                                <div class="mt-2 text-warning" style="font-size:13px;">
+                                                    @for($star = 1; $star <= 5; $star++)
+                                                        <i class="{{ $star <= $comment->cm_rating ? 'fas' : 'far' }} fa-star"></i>
+                                                    @endfor
+                                                </div>
+                                            @endif
                                             @php $commentImages = is_array($comment->cm_images) ? $comment->cm_images : []; @endphp
                                             @if(!empty($commentImages))
                                                 <div class="d-flex flex-wrap mt-2" style="gap:6px;">
@@ -117,6 +143,9 @@
                                                     @endforeach
                                                 </div>
                                             @endif
+                                        </td>
+                                        <td class="text-center align-middle">
+                                            {{ $comment->cm_rating ? $comment->cm_rating . '/5' : '--' }}
                                         </td>
                                         <td class="text-center align-middle">
                                             <span class="badge {{ str_replace('btn-', 'badge-', $classStatus[$comment->cm_status] ?? 'badge-secondary') }} px-2 py-1" style="font-size: 12px;">
@@ -151,7 +180,7 @@
                                 @endforeach
                             @else
                                 <tr>
-                                    <td colspan="5" class="text-center py-5 text-muted">
+                                    <td colspan="{{ Auth::guard('admins')->user()->can(['full-quyen-quan-ly']) ? 6 : 5 }}" class="text-center py-5 text-muted">
                                         <i class="fas fa-comments fa-3x mb-3 opacity-50"></i><br>
                                         Chưa có bình luận nào.
                                     </td>
@@ -163,7 +192,7 @@
                 @if($comments->hasPages())
                     <div class="card-footer bg-white border-0">
                         <div class="float-right">
-                            {{ $comments->appends($query = '')->links() }}
+                            {{ $comments->links() }}
                         </div>
                     </div>
                 @endif

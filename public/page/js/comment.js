@@ -30,6 +30,11 @@ $(function () {
         formData.append('hotel_id', hotel_id || '');
         formData.append('message', content);
 
+        var $rating = $(this).closest('form').find('input[name="rating"]:checked');
+        if ($rating.length) {
+            formData.append('rating', $rating.val());
+        }
+
         var $fileInput = $(this).closest('form').find('input[type="file"][name="checkin_images[]"]');
         if (!reply_id && $fileInput.length && $fileInput[0].files.length) {
             $.each($fileInput[0].files, function (index, file) {
@@ -48,13 +53,16 @@ $(function () {
         }).done(function (result) {
 
             if (result.code == 200) {
-                $('.comment-list').prepend(result.html);
-                $('.comment-empty').hide();
+                if (result.html) {
+                    $('.comment-list').prepend(result.html);
+                    $('.comment-empty').hide();
+                }
                 $textarea.val('');
                 if ($fileInput.length) {
                     $fileInput.val('');
                     $fileInput.closest('.comment-checkin-box').find('.comment-image-preview').empty();
                 }
+                toastr.success(result.message || 'Gửi bình luận thành công', {timeOut: 3000});
             } else {
                 toastr.error('Đã xảy ra lỗi không thể bình luận', {timeOut: 3000});
             }

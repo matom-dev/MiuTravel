@@ -81,58 +81,129 @@
         max-width: 1480px;
     }
 
+    .car-banner-search>.container {
+        width: min(100% - 44px, 1480px) !important;
+        max-width: 1480px !important;
+        margin: 0 auto !important;
+    }
+
+    .banner-search-section.car-banner-search .search-wrap-modern,
+    .banner-search-section.car-banner-search .car-filter {
+        margin: 0 auto !important;
+        max-width: none !important;
+        overflow: visible !important;
+        width: 100% !important;
+    }
+
     .car-filter {
-        width: 100%;
-        max-width: 680px;
-        justify-self: end;
-        background: #fff;
-        border: 1px solid #e7ebf0;
-        border-radius: 8px;
-        padding: 10px;
-        margin-bottom: 0;
-        box-shadow: 0 18px 48px rgba(0, 0, 0, .18);
+        width: 100% !important;
+        max-width: none !important;
+        justify-self: center !important;
+        padding: 0 !important;
+        margin: 0 auto !important;
+        background: transparent !important;
+        border: 0 !important;
+        box-shadow: none !important;
     }
 
-    .car-filter form {
-        display: grid;
-        grid-template-columns: 1.4fr 1fr .8fr auto;
-        gap: 8px;
-        align-items: end;
+    .car-connect-search {
+        display: grid !important;
+        grid-template-columns: minmax(230px, 1.35fr) minmax(120px, .7fr) minmax(150px, .82fr) minmax(170px, .9fr) minmax(170px, .9fr) 150px !important;
+        gap: 0 !important;
+        align-items: stretch !important;
+        min-height: 76px !important;
+        padding: 0 !important;
+        overflow: visible !important;
+        background: #fff !important;
+        border: 2px solid #f15d30 !important;
+        border-radius: 8px !important;
+        box-shadow: 0 14px 38px rgba(15, 23, 42, .12) !important;
     }
 
-    .car-filter form label {
-        display: block;
-        color: #64748b;
-        font-size: 12px;
-        line-height: 1.25;
-        font-weight: 800;
-        margin-bottom: 6px;
+    .car-connect-search__field {
+        display: flex !important;
+        flex-direction: column !important;
+        justify-content: center !important;
+        min-width: 0 !important;
+        padding: 12px 16px !important;
+        margin: 0 !important;
+        border-right: 1px solid #dfe6ed !important;
     }
 
-    .car-filter form input,
-    .car-filter form select {
-        width: 100%;
-        height: 42px;
-        border: 1px solid #dde5ee;
-        border-radius: 8px;
-        padding: 0 12px;
-        color: #172033;
-        font-size: 14px;
-        line-height: 1.35;
-        background: #fbfcfe;
+    .car-connect-search__field label {
+        align-items: center !important;
+        color: #344054 !important;
+        display: flex !important;
+        font-size: 12px !important;
+        font-weight: 800 !important;
+        gap: 7px !important;
+        line-height: 1.2 !important;
+        margin-bottom: 6px !important;
+        white-space: nowrap;
     }
 
-    .car-filter form button {
-        height: 42px;
-        border: 0;
-        border-radius: 8px;
-        padding: 0 16px;
-        color: #fff;
-        font-weight: 850;
-        font-size: 14px;
-        background: linear-gradient(135deg, #f15d30, #d44820);
-        cursor: pointer;
-        box-shadow: 0 10px 22px rgba(241, 93, 48, .22);
+    .car-connect-search__field label i {
+        color: #f15d30 !important;
+        font-size: 14px !important;
+    }
+
+    .car-connect-search__field input,
+    .car-connect-search__field select {
+        width: 100% !important;
+        height: 25px !important;
+        min-width: 0 !important;
+        padding: 0 !important;
+        border: 0 !important;
+        outline: 0 !important;
+        background: transparent !important;
+        color: #101828 !important;
+        font-size: 14px !important;
+        font-weight: 650 !important;
+        line-height: 25px !important;
+        appearance: none;
+        text-overflow: ellipsis;
+    }
+
+    .car-connect-search__field input::placeholder {
+        color: #98a2b3 !important;
+        font-weight: 500 !important;
+    }
+
+    .car-connect-search__select {
+        position: relative;
+    }
+
+    .car-connect-search__select::after {
+        color: #667085;
+        content: "\f107";
+        font-family: FontAwesome;
+        font-size: 15px;
+        pointer-events: none;
+        position: absolute;
+        right: 0;
+        top: 50%;
+        transform: translateY(-50%);
+    }
+
+    .car-connect-search__submit {
+        align-items: center !important;
+        justify-content: center !important;
+        display: inline-flex !important;
+        gap: 9px !important;
+        width: 100% !important;
+        min-width: 0 !important;
+        border: 0 !important;
+        border-radius: 0 5px 5px 0 !important;
+        background: #f15d30 !important;
+        color: #fff !important;
+        cursor: pointer !important;
+        font-size: 14px !important;
+        font-weight: 800 !important;
+        padding: 0 18px !important;
+    }
+
+    .car-connect-search__submit:hover {
+        background: #d94820 !important;
     }
 
     .car-count-bar {
@@ -220,11 +291,28 @@
         }
 
         .car-filter {
-            max-width: none;
+            max-width: none !important;
         }
 
-        .car-filter form {
-            grid-template-columns: 1fr 1fr;
+        .car-connect-search {
+            grid-template-columns: 1fr 1fr !important;
+            border-radius: 18px !important;
+            overflow: hidden !important;
+        }
+
+        .car-connect-search__field {
+            padding: 14px !important;
+            margin: 0 !important;
+            border-right: 0 !important;
+            border-bottom: 1px solid #e3e6eb !important;
+        }
+
+        .car-connect-search__submit {
+            grid-column: 1 / -1;
+            width: 100% !important;
+            min-width: 0 !important;
+            height: 44px !important;
+            border-radius: 0 !important;
         }
     }
 
@@ -235,12 +323,8 @@
             width: min(100% - 24px, 1480px);
         }
 
-        .car-filter {
-            padding: 18px;
-        }
-
-        .car-filter form {
-            grid-template-columns: 1fr;
+        .car-connect-search {
+            grid-template-columns: 1fr !important;
         }
 
         .car-rental-card .hotel-card__img {
@@ -275,25 +359,24 @@
 <section class="banner-search-section car-banner-search">
     <div class="container">
         <div class="search-wrap-modern car-filter">
-            <div class="home-search-pill">
-                <form method="GET" action="{{ route('car.rental') }}"
-                    class="home-search-pill__form home-search-pill__form--car">
-                    <div class="home-search-pill__field">
-                        <label class="home-search-pill__label" for="car-page-key">
+            <div class="car-connect-search-wrap">
+                <form method="GET" action="{{ route('car.rental') }}" class="car-connect-search">
+                    <div class="car-connect-search__field">
+                        <label for="car-page-key">
                             <i class="fa fa-search"></i>
                             Tìm xe
                         </label>
-                        <div class="home-search-pill__control">
+                        <div>
                             <input type="text" id="car-page-key" name="key_car" value="{{ request('key_car') }}"
                                 placeholder="Nhập tên xe hoặc dịch vụ" autocomplete="off">
                         </div>
                     </div>
-                    <div class="home-search-pill__field">
-                        <label class="home-search-pill__label" for="car-page-seats">
+                    <div class="car-connect-search__field">
+                        <label for="car-page-seats">
                             <i class="fa fa-users"></i>
                             Số chỗ
                         </label>
-                        <div class="home-search-pill__control">
+                        <div class="car-connect-search__select">
                             <select id="car-page-seats" name="seats">
                                 <option value="">Bất kỳ</option>
                                 @foreach([4, 5, 7, 16, 29, 45] as $seat)
@@ -304,8 +387,56 @@
                             </select>
                         </div>
                     </div>
-                    <button type="submit" class="home-search-pill__btn" aria-label="Tìm kiếm xe">
-                        <i class="fa fa-search"></i>
+                    <div class="car-connect-search__field">
+                        <label for="car-page-type">
+                            <i class="fa fa-car"></i>
+                            Loại xe
+                        </label>
+                        <div class="car-connect-search__select">
+                            <select id="car-page-type" name="vehicle_type">
+                                <option value="">Tất cả</option>
+                                @foreach(\App\Models\CarRental::VEHICLE_TYPES as $value => $label)
+                                    <option value="{{ $value }}" {{ request('vehicle_type') === $value ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="car-connect-search__field">
+                        <label for="car-page-location">
+                            <i class="fa fa-map-marker"></i>
+                            Khu vực
+                        </label>
+                        <div class="car-connect-search__select">
+                            <select id="car-page-location" name="location_id">
+                                <option value="">Mọi khu vực</option>
+                                @foreach($locations as $location)
+                                    <option value="{{ $location->id }}" {{ (string) request('location_id') === (string) $location->id ? 'selected' : '' }}>
+                                        {{ $location->l_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="car-connect-search__field">
+                        <label for="car-page-driver">
+                            <i class="fa fa-id-card-o"></i>
+                            Hình thức
+                        </label>
+                        <div class="car-connect-search__select">
+                            <select id="car-page-driver" name="driver_option">
+                                <option value="">Linh hoạt</option>
+                                @foreach(\App\Models\CarRental::DRIVER_OPTIONS as $value => $label)
+                                    <option value="{{ $value }}" {{ request('driver_option') === $value ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="car-connect-search__submit" aria-label="Tìm kiếm xe">
+                        <i class="fa fa-search"></i> Tìm xe
                     </button>
                 </form>
             </div>
@@ -317,7 +448,6 @@
     <div class="container">
         <div class="car-count-bar">
             <div>Tìm thấy <strong>{{ $carRentals->total() }}</strong> dịch vụ thuê xe</div>
-            <div><i class="fa fa-car" style="color:#f15d30;"></i> Sắp xếp theo: Mới nhất</div>
         </div>
 
         <div class="row">
@@ -367,6 +497,10 @@
                             <div class="hotel-card__amenities">
                                 <span class="hotel-card__amenity"><i class="fa fa-users"></i>
                                     {{ $carRental->cr_number_seats ? $carRental->cr_number_seats . ' chỗ' : 'Số chỗ' }}</span>
+                                <span class="hotel-card__amenity"><i class="fa fa-car"></i>
+                                    {{ $carRental->vehicle_type_label }}</span>
+                                <span class="hotel-card__amenity"><i class="fa fa-id-card-o"></i>
+                                    {{ $carRental->driver_option_label }}</span>
                                 <span class="hotel-card__amenity"><i class="fa fa-cog"></i>
                                     {{ $carRental->cr_transmission ?: 'Hộp số' }}</span>
                                 <span class="hotel-card__amenity"><i class="fa fa-tint"></i>
@@ -402,6 +536,7 @@
                 {{ $carRentals->links('page.pagination.default') }}
             </div>
         @endif
+
     </div>
 </section>
 <script>

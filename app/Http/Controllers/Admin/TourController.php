@@ -7,7 +7,10 @@ use App\Http\Controllers\Controller;
 use App\Models\Tour;
 use App\Models\Location;
 use App\Models\TourGuide;
+use App\Models\BookTour;
+use App\Models\TourSchedule;
 use App\Http\Requests\TourRequest;
+use App\Jobs\CreateAppNotification;
 use App\Services\AdminAuditLogger;
 
 class TourController extends Controller
@@ -45,7 +48,11 @@ class TourController extends Controller
     public function index(Request $request)
     {
         //
-        $tours = Tour::with('location');
+        $tours = Tour::with(['location', 'guideAssignments.guide'])
+            ->withCount([
+                'activeSchedules',
+                'guideAssignments',
+            ]);
         if ($request->t_title) {
             $tours->where('t_title', 'like', '%'.$request->t_title.'%');
         }
@@ -66,7 +73,92 @@ class TourController extends Controller
         }
 
         $tours = $tours->paginate(NUMBER_PAGINATION)->withQueryString();
+        $tourIds = $tours->getCollection()->pluck('id');
+        $guestExpression = 'COALESCE(b_number_adults,0) + COALESCE(b_number_children,0) + COALESCE(b_number_child6,0) + COALESCE(b_number_child2,0)';
+        $pendingGuests = BookTour::whereIn('b_tour_id', $tourIds)
+            ->where('b_status', BookTour::STATUS_PENDING)
+            ->select('b_tour_id')
+            ->selectRaw('SUM(' . $guestExpression . ') as guests_count')
+            ->groupBy('b_tour_id')
+            ->pluck('guests_count', 'b_tour_id');
+        $confirmedGuests = BookTour::whereIn('b_tour_id', $tourIds)
+            ->whereIn('b_status', [BookTour::STATUS_CONFIRMED, BookTour::STATUS_PAID, BookTour::STATUS_COMPLETED])
+            ->select('b_tour_id')
+            ->selectRaw('SUM(' . $guestExpression . ') as guests_count')
+            ->groupBy('b_tour_id')
+            ->pluck('guests_count', 'b_tour_id');
+
+        $tours->getCollection()->each(function ($tour) use ($pendingGuests, $confirmedGuests) {
+            $tour->pending_guests_count = (int) ($pendingGuests[$tour->id] ?? 0);
+            $tour->confirmed_guests_count = (int) ($confirmedGuests[$tour->id] ?? 0);
+        });
+
         return view('admin.tour.index', compact('tours'));
+    }
+
+    public function calendar(Request $request)
+    {
+        $validated = $request->validate([
+            'date_from' => 'nullable|date',
+            'date_to' => 'nullable|date|after_or_equal:date_from',
+            'tour_id' => 'nullable|integer',
+        ]);
+
+        $dateFrom = $validated['date_from'] ?? now()->startOfMonth()->toDateString();
+        $dateTo = $validated['date_to'] ?? now()->endOfMonth()->toDateString();
+        $tourId = $validated['tour_id'] ?? null;
+
+        $schedules = TourSchedule::with('tour')
+            ->whereDate('ts_start_date', '>=', $dateFrom)
+            ->whereDate('ts_start_date', '<=', $dateTo)
+            ->when($tourId, function ($query) use ($tourId) {
+                $query->where('ts_tour_id', $tourId);
+            })
+            ->orderBy('ts_start_date')
+            ->get();
+
+        $requestedBookings = BookTour::with('tour')
+            ->whereIn('b_status', [BookTour::STATUS_PENDING, BookTour::STATUS_CONFIRMED, BookTour::STATUS_PAID])
+            ->whereDate('b_start_date', '>=', $dateFrom)
+            ->whereDate('b_start_date', '<=', $dateTo)
+            ->when($tourId, function ($query) use ($tourId) {
+                $query->where('b_tour_id', $tourId);
+            })
+            ->orderBy('b_start_date')
+            ->get();
+
+        $tours = Tour::where('t_status', 1)->orderBy('t_title')->get(['id', 't_title']);
+
+        return view('admin.tour.calendar', compact('schedules', 'requestedBookings', 'tours', 'dateFrom', 'dateTo', 'tourId'));
+    }
+
+    public function preview($id)
+    {
+        $tour = Tour::with(['location', 'guideAssignments.guide'])->findOrFail($id);
+
+        return view('admin.tour.preview', compact('tour'));
+    }
+
+    public function publish(Request $request, $id, $status)
+    {
+        $newStatus = (int) $status;
+
+        if (!array_key_exists($newStatus, Tour::STATUS)) {
+            abort(404);
+        }
+
+        $tour = Tour::findOrFail($id);
+        $oldStatus = (int) $tour->t_status;
+        $tour->t_status = $newStatus;
+        $tour->save();
+
+        $this->auditLogger->log('tour.status_published', $tour, [
+            'title' => $tour->t_title,
+            'old_status' => $oldStatus,
+            'new_status' => $newStatus,
+        ], $request);
+
+        return redirect()->back()->with('success', 'Cập nhật trạng thái tour thành công');
     }
 
     /**
@@ -92,6 +184,7 @@ class TourController extends Controller
         \DB::beginTransaction();
         try {
             $tour = $this->tour->createOrUpdate($request);
+            $this->notifyPendingReview($tour, 'created');
             $this->auditLogger->log('tour.created', $tour, [
                 'title' => $tour->t_title,
                 'status' => (int) $tour->t_status,
@@ -100,6 +193,7 @@ class TourController extends Controller
             return redirect()->back()->with('success', 'Lưu dữ liệu thành công');
         } catch (\Exception $exception) {
             \DB::rollBack();
+            report($exception);
             return redirect()->back()->with('error', 'Đã xảy ra lỗi khi lưu dữ liệu');
         }
     }
@@ -134,7 +228,9 @@ class TourController extends Controller
         //
         \DB::beginTransaction();
         try {
+            $oldStatus = (int) Tour::whereKey($id)->value('t_status');
             $tour = $this->tour->createOrUpdate($request, $id);
+            $this->notifyPendingReview($tour, 'updated', $oldStatus);
             $this->auditLogger->log('tour.updated', $tour, [
                 'title' => $tour->t_title,
                 'status' => (int) $tour->t_status,
@@ -143,6 +239,7 @@ class TourController extends Controller
             return redirect()->back()->with('success', 'Lưu dữ liệu thành công');
         } catch (\Exception $exception) {
             \DB::rollBack();
+            report($exception);
             return redirect()->back()->with('error', 'Đã xảy ra lỗi khi lưu dữ liệu');
         }
     }
@@ -198,5 +295,34 @@ class TourController extends Controller
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', 'Đã xảy ra lỗi không thể xóa dữ liệu');
         }
+    }
+
+    private function notifyPendingReview(Tour $tour, string $action, ?int $oldStatus = null): void
+    {
+        if ((int) $tour->t_status !== Tour::STATUS_PENDING_REVIEW) {
+            return;
+        }
+
+        if ($action === 'updated' && $oldStatus === Tour::STATUS_PENDING_REVIEW) {
+            return;
+        }
+
+        $actor = auth('admins')->user();
+        $actorName = $actor ? $actor->name : 'Nhân viên';
+
+        CreateAppNotification::dispatch([
+            'receiver_guard' => 'admins',
+            'type' => 'tour_pending_review',
+            'title' => 'Có tour chờ duyệt',
+            'message' => $actorName . ' vừa ' . ($action === 'created' ? 'tạo' : 'cập nhật') . ' tour "' . $tour->t_title . '".',
+            'url' => route('tour.index', ['t_status' => Tour::STATUS_PENDING_REVIEW], false),
+            'data' => [
+                'tour_id' => $tour->id,
+                'title' => $tour->t_title,
+                'status' => (int) $tour->t_status,
+                'action' => $action,
+                'actor_id' => $actor ? $actor->id : null,
+            ],
+        ]);
     }
 }

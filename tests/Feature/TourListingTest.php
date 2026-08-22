@@ -27,6 +27,7 @@ class TourListingTest extends TestCase
         $matchingTour = $this->createTour([
             't_title' => 'Tour Phong Nha 3 ngay',
             't_location_id' => $quangBinh->id,
+            't_type' => 'adventure',
             't_price_adults' => 2500000,
             't_duration_days' => 3,
             't_duration_nights' => 2,
@@ -35,6 +36,7 @@ class TourListingTest extends TestCase
         $this->createTour([
             't_title' => 'Tour Da Nang 3 ngay',
             't_location_id' => $daNang->id,
+            't_type' => 'adventure',
             't_price_adults' => 2500000,
             't_duration_days' => 3,
             't_duration_nights' => 2,
@@ -43,6 +45,7 @@ class TourListingTest extends TestCase
         $this->createTour([
             't_title' => 'Tour Phong Nha 1 ngay',
             't_location_id' => $quangBinh->id,
+            't_type' => 'family',
             't_price_adults' => 800000,
             't_duration_days' => 1,
             't_duration_nights' => 0,
@@ -53,6 +56,7 @@ class TourListingTest extends TestCase
             'location_id' => $quangBinh->id,
             'price' => '2000000-3000000',
             'duration' => '2-3',
+            'tour_type' => 'adventure',
         ]));
 
         $response
@@ -63,6 +67,62 @@ class TourListingTest extends TestCase
             ->assertSee('Còn nhận đặt')
             ->assertSee('Xem chi tiết')
             ->assertSee('Đặt tour');
+    }
+
+    public function test_tour_detail_renders_itinerary_as_day_timeline(): void
+    {
+        $location = Location::create([
+            'l_name' => 'Quang Binh',
+            'l_slug' => 'quang-binh',
+            'l_status' => 1,
+        ]);
+
+        $tour = $this->createTour([
+            't_title' => 'Tour timeline Phong Nha',
+            't_location_id' => $location->id,
+            't_description' => '<h3>Ngày 1: Động Phong Nha</h3><p>Khởi hành và khám phá hang động.</p><h3>Ngày 2: Suối Moọc</h3><p>Tự do trải nghiệm sinh thái.</p>',
+        ]);
+
+        $this->get(route('tour.detail', ['id' => $tour->id, 'slug' => 'tour-timeline-phong-nha']))
+            ->assertOk()
+            ->assertSee('itinerary-timeline', false)
+            ->assertSee('Ngày 1: Động Phong Nha')
+            ->assertSee('Ngày 2: Suối Moọc');
+    }
+
+    public function test_newest_tour_is_displayed_first_within_the_same_status(): void
+    {
+        $olderTour = $this->createTour(['t_title' => 'Tour cu']);
+        $newerTour = $this->createTour(['t_title' => 'Tour moi']);
+
+        $response = $this->get(route('tour'));
+        $tours = $response->viewData('tours');
+
+        $response->assertOk();
+        $this->assertSame([$newerTour->id, $olderTour->id], $tours->pluck('id')->take(2)->all());
+    }
+
+    public function test_tour_directory_displays_sixteen_tours_per_page(): void
+    {
+        foreach (range(1, 17) as $number) {
+            $this->createTour(['t_title' => 'Tour phan trang '.$number]);
+        }
+
+        $response = $this->get(route('tour'));
+        $tours = $response->viewData('tours');
+
+        $response->assertOk();
+        $this->assertSame(16, $tours->count());
+        $this->assertSame(16, $tours->perPage());
+        $this->assertSame(17, $tours->total());
+        $this->assertSame('Tour phan trang 17', $tours->first()->t_title);
+
+        $secondPage = $this->get(route('tour', ['page' => 2]));
+        $secondPageTours = $secondPage->viewData('tours');
+
+        $secondPage->assertOk();
+        $this->assertCount(1, $secondPageTours);
+        $this->assertSame('Tour phan trang 1', $secondPageTours->first()->t_title);
     }
 
     public function test_paused_tours_are_visible_but_not_bookable_on_public_pages(): void

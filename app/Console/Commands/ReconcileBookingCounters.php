@@ -2,7 +2,6 @@
 
 namespace App\Console\Commands;
 
-use App\Models\BookTour;
 use App\Models\Tour;
 use App\Models\TourSchedule;
 use Illuminate\Console\Command;
@@ -10,20 +9,20 @@ use Illuminate\Support\Facades\DB;
 
 class ReconcileBookingCounters extends Command
 {
-    protected $signature = 'bookings:reconcile-counters {--fix : Update tours and schedules to the computed values}';
+    protected $signature = 'bookings:reconcile-counters {--fix : Clear legacy tour seat counters}';
 
-    protected $description = 'Audit and optionally repair booking counters on tours and tour schedules.';
+    protected $description = 'Audit and optionally clear legacy tour seat counters that are no longer used by flexible-date bookings.';
 
     public function handle(): int
     {
         $fix = (bool) $this->option('fix');
         $differences = 0;
 
-        $this->info($fix ? 'Reconciling booking counters...' : 'Auditing booking counters...');
+        $this->info($fix ? 'Clearing legacy booking counters...' : 'Auditing legacy booking counters...');
 
         Tour::query()->orderBy('id')->chunkById(100, function ($tours) use ($fix, &$differences) {
             foreach ($tours as $tour) {
-                $expected = $this->expectedCounters(['b_tour_id' => $tour->id]);
+                $expected = $this->expectedCounters();
                 $current = [
                     'follow' => (int) $tour->t_follow,
                     'registered' => (int) $tour->t_number_registered,
@@ -32,7 +31,7 @@ class ReconcileBookingCounters extends Command
                 if ($expected !== $current) {
                     $differences++;
                     $this->line(sprintf(
-                        'Tour #%d: follow %d -> %d, registered %d -> %d',
+                        'Tour #%d: legacy follow %d -> %d, legacy registered %d -> %d',
                         $tour->id,
                         $current['follow'],
                         $expected['follow'],
@@ -42,8 +41,8 @@ class ReconcileBookingCounters extends Command
 
                     if ($fix) {
                         $tour->forceFill([
-                            't_follow' => $expected['follow'],
-                            't_number_registered' => $expected['registered'],
+                            't_follow' => 0,
+                            't_number_registered' => 0,
                         ])->save();
                     }
                 }
@@ -53,7 +52,7 @@ class ReconcileBookingCounters extends Command
         if (class_exists(TourSchedule::class) && DB::getSchemaBuilder()->hasTable('tour_schedules')) {
             TourSchedule::query()->orderBy('id')->chunkById(100, function ($schedules) use ($fix, &$differences) {
                 foreach ($schedules as $schedule) {
-                    $expected = $this->expectedCounters(['b_tour_schedule_id' => $schedule->id]);
+                    $expected = $this->expectedCounters();
                     $current = [
                         'follow' => (int) $schedule->ts_follow,
                         'registered' => (int) $schedule->ts_number_registered,
@@ -62,7 +61,7 @@ class ReconcileBookingCounters extends Command
                     if ($expected !== $current) {
                         $differences++;
                         $this->line(sprintf(
-                            'Schedule #%d: follow %d -> %d, registered %d -> %d',
+                            'Schedule #%d: legacy follow %d -> %d, legacy registered %d -> %d',
                             $schedule->id,
                             $current['follow'],
                             $expected['follow'],
@@ -72,8 +71,8 @@ class ReconcileBookingCounters extends Command
 
                         if ($fix) {
                             $schedule->forceFill([
-                                'ts_follow' => $expected['follow'],
-                                'ts_number_registered' => $expected['registered'],
+                                'ts_follow' => 0,
+                                'ts_number_registered' => 0,
                             ])->save();
                         }
                     }
@@ -81,20 +80,16 @@ class ReconcileBookingCounters extends Command
             });
         }
 
-        $this->info($differences === 0 ? 'No counter drift found.' : $differences . ' counter difference(s) found.');
+        $this->info($differences === 0 ? 'No legacy counter values found.' : $differences . ' legacy counter value set(s) found.');
 
         return self::SUCCESS;
     }
 
-    private function expectedCounters(array $where): array
+    private function expectedCounters(): array
     {
-        $base = BookTour::query()->where($where);
-
-        $guestExpression = 'COALESCE(b_number_adults,0) + COALESCE(b_number_children,0) + COALESCE(b_number_child6,0) + COALESCE(b_number_child2,0)';
-
         return [
-            'follow' => (int) (clone $base)->where('b_status', 1)->selectRaw('SUM(' . $guestExpression . ') as total')->value('total'),
-            'registered' => (int) (clone $base)->whereIn('b_status', [2, 3, 4])->selectRaw('SUM(' . $guestExpression . ') as total')->value('total'),
+            'follow' => 0,
+            'registered' => 0,
         ];
     }
 }

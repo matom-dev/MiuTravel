@@ -39,7 +39,7 @@ class BookTour extends Model
         self::STATUS_CANCELLED => [],
     ];
 
-    protected $fillable = ['b_tour_id', 'b_tour_schedule_id', 'b_user_id', 'b_name', 'b_email', 'b_phone', 'b_address', 'b_start_date', 'b_end_date', 'b_note', 'b_number_adults', 'b_number_children','b_price_adults','b_price_children','b_number_child6','b_number_child2','b_price_child6','b_price_child2','b_status'];
+    protected $fillable = ['b_code', 'b_tour_id', 'b_tour_schedule_id', 'b_user_id', 'b_assigned_staff_id', 'b_name', 'b_email', 'b_phone', 'b_address', 'b_start_date', 'b_end_date', 'b_note', 'b_cancel_reason', 'b_internal_note', 'b_number_adults', 'b_number_children','b_price_adults','b_price_children','b_number_child6','b_number_child2','b_price_child6','b_price_child2','b_status'];
 
     protected $casts = [
         'b_start_date' => 'datetime',
@@ -54,6 +54,11 @@ class BookTour extends Model
     public function user()
     {
         return $this->belongsTo(User::class, 'b_user_id', 'id');
+    }
+
+    public function assignedStaff()
+    {
+        return $this->belongsTo(User::class, 'b_assigned_staff_id', 'id');
     }
 
     public function schedule()
@@ -80,6 +85,18 @@ class BookTour extends Model
             + ((int) $this->b_number_children * (int) $this->b_price_children)
             + ((int) $this->b_number_child6 * (int) $this->b_price_child6)
             + ((int) $this->b_number_child2 * (int) $this->b_price_child2);
+    }
+
+    public function getDisplayCodeAttribute(): string
+    {
+        return $this->b_code ?: self::makeCode((int) $this->id, $this->created_at);
+    }
+
+    public static function makeCode(int $id, $date = null): string
+    {
+        $year = $date ? date('Y', strtotime((string) $date)) : date('Y');
+
+        return 'MT-' . $year . '-' . str_pad((string) $id, 6, '0', STR_PAD_LEFT);
     }
 
     public function canTransitionTo(int $status): bool

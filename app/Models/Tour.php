@@ -15,6 +15,11 @@ class Tour extends Model
     protected $table = 'tours';
     public $timestamps = true;
 
+    public const STATUS_BOOKABLE = 1;
+    public const STATUS_PAUSED = 2;
+    public const STATUS_HIDDEN = 3;
+    public const STATUS_PENDING_REVIEW = 4;
+
     protected $fillable = [
         't_title',
         't_journeys',
@@ -37,6 +42,7 @@ class Tour extends Model
         't_anbum_image',
         't_image',
         't_location_id',
+        't_type',
         't_user_id',
         't_number_registered',
         't_follow',
@@ -146,37 +152,50 @@ class Tour extends Model
     }
 
     const STATUS = [
-        1 => 'Còn nhận đặt',
-        2 => 'Tạm ngưng nhận đặt',
-        3 => 'Ngừng hiển thị',
+        self::STATUS_BOOKABLE => 'Còn nhận đặt',
+        self::STATUS_PAUSED => 'Tạm ngưng nhận đặt',
+        self::STATUS_HIDDEN => 'Ngừng hiển thị',
+        self::STATUS_PENDING_REVIEW => 'Chờ duyệt',
     ];
 
     const STATUS_BADGE_CLASS = [
-        1 => 'badge-success',
-        2 => 'badge-warning',
-        3 => 'badge-secondary',
+        self::STATUS_BOOKABLE => 'badge-success',
+        self::STATUS_PAUSED => 'badge-warning',
+        self::STATUS_HIDDEN => 'badge-secondary',
+        self::STATUS_PENDING_REVIEW => 'badge-info',
     ];
 
     const STATUS_ICON = [
-        1 => 'fas fa-check-circle',
-        2 => 'fas fa-pause-circle',
-        3 => 'fas fa-eye-slash',
+        self::STATUS_BOOKABLE => 'fas fa-check-circle',
+        self::STATUS_PAUSED => 'fas fa-pause-circle',
+        self::STATUS_HIDDEN => 'fas fa-eye-slash',
+        self::STATUS_PENDING_REVIEW => 'fas fa-user-check',
     ];
 
     const PUBLIC_STATUS_ICON = [
-        1 => 'fa fa-check-circle',
-        2 => 'fa fa-pause-circle',
-        3 => 'fa fa-eye-slash',
+        self::STATUS_BOOKABLE => 'fa fa-check-circle',
+        self::STATUS_PAUSED => 'fa fa-pause-circle',
+        self::STATUS_HIDDEN => 'fa fa-eye-slash',
+        self::STATUS_PENDING_REVIEW => 'fa fa-user-check',
+    ];
+
+    const TOUR_TYPES = [
+        'adventure' => 'Khám phá mạo hiểm',
+        'leisure' => 'Nghỉ dưỡng',
+        'family' => 'Gia đình',
+        'culture' => 'Văn hóa - lịch sử',
+        'eco' => 'Sinh thái',
+        'one_day' => 'Tour trong ngày',
     ];
 
     public function getIsBookableAttribute(): bool
     {
-        return (int) $this->t_status === 1;
+        return (int) $this->t_status === self::STATUS_BOOKABLE;
     }
 
     public function getIsPubliclyVisibleAttribute(): bool
     {
-        return in_array((int) $this->t_status, [1, 2], true);
+        return in_array((int) $this->t_status, [self::STATUS_BOOKABLE, self::STATUS_PAUSED], true);
     }
 
     public function getStatusLabelAttribute(): string
@@ -199,18 +218,23 @@ class Tour extends Model
         return self::PUBLIC_STATUS_ICON[(int) $this->t_status] ?? 'fa fa-question-circle';
     }
 
+    public function getTypeLabelAttribute(): string
+    {
+        return self::TOUR_TYPES[$this->t_type] ?? 'Tour trải nghiệm';
+    }
+
     /**
      * Scope lấy các tour còn nhận đặt (status = 1).
      * Dùng thống nhất thay cho->where('t_status', 1) rải rác khắp nơi.
      */
     public function scopeActive($query)
     {
-        return $query->where('t_status', 1);
+        return $query->where('t_status', self::STATUS_BOOKABLE);
     }
 
     public function scopeVisibleToCustomers($query)
     {
-        return $query->whereIn('t_status', [1, 2]);
+        return $query->whereIn('t_status', [self::STATUS_BOOKABLE, self::STATUS_PAUSED]);
     }
 
     public function createOrUpdate($request , $id ='')
@@ -250,6 +274,7 @@ class Tour extends Model
         $params['t_end_date'] = null;
         $params['t_activities'] = $this->buildActivities($request);
         $params['t_guides'] = $this->buildGuides($request);
+        $params['t_status'] = $this->resolveReviewStatus($request);
 
         // Upload ảnh đại diện
         if ($request->hasFile('images')) {
@@ -273,11 +298,11 @@ class Tour extends Model
 
         $params['t_sale'] = $request->t_sale ? $request->t_sale : 0;
         if ($id) {
-            $tour = $this->find($id);
-            $updated = $tour->update($params);
+            $tour = $this->findOrFail($id);
+            $tour->update($params);
             $this->syncGuideAssignments($tour, $request);
 
-            return $updated;
+            return $tour->refresh();
         }
         $params['t_user_id'] = Auth::guard('admins')->id();
         $params['t_number_guests'] = 0;
@@ -293,6 +318,23 @@ class Tour extends Model
         $nights = max(0, (int) $nights);
 
         return $days . ' ngày ' . $nights . ' đêm';
+    }
+
+    protected function resolveReviewStatus($request): int
+    {
+        $requestedStatus = (int) $request->input('t_status', self::STATUS_PENDING_REVIEW);
+
+        if (!array_key_exists($requestedStatus, self::STATUS)) {
+            $requestedStatus = self::STATUS_PENDING_REVIEW;
+        }
+
+        $admin = Auth::guard('admins')->user();
+
+        if ($admin && !$admin->can(['full-quyen-quan-ly', 'duyet-xuat-ban-tour'])) {
+            return self::STATUS_PENDING_REVIEW;
+        }
+
+        return $requestedStatus;
     }
 
     protected function parseDurationNumber(array $units): ?int

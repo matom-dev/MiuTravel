@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateInfoAccountRequest;
 use App\Http\Requests\ChangePasswordRequest;
 use App\Models\User;
 use App\Models\BookTour;
+use App\Services\BookingDocumentService;
 use App\Services\BookingService;
 use Mail;
 
@@ -85,8 +86,21 @@ class AccountController extends Controller
     public function myTour()
     {
         $user = Auth::guard('users')->user();
-        $bookTours = BookTour::with(['tour', 'schedule'])->where('b_user_id', $user->id)->orderByDesc('id')->paginate(NUMBER_PAGINATION_PAGE);
+        $bookTours = BookTour::with([
+            'tour',
+            'schedule',
+        ])->where('b_user_id', $user->id)->orderByDesc('id')->paginate(NUMBER_PAGINATION_PAGE);
         return view('page.auth.my_tour', compact('bookTours', 'user'));
+    }
+
+    public function downloadBookingConfirmation($id, BookingDocumentService $documents)
+    {
+        $user = Auth::guard('users')->user();
+        $bookTour = BookTour::with(['tour', 'user'])
+            ->where('b_user_id', $user->id)
+            ->findOrFail($id);
+
+        return $documents->confirmation($bookTour);
     }
 
     public function updateStatus(Request $request, $id)
@@ -106,8 +120,12 @@ class AccountController extends Controller
                 : redirect()->back()->with('error', 'Chỉ có thể hủy booking đang chờ xác nhận');
         }
 
+        $data = $request->validate([
+            'cancel_reason' => 'required|string|max:500',
+        ]);
+
         try {
-            $result = $this->bookingService->changeStatus($bookTour, 5);
+            $result = $this->bookingService->changeStatus($bookTour, BookTour::STATUS_CANCELLED, $data['cancel_reason'], $user, 'users');
 
             $mailuser = $user->email;
             try {

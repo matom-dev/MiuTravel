@@ -14,9 +14,12 @@ class Hotel extends Model
     protected $table = 'hotels';
     public $timestamps = true;
 
+    public const STATUS_VISIBLE = 1;
+    public const STATUS_HIDDEN = 2;
+
     const STATUS = [
-        1 => 'Xuất bản',
-        2 => 'Bản nháp'
+        self::STATUS_VISIBLE => 'Hiển thị',
+        self::STATUS_HIDDEN => 'Ẩn',
     ];
 
     const ACCOMMODATION_TYPES = [
@@ -127,6 +130,21 @@ class Hotel extends Model
         return $prefix.preg_replace('/\D+/', '', $phone);
     }
 
+    public function getStatusLabelAttribute()
+    {
+        return self::STATUS[(int) $this->h_status] ?? 'Không rõ';
+    }
+
+    public function getStatusBadgeClassAttribute()
+    {
+        return (int) $this->h_status === self::STATUS_VISIBLE ? 'success' : 'secondary';
+    }
+
+    public function getStatusIconAttribute()
+    {
+        return (int) $this->h_status === self::STATUS_VISIBLE ? 'fas fa-check-circle' : 'fas fa-eye-slash';
+    }
+
     protected function normalizeAlbumImages($value)
     {
         if (is_array($value)) {
@@ -205,7 +223,7 @@ class Hotel extends Model
 
     public function scopeActive($query)
     {
-        return $query->where('h_status', 1);
+        return $query->where('h_status', self::STATUS_VISIBLE);
     }
 
     public function comments()

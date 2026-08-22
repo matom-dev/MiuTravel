@@ -20,13 +20,21 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canCreateCategory = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canEditCategory = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canDeleteCategory = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'xoa-noi-dung']);
+            @endphp
             <div class="card shadow-sm">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">Danh sách Danh mục</h3>
                     <div class="card-tools ml-auto">
+                        @if($canCreateCategory)
                         <a href="{{ route('category.create') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle mr-1"></i> Thêm Mới
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive">
@@ -55,12 +63,16 @@
                                         </td>
                                         <td class="text-center">
                                             <div class="btn-group">
+                                                @if($canEditCategory)
                                                 <a href="{{ route('category.update', $category->id) }}" class="btn btn-info btn-sm" title="Chỉnh sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endif
+                                                @if($canDeleteCategory)
                                                 <a href="{{ route('category.delete', $category->id) }}" class="btn btn-danger btn-sm btn-confirm-delete" title="Xóa">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

@@ -17,7 +17,32 @@
         color: #6c757d;
         font-size: 12px;
     }
+
+    .operation-panel {
+        background: #f8fafc;
+        border: 1px solid #e5e7eb;
+        border-radius: 8px;
+        padding: 10px;
+        min-width: 220px;
+    }
+
+    .operation-panel label {
+        color: #6b7280;
+        font-size: 11px;
+        font-weight: 800;
+        margin-bottom: 4px;
+        text-transform: uppercase;
+    }
+
+    .operation-panel .form-control {
+        font-size: 12.5px;
+    }
+
 </style>
+@php
+    $adminUser = Auth::guard('admins')->user();
+    $canManageAllBookings = $canManageAllBookings ?? false;
+@endphp
 <section class="content-header">
     <div class="container-fluid">
         <div class="row mb-2">
@@ -49,8 +74,8 @@
                     <div class="row align-items-end">
                         <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                             <label class="text-muted" style="font-size: 13px;">Mã booking</label>
-                            <input type="number" name="booking_id" value="{{ Request::get('booking_id') }}"
-                                class="form-control" placeholder="VD: 1024">
+                            <input type="text" name="booking_code" value="{{ Request::get('booking_code', Request::get('booking_id')) }}"
+                                class="form-control" placeholder="VD: MT-2026-000123">
                         </div>
                         <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                             <label class="text-muted" style="font-size: 13px;">Tên tour</label>
@@ -95,6 +120,32 @@
                             <input type="date" name="b_start_date" value="{{ Request::get('b_start_date') }}"
                                 class="form-control">
                         </div>
+                    </div>
+                    <div class="row mt-3">
+                        <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                            <label class="text-muted" style="font-size: 13px;">Khởi hành từ ngày</label>
+                            <input type="date" name="b_start_date_from" value="{{ Request::get('b_start_date_from') }}"
+                                class="form-control">
+                        </div>
+                        <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                            <label class="text-muted" style="font-size: 13px;">Khởi hành đến ngày</label>
+                            <input type="date" name="b_start_date_to" value="{{ Request::get('b_start_date_to') }}"
+                                class="form-control">
+                        </div>
+                        @if($canManageAllBookings)
+                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                                <label class="text-muted" style="font-size: 13px;">Nhân viên phụ trách</label>
+                                <select name="b_assigned_staff_id" class="form-control custom-select">
+                                    <option value="">Tất cả nhân viên</option>
+                                    <option value="unassigned" {{ Request::get('b_assigned_staff_id') === 'unassigned' ? 'selected' : '' }}>Chưa phân công</option>
+                                    @foreach($staffUsers as $staffUser)
+                                        <option value="{{ $staffUser->id }}" {{ (string) Request::get('b_assigned_staff_id') === (string) $staffUser->id ? 'selected' : '' }}>
+                                            {{ $staffUser->name }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        @endif
                         <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
                             <label class="text-muted" style="font-size: 13px;">Trạng thái</label>
                             <select name="b_status" class="form-control custom-select">
@@ -123,19 +174,42 @@
         <div class="card shadow-sm">
             <div class="card-header border-0 d-flex justify-content-between align-items-center">
                 <h3 class="card-title font-weight-bold">Danh sách Đơn Đặt Tour</h3>
+                @php
+                    $canExportBookings = $adminUser->can(['full-quyen-quan-ly', 'xuat-dat-tour']);
+                @endphp
+                @if($canExportBookings)
+                <div class="card-tools">
+                    <a href="{{ route('book.tour.export', array_merge(request()->query(), ['format' => 'csv'])) }}"
+                        class="btn btn-sm btn-outline-success">
+                        <i class="fas fa-file-excel mr-1"></i> Xuất Excel
+                    </a>
+                    <a href="{{ route('book.tour.export', array_merge(request()->query(), ['format' => 'pdf'])) }}"
+                        class="btn btn-sm btn-outline-danger">
+                        <i class="fas fa-file-pdf mr-1"></i> Xuất PDF
+                    </a>
+                </div>
+                @endif
             </div>
             <div class="card-body p-0 table-responsive">
-                @php $canManageBookingStatus = Auth::guard('admins')->user()->can(['full-quyen-quan-ly', 'xoa-va-cap-nhat-trang-thai']); @endphp
+                @php
+                    $canUpdateBookingStatus = $adminUser->can(['full-quyen-quan-ly', 'cap-nhat-trang-thai-dat-tour']);
+                    $canDeleteBooking = $adminUser->can(['full-quyen-quan-ly', 'xoa-dat-tour']);
+                    $canDownloadBookingConfirmation = $adminUser->can(['full-quyen-quan-ly', 'xem-dat-tour']);
+                    $showBookingActions = $canUpdateBookingStatus || $canDeleteBooking || $canDownloadBookingConfirmation;
+                    $bookTourColumnCount = $showBookingActions ? 8 : 7;
+                @endphp
                 <table class="table table-hover table-striped m-0 book-tour-table">
                     <thead>
                         <tr>
+                            <th width="5%" class="text-center">STT</th>
                             <th width="9%" class="text-center">Mã booking</th>
-                            <th width="21%">Tour</th>
+                            <th width="20%">Tour</th>
                             <th width="20%">Tên khách / Liên hệ</th>
-                            <th width="31%">Ngày khách chọn / Chi phí</th>
+                            <th width="29%">Ngày khách chọn / Chi phí</th>
+                            <th width="16%">Vận hành nội bộ</th>
                             <th class="text-center">Trạng Thái</th>
-                            @if($canManageBookingStatus)
-                                <th width="11%" class="text-center">Cập nhật trạng thái</th>
+                            @if($showBookingActions)
+                                <th width="11%" class="text-center">Thao tác</th>
                             @endif
                         </tr>
                     </thead>
@@ -143,10 +217,14 @@
                         @if (!$bookTours->isEmpty())
                             @php $i = $bookTours->firstItem(); @endphp
                             @foreach($bookTours as $book)
+                                @php
+                                    $canOperateThisBooking = $canManageAllBookings
+                                        || ($canUpdateBookingStatus && (int) $book->b_assigned_staff_id === (int) $adminUser->id);
+                                @endphp
                                 <tr class="booking-row">
+                                    <td class="text-center align-middle text-muted font-weight-bold">{{ $i }}</td>
                                     <td class="text-center align-middle">
-                                        <span class="booking-code">#{{ $book->id }}</span>
-                                        <span class="booking-subtle">STT {{ $i }}</span>
+                                        <span class="booking-code">{{ $book->display_code }}</span>
                                     </td>
                                     <td class="align-middle">
                                         <p class="font-weight-medium mb-1 text-primary">
@@ -225,6 +303,55 @@
                                                 Ghi chú: {{ $book->b_note }}
                                             </div>
                                         @endif
+                                        @if($book->b_cancel_reason)
+                                            <div class="mt-2 text-danger font-italic">
+                                                <i class="fas fa-ban mr-1"></i>
+                                                Lý do hủy: {{ $book->b_cancel_reason }}
+                                            </div>
+                                        @endif
+                                    </td>
+                                    <td class="align-middle" style="font-size: 13.5px;">
+                                        @if($canOperateThisBooking)
+                                            <form class="operation-panel" method="POST" action="{{ route('book.tour.update.operation', $book->id) }}">
+                                                @csrf
+                                                @method('PATCH')
+                                                @if($canManageAllBookings)
+                                                    <div class="form-group mb-2">
+                                                        <label>Phụ trách</label>
+                                                        <select name="b_assigned_staff_id" class="form-control custom-select">
+                                                            <option value="">Chưa phân công</option>
+                                                            @foreach($staffUsers as $staffUser)
+                                                                <option value="{{ $staffUser->id }}" {{ (int) $book->b_assigned_staff_id === (int) $staffUser->id ? 'selected' : '' }}>
+                                                                    {{ $staffUser->name }}
+                                                                </option>
+                                                            @endforeach
+                                                        </select>
+                                                    </div>
+                                                @else
+                                                    <div class="mb-2">
+                                                        <label>Phụ trách</label>
+                                                        <div class="form-control bg-light">{{ optional($book->assignedStaff)->name ?: 'Chưa phân công' }}</div>
+                                                    </div>
+                                                @endif
+                                                <div class="form-group mb-2">
+                                                    <label>Ghi chú nội bộ</label>
+                                                    <textarea name="b_internal_note" class="form-control" rows="3" maxlength="1000" placeholder="VD: đã gọi lần 1, cần xác nhận điểm đón...">{{ $book->b_internal_note }}</textarea>
+                                                </div>
+                                                <button type="submit" class="btn btn-sm btn-outline-primary btn-block">
+                                                    <i class="fas fa-save mr-1"></i> Lưu vận hành
+                                                </button>
+                                            </form>
+                                        @else
+                                            <div class="mb-1">
+                                                <i class="fas fa-user-tie text-primary mr-1" style="width:16px;"></i>
+                                                Phụ trách: <b>{{ optional($book->assignedStaff)->name ?: 'Chưa phân công' }}</b>
+                                            </div>
+                                            @if($book->b_internal_note)
+                                                <div class="text-muted font-italic">
+                                                    <i class="fas fa-sticky-note mr-1"></i> {{ $book->b_internal_note }}
+                                                </div>
+                                            @endif
+                                        @endif
                                     </td>
                                     <td class="text-center align-middle">
                                         <span
@@ -233,7 +360,7 @@
                                             {{ $status[$book->b_status] ?? 'Không rõ' }}
                                         </span>
                                     </td>
-                                    @if($canManageBookingStatus)
+                                    @if($showBookingActions)
                                         <td class="text-center align-middle">
                                             <div class="dropdown">
                                                 <button class="btn btn-outline-primary btn-sm dropdown-toggle" type="button"
@@ -243,27 +370,43 @@
                                                 </button>
                                                 <div class="dropdown-menu dropdown-menu-right shadow-sm border-0"
                                                     aria-labelledby="dropdownMenuButton{{$book->id}}">
-                                                    <h6 class="dropdown-header">Cập nhật trạng thái</h6>
-                                                    @foreach($status as $key => $item)
-                                                        @php $canTransition = $book->canTransitionTo((int) $key); @endphp
-                                                        <a class="dropdown-item {{ $canTransition ? 'update_book_tour' : 'disabled text-muted' }} py-2"
-                                                            style="cursor: {{ $canTransition ? 'pointer' : 'not-allowed' }};"
-                                                            @if($canTransition)
-                                                                url="{{ route('book.tour.update.status', ['status' => $key, 'id' => $book->id]) }}"
-                                                            @endif>
-                                                            @if($book->b_status == $key)
-                                                                <i class="fas fa-dot-circle text-primary mr-2"></i>
-                                                            @else
-                                                                <i class="far fa-circle text-muted mr-2"></i>
-                                                            @endif
-                                                            {{ $item }}
+                                                    @if($canOperateThisBooking)
+                                                        <h6 class="dropdown-header">Cập nhật trạng thái</h6>
+                                                        @foreach($status as $key => $item)
+                                                            @php $canTransition = $book->canTransitionTo((int) $key); @endphp
+                                                            <a class="dropdown-item {{ $canTransition ? 'update_book_tour' : 'disabled text-muted' }} py-2"
+                                                                style="cursor: {{ $canTransition ? 'pointer' : 'not-allowed' }};"
+                                                                @if($canTransition)
+                                                                    url="{{ route('book.tour.update.status', ['status' => $key, 'id' => $book->id]) }}"
+                                                                    @if((int) $key === \App\Models\BookTour::STATUS_CANCELLED)
+                                                                        data-requires-reason="1"
+                                                                    @endif
+                                                                @endif>
+                                                                @if($book->b_status == $key)
+                                                                    <i class="fas fa-dot-circle text-primary mr-2"></i>
+                                                                @else
+                                                                    <i class="far fa-circle text-muted mr-2"></i>
+                                                                @endif
+                                                                {{ $item }}
+                                                            </a>
+                                                        @endforeach
+                                                    @endif
+                                                    @if($canDownloadBookingConfirmation)
+                                                        @if($canOperateThisBooking)
+                                                            <div class="dropdown-divider"></div>
+                                                        @endif
+                                                        <a class="dropdown-item py-2"
+                                                            href="{{ route('book.tour.confirmation', $book->id) }}">
+                                                            <i class="fas fa-file-pdf mr-2"></i> Tải phiếu PDF
                                                         </a>
-                                                    @endforeach
-                                                    <div class="dropdown-divider"></div>
-                                                    <a class="dropdown-item text-danger btn-confirm-delete py-2"
-                                                        href="{{ route('book.tour.delete', $book->id) }}">
-                                                        <i class="fas fa-trash-alt mr-2"></i> Xóa đơn đặt
-                                                    </a>
+                                                    @endif
+                                                    @if($canDeleteBooking)
+                                                        <div class="dropdown-divider"></div>
+                                                        <a class="dropdown-item text-danger btn-confirm-delete py-2"
+                                                            href="{{ route('book.tour.delete', $book->id) }}">
+                                                            <i class="fas fa-trash-alt mr-2"></i> Xóa đơn đặt
+                                                        </a>
+                                                    @endif
                                                 </div>
                                             </div>
                                         </td>
@@ -273,7 +416,7 @@
                             @endforeach
                         @else
                             <tr>
-                                <td colspan="{{ $canManageBookingStatus ? 6 : 5 }}" class="text-center py-5 text-muted">
+                                <td colspan="{{ $bookTourColumnCount }}" class="text-center py-5 text-muted">
                                     <i class="fas fa-clipboard-list fa-3x mb-3 opacity-50"></i><br>
                                     Chưa có đơn đặt tour nào.
                                 </td>
@@ -285,7 +428,7 @@
             @if($bookTours->hasPages())
                 <div class="card-footer bg-white border-0">
                     <div class="float-right">
-                        {{ $bookTours->appends($query = '')->links() }}
+                        {{ $bookTours->appends(request()->query())->links() }}
                     </div>
                 </div>
             @endif

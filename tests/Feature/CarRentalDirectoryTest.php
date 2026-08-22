@@ -52,6 +52,7 @@ class CarRentalDirectoryTest extends TestCase
 
         $this->assertStringContainsString('Điện thoại đơn vị cho thuê', $html);
         $this->assertStringContainsString('name="cr_phone"', $html);
+        $this->assertStringContainsString('name="cr_driver_option"', $html);
         $this->assertStringNotContainsString('name="cr_price"', $html);
         $this->assertSame(1, substr_count($html, 'name="cr_content"'));
         $this->assertStringNotContainsString('name="cr_description"', $html);
@@ -85,6 +86,77 @@ class CarRentalDirectoryTest extends TestCase
         $this->assertStringContainsString('Don tan noi', $carRental->cr_description);
         $this->assertSame($carRental->cr_description, strip_tags($carRental->cr_description));
         $this->assertStringContainsString('<h2>Don tan noi</h2>', $carRental->cr_content);
+    }
+
+    public function test_car_rental_directory_filters_by_vehicle_metadata(): void
+    {
+        $quangBinh = $this->createLocation();
+        $daNang = Location::create([
+            'l_name' => 'Da Nang',
+            'l_slug' => 'da-nang',
+            'l_status' => 1,
+        ]);
+
+        $matchingCar = CarRental::create([
+            'cr_name' => 'SUV 7 cho co tai xe',
+            'cr_location_id' => $quangBinh->id,
+            'cr_vehicle_type' => 'suv',
+            'cr_driver_option' => 'with_driver',
+            'cr_number_seats' => 7,
+            'cr_phone' => '0901 111 222',
+            'cr_status' => 1,
+        ]);
+        CarRental::create([
+            'cr_name' => 'Sedan tu lai Da Nang',
+            'cr_location_id' => $daNang->id,
+            'cr_vehicle_type' => 'sedan',
+            'cr_driver_option' => 'self_drive',
+            'cr_number_seats' => 4,
+            'cr_phone' => '0901 333 444',
+            'cr_status' => 1,
+        ]);
+
+        $this->get(route('car.rental', [
+            'location_id' => $quangBinh->id,
+            'seats' => 7,
+            'vehicle_type' => 'suv',
+            'driver_option' => 'with_driver',
+        ]))
+            ->assertOk()
+            ->assertSee($matchingCar->cr_name)
+            ->assertSee('Có tài xế')
+            ->assertDontSee('Sedan tu lai Da Nang');
+    }
+
+    public function test_car_rental_directory_displays_twelve_cars_per_page(): void
+    {
+        $location = $this->createLocation();
+
+        foreach (range(1, 13) as $number) {
+            CarRental::create([
+                'cr_name' => 'Xe du lich '.$number,
+                'cr_location_id' => $location->id,
+                'cr_phone' => '0901234567',
+                'cr_status' => 1,
+            ]);
+        }
+
+        $response = $this->get(route('car.rental'));
+        $carRentals = $response->viewData('carRentals');
+
+        $response
+            ->assertOk()
+            ->assertSee('Xe du lich 13')
+            ->assertSee('class="block-27', false);
+        $this->assertSame(12, $carRentals->count());
+        $this->assertSame(12, $carRentals->perPage());
+        $this->assertSame(13, $carRentals->total());
+
+        $secondPage = $this->get(route('car.rental', ['page' => 2]));
+        $secondPageCars = $secondPage->viewData('carRentals');
+
+        $secondPage->assertOk()->assertSee('Xe du lich 1');
+        $this->assertCount(1, $secondPageCars);
     }
 
     private function createLocation(): Location

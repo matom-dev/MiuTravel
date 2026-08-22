@@ -5,7 +5,7 @@
     $selectedMealPlans = old('h_meal_plans', isset($hotel) ? ($hotel->h_meal_plans ?? []) : []);
     $selectedSuitableFor = old('h_suitable_for', isset($hotel) ? ($hotel->h_suitable_for ?? []) : []);
 @endphp
-<div class="container-fluid">
+<div class="container-fluid admin-form-page">
     <form role="form" action="" method="post" enctype="multipart/form-data">
         @csrf
         <div class="row">

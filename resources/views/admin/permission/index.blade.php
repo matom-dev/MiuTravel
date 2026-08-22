@@ -47,7 +47,7 @@
                                             <tr>
                                                 <td class=" text-center">{{ $i }}</td>
                                                 <td>{{$permission->display_name}}</td>
-                                                <td><span class="label label-success">{{$permission->groups->name}}</span></td>
+                                                <td><span class="label label-success">{{ optional($permission->groups)->name ?? 'Chưa phân nhóm' }}</span></td>
                                                 <td>{{$permission->description}}</td>
                                                 <td class="text-center">
                                                     <a class="btn btn-primary btn-sm" href="{{ route('permission.update', $permission->id) }}">

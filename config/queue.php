@@ -13,7 +13,7 @@ return [
     |
     */
 
-    'default' => env('QUEUE_CONNECTION', 'sync'),
+    'default' => env('QUEUE_CONNECTION', env('APP_ENV') === 'production' ? 'database' : 'sync'),
 
     /*
     |--------------------------------------------------------------------------
@@ -36,9 +36,11 @@ return [
 
         'database' => [
             'driver' => 'database',
-            'table' => 'jobs',
-            'queue' => 'default',
-            'retry_after' => 90,
+            'connection' => env('DB_QUEUE_CONNECTION', env('DB_CONNECTION', 'mysql')),
+            'table' => env('DB_QUEUE_TABLE', 'jobs'),
+            'queue' => env('DB_QUEUE', 'bookings'),
+            'retry_after' => (int) env('DB_QUEUE_RETRY_AFTER', 120),
+            'after_commit' => env('DB_QUEUE_AFTER_COMMIT', true),
         ],
 
         'beanstalkd' => [

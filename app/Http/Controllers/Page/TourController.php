@@ -7,14 +7,17 @@ use App\Http\Controllers\Controller;
 use App\Models\Tour;
 use App\Models\Location;
 use App\Models\User;
+use App\Models\BookTour;
+use App\Models\Comment;
 use App\Http\Requests\BookTourRequest;
 use App\Services\BookingService;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Validation\Rule;
 use Mail;
 
 class TourController extends Controller
 {
-    private const TOUR_PER_PAGE = 8;
+    private const TOUR_PER_PAGE = 16;
 
     protected $bookingService;
 
@@ -26,26 +29,39 @@ class TourController extends Controller
     //
     public function index(Request $request)
     {
+        $validated = $request->validate([
+            'key_tour' => 'nullable|string|max:191',
+            'location_id' => 'nullable|integer',
+            'price' => 'nullable|regex:/^\d+-\d+$/',
+            'duration' => 'nullable|in:1,2-3,4-5,6+',
+            'tour_type' => ['nullable', 'string', Rule::in(array_keys(Tour::TOUR_TYPES))],
+        ]);
+
         $tours = Tour::with(['user', 'location']);
 
-        if ($request->key_tour) {
-            $tours->where('t_title', 'like', '%' . $request->key_tour . '%');
+        if (!empty($validated['key_tour'])) {
+            $tours->where('t_title', 'like', '%' . $validated['key_tour'] . '%');
         }
 
-        if ($request->location_id) {
-            $tours->where('t_location_id', $request->location_id);
+        if (!empty($validated['location_id'])) {
+            $tours->where('t_location_id', $validated['location_id']);
         }
 
-        if ($request->price && preg_match('/^\d+-\d+$/', $request->price)) {
-            $price = explode('-', $request->price);
+        if (!empty($validated['price'])) {
+            $price = explode('-', $validated['price']);
             $tours->whereBetween('t_price_adults', [$price[0], $price[1]]);
         }
 
-        if ($request->duration) {
-            $this->applyDurationFilter($tours, $request->duration);
+        if (!empty($validated['duration'])) {
+            $this->applyDurationFilter($tours, $validated['duration']);
+        }
+
+        if (!empty($validated['tour_type'])) {
+            $tours->where('t_type', $validated['tour_type']);
         }
 
         $tours = $tours->orderBy('t_status')
+            ->orderByDesc('id')
             ->visibleToCustomers()
             ->paginate(self::TOUR_PER_PAGE)
             ->appends($request->query());
@@ -55,6 +71,7 @@ class TourController extends Controller
         $viewData = [
             'tours' => $tours,
             'locations' => $locations,
+            'tourTypes' => Tour::TOUR_TYPES,
         ];
         return view('page.tour.index', $viewData);
     }
@@ -85,10 +102,10 @@ class TourController extends Controller
     {
         $tour = Tour::with(['comments' => function ($query) use ($id) {
             $query->with(['user', 'replies' => function ($q) {
-                $q->with('user')->limit(10);
+                $q->with('user')->where('cm_status', Comment::STATUS_APPROVED)->limit(10);
             }])
                 ->where('cm_tour_id', $id)
-                ->where('cm_status', '!=', 3) // Ẩn những BL admin đã ẩn (status=3)
+                ->where('cm_status', Comment::STATUS_APPROVED)
                 ->limit(20)
                 ->orderByDesc('id');
         }])->visibleToCustomers()->find($id);
@@ -97,14 +114,39 @@ class TourController extends Controller
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
 
-        $tours = Tour::where('t_location_id', $tour->t_location_id)
-            ->where('id', '<>', $id)
-            ->visibleToCustomers()
-            ->orderBy('id')
+        $tours = Tour::where('id', '<>', $id)
+            ->visibleToCustomers();
+
+        if ($tour->t_location_id || $tour->t_type) {
+            $tours->where(function ($query) use ($tour) {
+                if ($tour->t_location_id) {
+                    $query->where('t_location_id', $tour->t_location_id);
+                }
+
+                if ($tour->t_type) {
+                    $tour->t_location_id
+                        ? $query->orWhere('t_type', $tour->t_type)
+                        : $query->where('t_type', $tour->t_type);
+                }
+            });
+        }
+
+        $tours = $tours->withCount(['booktour as booking_count' => function ($query) {
+                $query->whereIn('b_status', [
+                    BookTour::STATUS_CONFIRMED,
+                    BookTour::STATUS_PAID,
+                    BookTour::STATUS_COMPLETED,
+                ]);
+            }])
+            ->orderByDesc('booking_count')
+            ->orderByDesc('id')
             ->limit(NUMBER_PAGINATION_PAGE)
             ->get();
 
-        return view('page.tour.detail', compact('tour', 'tours'));
+        $itineraryDays = $this->buildItineraryDays($tour);
+        $canReviewTour = $this->canCurrentUserReviewTour($tour->id);
+
+        return view('page.tour.detail', compact('tour', 'tours', 'itineraryDays', 'canReviewTour'));
     }
 
     public function activities(Request $request, $id, $slug)
@@ -173,5 +215,58 @@ class TourController extends Controller
         } catch (\Exception $exception) {
             return redirect()->back()->with('error', 'Đã xảy ra lỗi khi lưu dữ liệu');
         }
+    }
+
+    private function canCurrentUserReviewTour(int $tourId): bool
+    {
+        $userId = Auth::guard('users')->id();
+
+        if (!$userId) {
+            return false;
+        }
+
+        return BookTour::where('b_user_id', $userId)
+            ->where('b_tour_id', $tourId)
+            ->whereIn('b_status', [
+                BookTour::STATUS_CONFIRMED,
+                BookTour::STATUS_PAID,
+                BookTour::STATUS_COMPLETED,
+            ])
+            ->exists();
+    }
+
+    private function buildItineraryDays(Tour $tour): array
+    {
+        $html = trim((string) $tour->t_description);
+
+        if ($html === '') {
+            return [];
+        }
+
+        $pattern = '/(<h[2-4][^>]*>\\s*(?:ngày|day)\\s*\\d+[^<]*<\\/h[2-4]>)/iu';
+        $parts = preg_split($pattern, $html, -1, PREG_SPLIT_DELIM_CAPTURE | PREG_SPLIT_NO_EMPTY);
+
+        if (count($parts) < 2) {
+            return [];
+        }
+
+        $days = [];
+        for ($i = 0; $i < count($parts); $i++) {
+            if (!preg_match($pattern, $parts[$i])) {
+                continue;
+            }
+
+            $title = trim(strip_tags($parts[$i]));
+            $content = trim($parts[$i + 1] ?? '');
+
+            if ($title !== '' && $content !== '') {
+                $days[] = [
+                    'title' => $title,
+                    'content' => $content,
+                ];
+            }
+        }
+
+        return $days;
     }
 }

@@ -9,6 +9,8 @@ use App\Models\Tour;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Illuminate\Http\Request;
+use Illuminate\Support\ViewErrorBag;
+use Illuminate\Support\Facades\View;
 use Tests\TestCase;
 
 class AdminBookingOverviewTest extends TestCase
@@ -42,6 +44,70 @@ class AdminBookingOverviewTest extends TestCase
 
         $this->assertSame(1, $bookings->total());
         $this->assertSame($matchedBooking->id, $bookings->first()->id);
+    }
+
+    public function test_booking_overview_can_show_only_upcoming_departures(): void
+    {
+        $this->actingAs(User::factory()->create(), 'admins');
+
+        $user = User::factory()->create();
+        $tour = $this->createTour();
+
+        $confirmedUpcomingBooking = $this->createBooking($tour, $user, [
+            'b_name' => 'Khach sap khoi hanh',
+            'b_start_date' => now()->addDays(2)->format('Y-m-d') . ' 00:00:00',
+            'b_status' => BookTour::STATUS_CONFIRMED,
+        ]);
+        $paidUpcomingBooking = $this->createBooking($tour, $user, [
+            'b_name' => 'Khach da thanh toan',
+            'b_start_date' => now()->addDays(3)->format('Y-m-d') . ' 00:00:00',
+            'b_status' => BookTour::STATUS_PAID,
+        ]);
+        $this->createBooking($tour, $user, [
+            'b_name' => 'Khach cho duyet',
+            'b_start_date' => now()->addDays(1)->format('Y-m-d') . ' 00:00:00',
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+        $this->createBooking($tour, $user, [
+            'b_name' => 'Khach qua xa',
+            'b_start_date' => now()->addDays(4)->format('Y-m-d') . ' 00:00:00',
+            'b_status' => BookTour::STATUS_CONFIRMED,
+        ]);
+        $this->createBooking($tour, $user, [
+            'b_name' => 'Khach da huy',
+            'b_start_date' => now()->addDays(3)->format('Y-m-d') . ' 00:00:00',
+            'b_status' => BookTour::STATUS_CANCELLED,
+        ]);
+
+        $request = Request::create('/admin/booking-overview', 'GET', [
+            'upcoming' => 1,
+        ]);
+
+        $response = app(HomeController::class)->bookingOverview($request);
+        $bookings = $response->getData()['bookings'];
+
+        $this->assertSame('admin.home.upcoming_bookings', $response->name());
+        $this->assertSame(2, $bookings->total());
+        $this->assertEqualsCanonicalizing([
+            $confirmedUpcomingBooking->id,
+            $paidUpcomingBooking->id,
+        ], $bookings->pluck('id')->all());
+
+        View::share('errors', new ViewErrorBag());
+
+        $html = $response->render();
+        $this->assertStringContainsString('Danh sách tour sắp khởi hành', $html);
+        $this->assertStringContainsString('Ngày khởi hành', $html);
+        $this->assertStringNotContainsString('Lịch đặt tour', $html);
+        $this->assertStringNotContainsString('Lọc lịch đặt tour', $html);
+        $this->assertStringNotContainsString('Danh sách lịch đặt tour', $html);
+        $this->assertStringNotContainsString('Ngày đặt', $html);
+        $this->assertStringNotContainsString('Ngày đi mong muốn', $html);
+        $this->assertStringNotContainsString('Về:', $html);
+        $this->assertStringNotContainsString('<th width="8%" class="text-center">Khách</th>', $html);
+        $this->assertStringNotContainsString('Tổng lượt đặt tour', $html);
+        $this->assertStringNotContainsString('Đơn đang hiển thị', $html);
+        $this->assertStringNotContainsString('Tổng khách', $html);
     }
 
     private function createTour(array $attributes = []): Tour

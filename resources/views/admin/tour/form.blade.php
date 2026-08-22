@@ -17,27 +17,27 @@
     }
 
     .tour-program-card > .card-header {
-        padding: 12px 16px 0;
+        padding: 18px 24px !important;
     }
 
     .tour-program-card > .card-header .card-title {
-        margin-bottom: 10px !important;
+        margin-bottom: 0 !important;
         font-size: 16px;
     }
 
     .tour-program-card > .card-body {
-        padding: 16px;
+        padding: 24px !important;
     }
 
     .tour-program-card > .card-body > .form-group,
     .tour-program-card > .card-body > .row,
     .tour-program-card > .card-body > .card {
-        margin-bottom: 14px !important;
+        margin-bottom: 22px !important;
     }
 
     .tour-program-card .control-label,
     .tour-program-card .activity-row label {
-        margin-bottom: 5px;
+        margin-bottom: 8px;
         font-size: 13px;
     }
 
@@ -49,7 +49,7 @@
     }
 
     .tour-program-card > .card-body > .card > .card-header {
-        padding: 10px 12px;
+        padding: 14px 18px !important;
     }
 
     .tour-program-card > .card-body > .card > .card-header h5 {
@@ -57,12 +57,12 @@
     }
 
     .tour-program-card > .card-body > .card > .card-body {
-        padding: 12px;
+        padding: 18px !important;
     }
 
     .tour-program-card .activity-row {
-        margin-bottom: 10px !important;
-        padding: 12px !important;
+        margin-bottom: 14px !important;
+        padding: 16px !important;
     }
 
     .tour-program-card .staff-picker-layout {
@@ -70,21 +70,21 @@
     }
 
     .tour-program-card .staff-picker-panel {
-        padding: 10px;
+        padding: 14px;
     }
 
     .tour-program-card .staff-picker-heading {
-        margin-bottom: 8px;
+        margin-bottom: 12px;
     }
 
     .tour-program-card .staff-picker-list {
-        gap: 8px;
-        max-height: 280px;
+        gap: 10px;
+        max-height: 330px;
     }
 
     .tour-program-card .staff-picker-card {
-        min-height: 66px;
-        padding: 9px 38px 9px 9px;
+        min-height: 74px;
+        padding: 12px 42px 12px 12px;
     }
 
     .tour-program-card .staff-picker-avatar {
@@ -95,12 +95,18 @@
 
     @media (max-width: 767.98px) {
         .tour-program-card > .card-body {
-            padding: 12px;
+            padding: 18px !important;
         }
 
     }
 </style>
-<div class="container-fluid">
+<div class="container-fluid admin-form-page">
+    @php
+        $adminUser = Auth::guard('admins')->user();
+        $canPublishTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'duyet-xuat-ban-tour']);
+        $canCreateTourStaff = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-nhan-su-tour']);
+        $tourStatusValue = old('t_status', isset($tour->t_status) ? $tour->t_status : \App\Models\Tour::STATUS_PENDING_REVIEW);
+    @endphp
     <form role="form" action="" method="post" enctype="multipart/form-data">
         @csrf
         <div class="row">
@@ -122,7 +128,7 @@
                         </div>
 
                         <div class="row mb-4">
-                            <div class="col-sm-12 col-md-6 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
                                 <div class="form-group mb-0">
                                     <label class="control-label font-weight-bold text-muted">Địa điểm <sup class="text-danger">(*)</sup></label>
                                     <select class="form-control custom-select px-3 py-2" name="t_location_id" style="border-radius: 5px;">
@@ -138,16 +144,40 @@
                                     @endif
                                 </div>
                             </div>
-                            <div class="col-sm-12 col-md-6">
+                            <div class="col-sm-12 col-md-4 mb-3 mb-md-0">
                                 <div class="form-group mb-0">
-                                    <label class="control-label font-weight-bold text-muted">Trạng thái</label>
-                                    <select class="form-control custom-select px-3 py-2" name="t_status" style="border-radius: 5px;">
-                                        @foreach($status as $key => $statu)
-                                            <option {{old('t_status', isset($tour->t_status ) ? $tour->t_status : '') == $key ? 'selected="selected"' : ''}} value="{{$key}}">
-                                                {{$statu}}
+                                    <label class="control-label font-weight-bold text-muted">Loại tour</label>
+                                    <select class="form-control custom-select px-3 py-2" name="t_type" style="border-radius: 5px;">
+                                        <option value="">-- Chọn loại tour --</option>
+                                        @foreach(\App\Models\Tour::TOUR_TYPES as $key => $label)
+                                            <option value="{{ $key }}" {{ old('t_type', isset($tour) ? $tour->t_type : '') === $key ? 'selected="selected"' : '' }}>
+                                                {{ $label }}
                                             </option>
                                         @endforeach
                                     </select>
+                                    @if($errors->has('t_type'))
+                                        <span class="text-danger small mt-1 d-block"><i class="fas fa-exclamation-circle mr-1"></i>{{ $errors->first('t_type') }}</span>
+                                    @endif
+                                </div>
+                            </div>
+                            <div class="col-sm-12 col-md-4">
+                                <div class="form-group mb-0">
+                                    <label class="control-label font-weight-bold text-muted">Trạng thái</label>
+                                    @if($canPublishTour)
+                                        <select class="form-control custom-select px-3 py-2" name="t_status" style="border-radius: 5px;">
+                                            @foreach($status as $key => $statu)
+                                                <option {{ (string) $tourStatusValue === (string) $key ? 'selected="selected"' : '' }} value="{{$key}}">
+                                                    {{$statu}}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @else
+                                        <input type="hidden" name="t_status" value="{{ \App\Models\Tour::STATUS_PENDING_REVIEW }}">
+                                        <div class="form-control px-3 py-2 bg-light text-muted" style="border-radius: 5px;">
+                                            Chờ duyệt
+                                        </div>
+                                        <small class="text-muted d-block mt-1">Tour cần được duyệt trước khi hiển thị công khai.</small>
+                                    @endif
                                     @if($errors->has('t_status'))
                                         <span class="text-danger small mt-1 d-block"><i class="fas fa-exclamation-circle mr-1"></i>{{ $errors->first('t_status') }}</span>
                                     @endif
@@ -497,9 +527,11 @@
                         <div class="card border mb-4">
                             <div class="card-header bg-light d-flex align-items-center justify-content-between">
                                 <h5 class="mb-0 font-weight-bold text-dark"><i class="fas fa-user-tie text-success mr-1"></i> Hướng dẫn viên phụ trách</h5>
+                                @if($canCreateTourStaff)
                                 <a href="{{ route('tour.guide.create') }}" class="btn btn-sm btn-outline-success ml-auto">
                                     <i class="fas fa-plus mr-1"></i> Thêm nhân sự
                                 </a>
+                                @endif
                             </div>
                             <div class="card-body">
                                 @if($tourLeaders->isEmpty() && $tourGuideStaff->isEmpty())

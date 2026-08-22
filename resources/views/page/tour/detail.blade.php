@@ -332,6 +332,40 @@
     height: auto;
     border-radius: 8px;
 }
+.itinerary-timeline {
+    position: relative;
+    display: grid;
+    gap: 16px;
+    margin-top: 18px;
+}
+.itinerary-day {
+    display: grid;
+    grid-template-columns: 46px 1fr;
+    gap: 14px;
+    align-items: start;
+}
+.itinerary-day__marker {
+    width: 38px;
+    height: 38px;
+    border-radius: 50%;
+    background: #fff4ee;
+    color: var(--primary);
+    border: 2px solid rgba(241, 93, 48, .22);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 900;
+}
+.itinerary-day__body {
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    padding: 16px 18px;
+    background: #fff;
+}
+.itinerary-day__body h3 {
+    margin-top: 0;
+    color: var(--primary);
+}
 .empty-soft {
     margin: 0;
     padding: 16px;
@@ -410,6 +444,37 @@
 .comment-form textarea:focus {
     border-color: var(--primary);
     box-shadow: 0 0 0 3px rgba(241,93,48,.1);
+}
+.comment-rating-input {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 12px;
+    color: var(--text-muted);
+    font-size: 13px;
+    font-weight: 800;
+}
+.comment-rating-stars {
+    display: inline-flex;
+    flex-direction: row-reverse;
+    gap: 4px;
+}
+.comment-rating-stars input {
+    position: absolute;
+    opacity: 0;
+    pointer-events: none;
+}
+.comment-rating-stars label {
+    margin: 0;
+    color: #d7dee8;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+}
+.comment-rating-stars input:checked ~ label,
+.comment-rating-stars label:hover,
+.comment-rating-stars label:hover ~ label {
+    color: #f7c94b;
 }
 .comment-checkin-box {
     margin-top: 12px;
@@ -856,7 +921,19 @@
                 <div class="content-card" id="schedule">
                     <div class="content-card__body rich-content">
                         <div class="section-label"><i class="fa fa-list-alt"></i> Lịch trình chi tiết từng ngày</div>
-                        @if(trim(strip_tags((string) $tour->t_description)) !== '')
+                        @if(!empty($itineraryDays))
+                            <div class="itinerary-timeline">
+                                @foreach($itineraryDays as $index => $day)
+                                    <div class="itinerary-day">
+                                        <div class="itinerary-day__marker">{{ $index + 1 }}</div>
+                                        <div class="itinerary-day__body">
+                                            <h3>{{ $day['title'] }}</h3>
+                                            {!! $day['content'] !!}
+                                        </div>
+                                    </div>
+                                @endforeach
+                            </div>
+                        @elseif(trim(strip_tags((string) $tour->t_description)) !== '')
                             {!! $tour->t_description !!}
                         @else
                             <p class="empty-soft">Lịch trình chi tiết từng ngày đang được cập nhật theo chương trình tour {{ $durationText }}.</p>
@@ -936,10 +1013,19 @@
                             <p class="empty-soft" style="text-align:center;">Chưa có bình luận nào cho tour này.</p>
                         @endif
 
-                        @if(Auth::guard('users')->check())
+                        @if(Auth::guard('users')->check() && $canReviewTour)
                             <div class="comment-form" style="margin-top:20px;padding-top:20px;border-top:1px solid var(--border);">
-                                <div class="section-label"><i class="fa fa-edit"></i> Viết bình luận</div>
+                                <div class="section-label"><i class="fa fa-edit"></i> Viết đánh giá tour</div>
                                 <form action="#" enctype="multipart/form-data">
+                                    <div class="comment-rating-input">
+                                        <span>Điểm sao</span>
+                                        <div class="comment-rating-stars" aria-label="Chọn điểm đánh giá">
+                                            @for($star = 5; $star >= 1; $star--)
+                                                <input type="radio" id="tour-rating-{{ $star }}" name="rating" value="{{ $star }}" {{ $star === 5 ? 'checked' : '' }}>
+                                                <label for="tour-rating-{{ $star }}"><i class="fa fa-star"></i></label>
+                                            @endfor
+                                        </div>
+                                    </div>
                                     <textarea id="message" placeholder="Chia sẻ đánh giá hoặc trải nghiệm của bạn về tour này..."></textarea>
                                     <div class="comment-checkin-box">
                                         <label class="comment-checkin-label" for="checkin_images">
@@ -952,9 +1038,14 @@
                                     </div>
                                     <span class="text-errors-comment" style="display:none;color:#e74c3c;font-size:13px;">Vui lòng nhập nội dung bình luận!</span>
                                     <button type="button" class="btn-comment-submit btn-comment" tour_id="{{ $tour->id }}">
-                                        <i class="fa fa-paper-plane"></i> Gửi bình luận
+                                        <i class="fa fa-paper-plane"></i> Gửi đánh giá
                                     </button>
                                 </form>
+                            </div>
+                        @elseif(Auth::guard('users')->check())
+                            <div style="margin-top:16px;padding:14px 18px;background:#f8f9fc;border-radius:8px;text-align:center;font-size:14px;color:var(--text-muted);">
+                                <i class="fa fa-shield" style="color:var(--primary);margin-right:6px;"></i>
+                                Chỉ khách đã có booking tour được xác nhận mới được gửi đánh giá.
                             </div>
                         @else
                             <div style="margin-top:16px;padding:14px 18px;background:#f8f9fc;border-radius:8px;text-align:center;font-size:14px;color:var(--text-muted);">

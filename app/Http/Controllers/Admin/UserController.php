@@ -11,6 +11,9 @@ use App\Services\AdminAuditLogger;
 
 class UserController extends Controller
 {
+    private const CUSTOMER_ROLE_NAMES = ['khach-hang', 'khach_hang', 'customer'];
+    private const CUSTOMER_ROLE_DISPLAY_NAMES = ['Khách hàng', 'Khach hang', 'Customer'];
+
     protected $auditLogger;
 
     public function __construct(Role $role, AdminAuditLogger $auditLogger)
@@ -32,8 +35,47 @@ class UserController extends Controller
      */
     public function index(Request $request)
     {
+        view()->share([
+            'user_staff_active' => 'active',
+        ]);
+
+        return $this->renderUserList($request, 'staff');
+    }
+
+    public function customers(Request $request)
+    {
+        view()->share([
+            'user_customer_active' => 'active',
+        ]);
+
+        return $this->renderUserList($request, 'customers');
+    }
+
+    private function renderUserList(Request $request, string $listType)
+    {
         $users = User::with('userRole');
 
+        if ($listType === 'customers') {
+            $this->scopeCustomers($users);
+        } else {
+            $this->scopeStaff($users);
+        }
+
+        $this->applyFilters($users, $request);
+
+        $users = $users->orderByDesc('id')
+            ->paginate(NUMBER_PAGINATION)
+            ->appends($request->query());
+
+        $staffCount = $this->countStaffUsers();
+        $customerCount = $this->countCustomerUsers();
+        $filterRoles = $this->getFilterRoles($listType);
+
+        return view('admin.user.index', compact('users', 'listType', 'staffCount', 'customerCount', 'filterRoles'));
+    }
+
+    private function applyFilters($users, Request $request): void
+    {
         if ($request->name) {
             $users->where('name', 'like', '%'.$request->name.'%');
         }
@@ -43,19 +85,72 @@ class UserController extends Controller
         if ($request->phone) {
             $users->where('phone', 'like', '%'.$request->phone.'%');
         }
-         
+
         if ($request->user_id) {
             $users->where('user_id', $request->user_id);
-          
         }
-        
+
         if ($request->role_id) {
             $listUser = \DB::table('role_user')->where('role_id', $request->role_id)->pluck('user_id');
             $users->whereIn('id', $listUser);
         }
+    }
 
-        $users = $users->orderByDesc('id')->paginate(NUMBER_PAGINATION);
-        return view('admin.user.index', compact('users'));
+    private function scopeStaff($users): void
+    {
+        $users->whereHas('userRole', function ($role) {
+            $this->scopeInternalRole($role);
+        });
+    }
+
+    private function scopeCustomers($users): void
+    {
+        $users->whereDoesntHave('userRole', function ($role) {
+            $this->scopeInternalRole($role);
+        });
+    }
+
+    private function scopeInternalRole($role): void
+    {
+        $role->where(function ($query) {
+            $query->whereNotIn('name', self::CUSTOMER_ROLE_NAMES)
+                ->orWhereNull('name');
+        })->where(function ($query) {
+            $query->whereNotIn('display_name', self::CUSTOMER_ROLE_DISPLAY_NAMES)
+                ->orWhereNull('display_name');
+        });
+    }
+
+    private function countStaffUsers(): int
+    {
+        $query = User::query();
+        $this->scopeStaff($query);
+
+        return $query->count();
+    }
+
+    private function countCustomerUsers(): int
+    {
+        $query = User::query();
+        $this->scopeCustomers($query);
+
+        return $query->count();
+    }
+
+    private function getFilterRoles(string $listType)
+    {
+        $roles = Role::query()->orderBy('display_name');
+
+        if ($listType === 'customers') {
+            $roles->where(function ($query) {
+                $query->whereIn('name', self::CUSTOMER_ROLE_NAMES)
+                    ->orWhereIn('display_name', self::CUSTOMER_ROLE_DISPLAY_NAMES);
+            });
+        } else {
+            $this->scopeInternalRole($roles);
+        }
+
+        return $roles->get();
     }
 
     /**

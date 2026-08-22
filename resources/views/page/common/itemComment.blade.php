@@ -8,6 +8,7 @@
                 ? $comment->user->name
                 : 'Ẩn danh';
             $initials  = mb_strtoupper(mb_substr($userName, 0, 1, 'UTF-8'), 'UTF-8');
+            $rating = max(0, min(5, (int) ($comment->cm_rating ?: 0)));
         @endphp
         <img src="{{ $avatarSrc }}" alt="{{ $userName }}" loading="lazy">
     </div>
@@ -15,13 +16,13 @@
         <div class="cmt-header">
             <div class="cmt-author-rating">
                 <span class="cmt-name">{{ $userName }}</span>
-                <span class="cmt-stars" aria-label="5 sao">
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                    <i class="fa fa-star"></i>
-                </span>
+                @if($rating > 0)
+                    <span class="cmt-stars" aria-label="{{ $rating }} sao">
+                        @for($star = 1; $star <= 5; $star++)
+                            <i class="fa {{ $star <= $rating ? 'fa-star' : 'fa-star-o' }}"></i>
+                        @endfor
+                    </span>
+                @endif
             </div>
             <span class="cmt-time">
                 <i class="fa fa-clock-o"></i>

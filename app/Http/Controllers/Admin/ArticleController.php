@@ -62,7 +62,15 @@ class ArticleController extends Controller
         }
 
         $articles = $articles->paginate(NUMBER_PAGINATION)->withQueryString();
+
         return view('admin.article.index', compact('articles'));
+    }
+
+    public function preview($id)
+    {
+        $article = Article::with('category')->findOrFail($id);
+
+        return view('admin.article.preview', compact('article'));
     }
 
     /**

@@ -19,6 +19,12 @@
 
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canCreateTourGuide = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-nhan-su-tour']);
+                $canEditTourGuide = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-nhan-su-tour']);
+                $canDeleteTourGuide = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-nhan-su-tour', 'xoa-tour']);
+            @endphp
             <div class="card shadow-sm mb-4">
                 <div class="card-header border-0 bg-white pb-0">
                     <h3 class="card-title font-weight-bold text-muted"><i class="fas fa-search mr-1"></i> Tìm kiếm nhân sự</h3>
@@ -52,9 +58,11 @@
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">Danh sách nhân sự tour</h3>
                     <div class="card-tools ml-auto">
+                        @if($canCreateTourGuide)
                         <a href="{{ route('tour.guide.create') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle mr-1"></i> Thêm Mới
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive">
@@ -111,12 +119,16 @@
                                         </td>
                                         <td class="text-center align-middle">
                                             <div class="btn-group">
+                                                @if($canEditTourGuide)
                                                 <a href="{{ route('tour.guide.update', $guide->id) }}" class="btn btn-info btn-sm" title="Chỉnh sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endif
+                                                @if($canDeleteTourGuide)
                                                 <a href="{{ route('tour.guide.delete', $guide->id) }}" class="btn btn-danger btn-sm btn-confirm-delete" title="Xóa">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

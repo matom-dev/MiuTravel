@@ -76,5 +76,22 @@ class User extends Authenticatable
             ->exists();
     }
 
+    public function hasRoleName($roles): bool
+    {
+        $roles = is_string($roles)
+            ? (preg_split('/[|,]/', $roles) ?: [])
+            : (array) $roles;
+
+        $roles = array_filter(array_map('trim', $roles));
+
+        if ($roles === []) {
+            return false;
+        }
+
+        return $this->userRole()
+            ->whereIn('name', $roles)
+            ->exists();
+    }
+
     public $timestamps = true;
 }

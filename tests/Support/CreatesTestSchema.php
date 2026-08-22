@@ -64,6 +64,7 @@ trait CreatesTestSchema
                 $table->json('t_anbum_image')->nullable();
                 $table->string('t_image')->nullable();
                 $table->unsignedBigInteger('t_location_id')->nullable();
+                $table->string('t_type', 30)->nullable();
                 $table->unsignedBigInteger('t_user_id')->nullable();
                 $table->unsignedInteger('t_number_registered')->default(0);
                 $table->unsignedInteger('t_follow')->default(0);
@@ -123,6 +124,7 @@ trait CreatesTestSchema
                 $table->unsignedBigInteger('cm_hotel_id')->nullable();
                 $table->unsignedBigInteger('cm_tour_id')->nullable();
                 $table->text('cm_content')->nullable();
+                $table->unsignedTinyInteger('cm_rating')->nullable();
                 $table->json('cm_images')->nullable();
                 $table->unsignedTinyInteger('cm_status')->default(1);
                 $table->timestamps();
@@ -132,9 +134,11 @@ trait CreatesTestSchema
         if (!Schema::hasTable('book_tours')) {
             Schema::create('book_tours', function (Blueprint $table) {
                 $table->id();
+                $table->string('b_code', 30)->nullable()->unique();
                 $table->unsignedBigInteger('b_tour_id');
                 $table->unsignedBigInteger('b_tour_schedule_id')->nullable();
                 $table->unsignedBigInteger('b_user_id');
+                $table->unsignedBigInteger('b_assigned_staff_id')->nullable();
                 $table->string('b_name');
                 $table->string('b_email');
                 $table->string('b_phone');
@@ -142,6 +146,8 @@ trait CreatesTestSchema
                 $table->dateTime('b_start_date')->nullable();
                 $table->dateTime('b_end_date')->nullable();
                 $table->text('b_note')->nullable();
+                $table->text('b_cancel_reason')->nullable();
+                $table->text('b_internal_note')->nullable();
                 $table->unsignedInteger('b_number_adults')->default(0);
                 $table->unsignedInteger('b_number_children')->default(0);
                 $table->unsignedInteger('b_number_child6')->default(0);

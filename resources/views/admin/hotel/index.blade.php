@@ -20,6 +20,12 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canCreateHotel = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-khach-san']);
+                $canEditHotel = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-khach-san']);
+                $canDeleteHotel = $adminUser && $adminUser->can(['full-quyen-quan-ly']);
+            @endphp
             <div class="row">
                 <div class="col-12">
                     <div class="card shadow-sm mb-4">
@@ -64,9 +70,11 @@
                         <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
                             <h5 class="card-title font-weight-bold text-muted mb-0"><i class="fas fa-bed mr-1"></i> Quản lý thông tin kết nối khách sạn</h5>
                             <div class="card-tools ml-auto">
+                                @if($canCreateHotel)
                                 <a href="{{ route('hotel.create') }}" class="btn btn-primary font-weight-bold shadow-sm">
                                     <i class="fas fa-plus-circle mr-1"></i> Thêm mới
                                 </a>
+                                @endif
                             </div>
                         </div>
                         <!-- /.card-header -->
@@ -114,27 +122,35 @@
                                                         </div>
                                                     </td>
                                                     <td class="text-center">
-                                                        @if($hotel->h_status == 1)
-                                                            <span class="badge badge-success px-2 py-1"><i class="fas fa-check-circle mr-1"></i>Hiển thị</span>
-                                                        @else
-                                                            <span class="badge badge-danger px-2 py-1"><i class="fas fa-eye-slash mr-1"></i>Ẩn</span>
-                                                        @endif
+                                                        <span class="badge badge-{{ $hotel->status_badge_class }} px-2 py-1">
+                                                            <i class="{{ $hotel->status_icon }} mr-1"></i>{{ $hotel->status_label }}
+                                                        </span>
                                                     </td>
                                                     <td class="text-center">
+                                                        @if($canEditHotel || $canDeleteHotel)
                                                         <div class="btn-group">
                                                             <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-icon" data-toggle="dropdown">
                                                                 Tác vụ
                                                             </button>
                                                             <div class="dropdown-menu dropdown-menu-right">
+                                                                @if($canEditHotel)
                                                                 <a class="dropdown-item text-primary" href="{{ route('hotel.update', $hotel->id) }}">
                                                                     <i class="fas fa-edit mr-1"></i> Chỉnh sửa
                                                                 </a>
+                                                                @endif
+                                                                @if($canEditHotel && $canDeleteHotel)
                                                                 <div class="dropdown-divider"></div>
+                                                                @endif
+                                                                @if($canDeleteHotel)
                                                                 <a class="dropdown-item text-danger btn-confirm-delete" href="{{ route('hotel.delete', $hotel->id) }}">
                                                                     <i class="fas fa-trash-alt mr-1"></i> Xóa bỏ
                                                                 </a>
+                                                                @endif
                                                             </div>
                                                         </div>
+                                                        @else
+                                                            <span class="text-muted">---</span>
+                                                        @endif
                                                     </td>
                                                 </tr>
                                                 @php $i++ @endphp

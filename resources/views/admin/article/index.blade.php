@@ -20,6 +20,13 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canPreviewArticle = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canCreateArticle = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canEditArticle = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canDeleteArticle = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'xoa-noi-dung']);
+            @endphp
             <!-- Form Tìm kiếm -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header border-0 bg-white pb-0">
@@ -85,9 +92,11 @@
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">Danh sách Bài viết</h3>
                     <div class="card-tools ml-auto">
+                        @if($canCreateArticle)
                         <a href="{{ route('article.create') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle mr-1"></i> Thêm Mới
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive">
@@ -134,12 +143,21 @@
                                         <td class="text-center text-muted" style="font-size: 13px;">{{ date('d-m-Y', strtotime($article->created_at)) }}</td>
                                         <td class="text-center">
                                             <div class="btn-group">
+                                                @if($canPreviewArticle)
+                                                <a href="{{ route('article.preview', $article->id) }}" class="btn btn-outline-secondary btn-sm" title="Preview">
+                                                    <i class="fas fa-eye"></i>
+                                                </a>
+                                                @endif
+                                                @if($canEditArticle)
                                                 <a href="{{ route('article.update', $article->id) }}" class="btn btn-info btn-sm" title="Chỉnh sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endif
+                                                @if($canDeleteArticle)
                                                 <a href="{{ route('article.delete', $article->id) }}" class="btn btn-danger btn-sm btn-confirm-delete" title="Xóa">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

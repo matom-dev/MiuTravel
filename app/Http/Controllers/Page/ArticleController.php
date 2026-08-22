@@ -6,6 +6,7 @@ use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Article;
 use App\Models\Category;
+use App\Models\Comment;
 
 class ArticleController extends Controller
 {
@@ -69,9 +70,9 @@ class ArticleController extends Controller
     {
         $article = Article::with(['user', 'category', 'comments' => function ($query) use ($id) {
             $query->with(['user', 'replies' => function ($q) {
-                $q->with('user')->limit(10);
+                $q->with('user')->where('cm_status', Comment::STATUS_APPROVED)->limit(10);
             }])->where('cm_article_id', $id)
-              ->where('cm_status', '!=', 3)
+              ->where('cm_status', Comment::STATUS_APPROVED)
               ->limit(20)
               ->orderByDesc('id');
         }])->find($id);

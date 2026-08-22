@@ -436,9 +436,15 @@
     }
 
     .hotel-filter-stars,
-    .hotel-card__stars {
+    .hotel-card__rating {
         color: #f5a000;
         white-space: nowrap;
+    }
+
+    .hotel-card__rating {
+        font-size: 13px;
+        line-height: 1;
+        margin: -2px 0 9px;
     }
 
 
@@ -470,16 +476,6 @@
         font-size: 12px;
         font-weight: 750;
         padding: 5px 9px;
-    }
-
-    .hotel-card__meta {
-        align-items: center;
-        color: #667085;
-        display: flex;
-        font-size: 12px;
-        font-weight: 700;
-        gap: 8px;
-        margin-bottom: 8px;
     }
 
     .hotel-list-section .hotel-card__img {
@@ -830,13 +826,12 @@
                     @endif
                 </div>
 
-                <div class="row mt-5">
-                    <div class="col text-center">
-                        <div class="block-27">
-                            {{ $hotels->links('page.pagination.default') }}
-                        </div>
+                @if($hotels->hasPages())
+                    <div class="block-27 mt-5 d-flex justify-content-center">
+                        {{ $hotels->links('page.pagination.default') }}
                     </div>
-                </div>
+                @endif
+
             </div>
         </div>
     </div>

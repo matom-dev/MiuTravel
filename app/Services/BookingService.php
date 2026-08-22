@@ -6,7 +6,6 @@ use App\Jobs\CreateAppNotification;
 use App\Models\BookingStatusHistory;
 use App\Models\BookTour;
 use App\Models\Tour;
-use App\Models\TourSchedule;
 use App\Models\User;
 use Carbon\Carbon;
 use Illuminate\Support\Facades\DB;
@@ -21,9 +20,6 @@ class BookingService
             if (!$tour || (int) $tour->t_status !== 1) {
                 throw new \DomainException('Tour không tồn tại hoặc không còn nhận đặt chỗ');
             }
-
-            $guestCount = $this->guestCount($data);
-            $this->ensureCapacity($tour, $guestCount);
 
             $adultPrice = $this->discountedPrice($tour->t_price_adults, $tour->t_sale);
             $childPrice = $this->discountedPrice($tour->t_price_children, $tour->t_sale);
@@ -43,8 +39,8 @@ class BookingService
                 'b_price_child2' => $childPrice * 25 / 100,
             ]));
 
-            $tour->t_follow = (int) $tour->t_follow + $guestCount;
-            $tour->save();
+            $book->b_code = BookTour::makeCode((int) $book->id, $book->created_at);
+            $book->save();
 
             $this->recordStatusHistory($book, null, BookTour::STATUS_PENDING, $user, 'users', 'Khách tạo booking');
 
@@ -55,7 +51,7 @@ class BookingService
                 'message' => 'Khách ' . $user->name . ' vừa đặt tour theo ngày khởi hành mong muốn '
                     . $book->b_start_date->format('d/m/Y') . ' - ' . $book->b_end_date->format('d/m/Y')
                     . ': "' . $tour->t_title . '".',
-                'url' => route('book.tour.index'),
+                'url' => route('book.tour.index', [], false),
                 'data' => [
                     'book_tour_id' => $book->id,
                     'tour_id' => $tour->id,
@@ -71,9 +67,9 @@ class BookingService
         });
     }
 
-    public function changeStatus(BookTour $booking, int $newStatus): array
+    public function changeStatus(BookTour $booking, int $newStatus, ?string $note = null, ?User $actor = null, ?string $guard = null): array
     {
-        return DB::transaction(function () use ($booking, $newStatus) {
+        return DB::transaction(function () use ($booking, $newStatus, $note, $actor, $guard) {
             $bookTour = BookTour::where('id', $booking->id)->lockForUpdate()->first();
 
             if (!$bookTour) {
@@ -90,32 +86,25 @@ class BookingService
                 throw new \DomainException('Thao tác chuyển trạng thái không hợp lệ');
             }
 
+            $note = trim((string) $note);
             $bookTour->b_status = $newStatus;
+            if ($newStatus === BookTour::STATUS_CANCELLED && $note !== '') {
+                $bookTour->b_cancel_reason = $note;
+            }
             $bookTour->save();
 
-            $tour = Tour::where('id', $bookTour->b_tour_id)->lockForUpdate()->first();
+            $tour = Tour::where('id', $bookTour->b_tour_id)->first();
             if (!$tour) {
                 throw new \DomainException('Tour của đơn đặt không tồn tại');
-            }
-
-            $schedule = $this->lockedSchedule($bookTour, $tour);
-            $guestCount = $this->guestCount($bookTour->toArray());
-
-            if ($newStatus === BookTour::STATUS_CONFIRMED) {
-                $this->confirmSeats($tour, $schedule, $guestCount);
-            }
-
-            if ($newStatus === BookTour::STATUS_CANCELLED) {
-                $this->releaseSeats($tour, $schedule, $guestCount, $currentStatus);
             }
 
             $this->recordStatusHistory(
                 $bookTour,
                 $currentStatus,
                 $newStatus,
-                auth('admins')->user(),
-                auth('admins')->check() ? 'admins' : null,
-                'Cập nhật trạng thái booking'
+                $actor ?: auth('admins')->user(),
+                $guard ?: (auth('admins')->check() ? 'admins' : null),
+                $note !== '' ? $note : 'Cập nhật trạng thái booking'
             );
 
             CreateAppNotification::dispatch([
@@ -129,7 +118,7 @@ class BookingService
                     . ($bookTour->b_end_date ? $bookTour->b_end_date->format('d/m/Y') : '---')
                     . ' đã chuyển sang trạng thái ' . (BookTour::STATUS[$newStatus] ?? 'mới')
                     . '. Tổng tiền tạm tính: ' . number_format($bookTour->total_price, 0, ',', '.') . ' đ.',
-                'url' => route('my.tour'),
+                'url' => route('my.tour', [], false),
                 'data' => [
                     'book_tour_id' => $bookTour->id,
                     'tour_id' => $tour->id,
@@ -151,78 +140,9 @@ class BookingService
         });
     }
 
-    private function confirmSeats(Tour $tour, ?TourSchedule $schedule, int $guestCount): void
-    {
-        if ($schedule) {
-            $schedule->ts_number_registered += $guestCount;
-            $schedule->ts_follow = max(0, (int) $schedule->ts_follow - $guestCount);
-            $schedule->save();
-        }
-
-        $tour->t_number_registered += $guestCount;
-        $tour->t_follow = max(0, (int) $tour->t_follow - $guestCount);
-        $tour->save();
-    }
-
-    private function releaseSeats(Tour $tour, ?TourSchedule $schedule, int $guestCount, int $currentStatus): void
-    {
-        if ($currentStatus === BookTour::STATUS_PENDING) {
-            if ($schedule) {
-                $schedule->ts_follow = max(0, (int) $schedule->ts_follow - $guestCount);
-                $schedule->save();
-            }
-
-            $tour->t_follow = max(0, (int) $tour->t_follow - $guestCount);
-        } else {
-            if ($schedule) {
-                $schedule->ts_number_registered = max(0, (int) $schedule->ts_number_registered - $guestCount);
-                $schedule->save();
-            }
-
-            $tour->t_number_registered = max(0, (int) $tour->t_number_registered - $guestCount);
-        }
-
-        $tour->save();
-    }
-
-    private function lockedSchedule(BookTour $bookTour, Tour $tour): ?TourSchedule
-    {
-        if (!$bookTour->b_tour_schedule_id) {
-            return null;
-        }
-
-        return TourSchedule::where('id', $bookTour->b_tour_schedule_id)
-            ->where('ts_tour_id', $tour->id)
-            ->lockForUpdate()
-            ->first();
-    }
-
-    private function guestCount(array $data): int
-    {
-        return (int) ($data['b_number_adults'] ?? 0)
-            + (int) ($data['b_number_children'] ?? 0)
-            + (int) ($data['b_number_child6'] ?? 0)
-            + (int) ($data['b_number_child2'] ?? 0);
-    }
-
     private function discountedPrice($price, $sale)
     {
         return (int) $price - ((int) $price * (int) $sale / 100);
-    }
-
-    private function ensureCapacity(Tour $tour, int $guestCount): void
-    {
-        $capacity = (int) $tour->t_number_guests;
-
-        if ($capacity <= 0) {
-            return;
-        }
-
-        $reserved = (int) $tour->t_number_registered + (int) $tour->t_follow;
-
-        if ($reserved + $guestCount > $capacity) {
-            throw new \DomainException('Tour không còn đủ chỗ cho số khách yêu cầu');
-        }
     }
 
     private function recordStatusHistory(

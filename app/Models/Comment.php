@@ -11,16 +11,20 @@ class Comment extends Model
     protected $table = 'comments';
     public $timestamps = true;
 
+    public const STATUS_PENDING = 1;
+    public const STATUS_APPROVED = 2;
+    public const STATUS_HIDDEN = 3;
+
     const STATUS = [
-        1 => 'Hiển thị',
-        2 => 'Nổi bật',
-        3 => 'Ẩn'
+        self::STATUS_PENDING => 'Chờ duyệt',
+        self::STATUS_APPROVED => 'Đã duyệt',
+        self::STATUS_HIDDEN => 'Ẩn',
     ];
 
     const CLASS_STATUS = [
-        1 => 'btn-info',
-        2 => 'btn-success',
-        3 => 'btn-warning',
+        self::STATUS_PENDING => 'btn-warning',
+        self::STATUS_APPROVED => 'btn-success',
+        self::STATUS_HIDDEN => 'btn-secondary',
     ];
 
     protected $fillable = [
@@ -30,11 +34,14 @@ class Comment extends Model
         'cm_hotel_id',
         'cm_tour_id',
         'cm_content',
+        'cm_rating',
         'cm_images',
+        'cm_status',
     ];
 
     protected $casts = [
         'cm_images' => 'array',
+        'cm_rating' => 'integer',
     ];
 
     public function user()

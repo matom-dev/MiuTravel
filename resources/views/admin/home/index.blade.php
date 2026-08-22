@@ -71,7 +71,7 @@
     }
 
     .mini-stat-grid {
-        grid-template-columns: repeat(6, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
         margin-bottom: 16px;
     }
 
@@ -360,7 +360,7 @@
 
     .dashboard-summary {
         display: grid;
-        grid-template-columns: repeat(4, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         margin-bottom: 16px;
         background: #fff;
         border: 1px solid #e9edf2;
@@ -373,7 +373,8 @@
         align-items: center;
         gap: 10px;
         min-width: 0;
-        padding: 13px 16px;
+        min-height: 92px;
+        padding: 16px 18px;
         color: inherit;
         text-decoration: none;
         border-right: 1px solid #eef1f4;
@@ -436,13 +437,17 @@
 
     .dashboard-main-grid {
         display: grid;
-        grid-template-columns: minmax(0, 2fr) minmax(300px, 1fr);
-        grid-template-areas:
-            "revenue status"
-            "monthly bookings";
+        grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
         gap: 20px;
         align-items: stretch;
         margin-bottom: 20px;
+    }
+
+    .dashboard-main-grid--revenue.dashboard-main-grid--booking {
+        grid-template-columns: minmax(0, 2fr) minmax(320px, 1fr);
+        grid-template-areas:
+            "revenue status"
+            "monthly bookings";
     }
 
     .dashboard-grid-card {
@@ -464,18 +469,34 @@
     }
 
     .dashboard-revenue-card {
-        grid-area: revenue;
+        grid-area: auto;
     }
 
     .dashboard-status-card {
-        grid-area: status;
+        grid-area: auto;
     }
 
     .dashboard-monthly-card {
-        grid-area: monthly;
+        grid-area: auto;
     }
 
     .dashboard-bookings-card {
+        grid-area: auto;
+    }
+
+    .dashboard-main-grid--revenue.dashboard-main-grid--booking .dashboard-revenue-card {
+        grid-area: revenue;
+    }
+
+    .dashboard-main-grid--revenue.dashboard-main-grid--booking .dashboard-status-card {
+        grid-area: status;
+    }
+
+    .dashboard-main-grid--revenue.dashboard-main-grid--booking .dashboard-monthly-card {
+        grid-area: monthly;
+    }
+
+    .dashboard-main-grid--revenue.dashboard-main-grid--booking .dashboard-bookings-card {
         grid-area: bookings;
     }
 
@@ -494,7 +515,7 @@
     }
     .dashboard-follow-up {
         display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
     }
 
     .dashboard-follow-up-section {
@@ -538,6 +559,9 @@
 
         .dashboard-main-grid {
             grid-template-columns: 1fr;
+        }
+
+        .dashboard-main-grid--revenue.dashboard-main-grid--booking {
             grid-template-areas:
                 "revenue"
                 "monthly"
@@ -622,6 +646,23 @@
 </style>
 @stop
 @section('content')
+@php
+    $adminUser = Auth::guard('admins')->user();
+    $isFullAdmin = $adminUser && $adminUser->can('full-quyen-quan-ly');
+    $canPublishTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'duyet-xuat-ban-tour']);
+    $canCreateTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
+    $canViewTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
+    $canOperateBooking = $adminUser && (
+        $isFullAdmin
+        || $adminUser->can('cap-nhat-trang-thai-dat-tour')
+        || $adminUser->hasRoleName(['quan-ly-van-hanh', 'nhan-vien-booking'])
+    );
+    $canViewRevenue = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'xem-doanh-thu']);
+    $canManageContent = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+    $canManageComments = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-binh-luan']);
+    $canViewHotel = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-khach-san']);
+    $kpiSectionLabel = $canOperateBooking ? 'KPI vận hành công ty du lịch' : 'KPI tài chính';
+@endphp
 <section class="content-header">
     <div class="container-fluid">
         <div class="dashboard-hero">
@@ -629,10 +670,11 @@
                 <h1 class="font-weight-bold">Bảng điều khiển</h1>
             </div>
             <div class="dashboard-hero-actions">
-
+                @if($canCreateTour)
                 <a href="{{ route('tour.create') }}" class="btn btn-outline-primary btn-sm">
                     <i class="fas fa-plus"></i> Thêm tour
                 </a>
+                @endif
             </div>
         </div>
     </div>
@@ -641,6 +683,7 @@
 <section class="content">
     <div class="container-fluid">
         <div class="dashboard-summary">
+            @if($canViewRevenue)
             <a href="{{ route('admin.revenue.month', ['select_month' => Request::get('select_month', date('m')), 'select_year' => Request::get('select_year', date('Y'))]) }}"
                 class="dashboard-summary-item" style="--summary-color:#047857;--summary-background:#ecfdf5;">
                 <span class="dashboard-summary-icon"><i class="fas fa-coins"></i></span>
@@ -650,6 +693,8 @@
                     <small class="dashboard-summary-meta">{{ number_format($totalGuestsMonth) }} lượt khách</small>
                 </span>
             </a>
+            @endif
+            @if($canOperateBooking)
             <a href="{{ route('book.tour.index', ['b_status' => 'pending']) }}" class="dashboard-summary-item"
                 style="--summary-color:#b45309;--summary-background:#fffbeb;">
                 <span class="dashboard-summary-icon"><i class="fas fa-clock"></i></span>
@@ -668,17 +713,136 @@
                     <small class="dashboard-summary-meta">{{ $bookingCompletionRate }}% đã hoàn tất</small>
                 </span>
             </a>
+            @endif
+            @if($canViewTour)
             <a href="{{ route('tour.index', ['t_status' => 1]) }}" class="dashboard-summary-item"
                 style="--summary-color:#6d28d9;--summary-background:#f5f3ff;">
                 <span class="dashboard-summary-icon"><i class="fas fa-route"></i></span>
                 <span class="dashboard-summary-copy">
                     <span class="dashboard-summary-label">Tour đang bán</span>
                     <strong class="dashboard-summary-value">{{ number_format($publishedTours) }} tour</strong>
-                    <small class="dashboard-summary-meta">{{ number_format($publishedHotels) }} khách sạn đang hiển thị</small>
+                    <small class="dashboard-summary-meta">{{ number_format($visibleHotels) }} khách sạn đang hiển thị</small>
                 </span>
             </a>
+            @endif
+            @if($canViewHotel)
+            <a href="{{ route('hotel.index') }}" class="dashboard-summary-item"
+                style="--summary-color:#0f766e;--summary-background:#f0fdfa;">
+                <span class="dashboard-summary-icon"><i class="fas fa-hotel"></i></span>
+                <span class="dashboard-summary-copy">
+                    <span class="dashboard-summary-label">Khách sạn</span>
+                    <strong class="dashboard-summary-value">{{ number_format($hotel) }} khách sạn</strong>
+                    <small class="dashboard-summary-meta">{{ number_format($visibleHotels) }} đang hiển thị</small>
+                </span>
+            </a>
+            @endif
+            @if($canPublishTour)
+            <a href="{{ route('tour.index', ['t_status' => \App\Models\Tour::STATUS_PENDING_REVIEW]) }}" class="dashboard-summary-item"
+                style="--summary-color:#0369a1;--summary-background:#f0f9ff;">
+                <span class="dashboard-summary-icon"><i class="fas fa-user-check"></i></span>
+                <span class="dashboard-summary-copy">
+                    <span class="dashboard-summary-label">Tour chờ duyệt</span>
+                    <strong class="dashboard-summary-value">{{ number_format($pendingReviewTours) }} tour</strong>
+                    <small class="dashboard-summary-meta">Cần kiểm tra trước khi hiển thị</small>
+                </span>
+            </a>
+            @endif
+            @if($canManageContent)
+            <a href="{{ route('article.index') }}" class="dashboard-summary-item"
+                style="--summary-color:#7c2d12;--summary-background:#fff7ed;">
+                <span class="dashboard-summary-icon"><i class="fas fa-newspaper"></i></span>
+                <span class="dashboard-summary-copy">
+                    <span class="dashboard-summary-label">Nội dung</span>
+                    <strong class="dashboard-summary-value">{{ number_format($article) }} bài</strong>
+                    <small class="dashboard-summary-meta">Bài viết, danh mục, địa điểm</small>
+                </span>
+            </a>
+            @endif
+            @if($canManageComments)
+            <a href="{{ route('comment.index') }}" class="dashboard-summary-item"
+                style="--summary-color:#4338ca;--summary-background:#eef2ff;">
+                <span class="dashboard-summary-icon"><i class="fas fa-comments"></i></span>
+                <span class="dashboard-summary-copy">
+                    <span class="dashboard-summary-label">Bình luận</span>
+                    <strong class="dashboard-summary-value">{{ number_format($comment) }} bình luận</strong>
+                    <small class="dashboard-summary-meta">{{ number_format($hiddenComments) }} bình luận đang ẩn</small>
+                </span>
+            </a>
+            @endif
+            @if($canOperateBooking)
+            <a href="{{ route('book.tour.index', ['b_status' => \App\Models\BookTour::STATUS_CANCELLED]) }}" class="dashboard-summary-item"
+                style="--summary-color:#b91c1c;--summary-background:#fef2f2;">
+                <span class="dashboard-summary-icon"><i class="fas fa-ban"></i></span>
+                <span class="dashboard-summary-copy">
+                    <span class="dashboard-summary-label">Tỷ lệ hủy</span>
+                    <strong class="dashboard-summary-value">{{ $bookingCancellationRate }}%</strong>
+                    <small class="dashboard-summary-meta">{{ number_format($cancelledBookings) }} đơn đã hủy</small>
+                </span>
+            </a>
+            <a href="{{ route('admin.booking.overview', ['upcoming' => 1]) }}" class="dashboard-summary-item"
+                style="--summary-color:#0f766e;--summary-background:#f0fdfa;">
+                <span class="dashboard-summary-icon"><i class="fas fa-calendar-day"></i></span>
+                <span class="dashboard-summary-copy">
+                    <span class="dashboard-summary-label">Sắp khởi hành</span>
+                    <strong class="dashboard-summary-value">{{ number_format($upcomingBookingCount) }} đơn</strong>
+                    <small class="dashboard-summary-meta">Đã xác nhận/thanh toán trong 3 ngày tới</small>
+                </span>
+            </a>
+            @endif
         </div>
-        <div class="dashboard-main-grid">
+        @if($canOperateBooking || $canViewRevenue)
+        <div class="dashboard-section-label">{{ $kpiSectionLabel }}</div>
+        <div class="mini-stat-grid">
+            @if($canViewRevenue)
+            <a href="{{ route('admin.revenue.month', ['select_month' => Request::get('select_month', date('m')), 'select_year' => Request::get('select_year', date('Y'))]) }}"
+                class="mini-stat-tile" style="--tile-color:#047857;">
+                <span class="mini-stat-icon"><i class="fas fa-wallet"></i></span>
+                <span>
+                    <span class="mini-stat-label">Giá trị TB/booking</span>
+                    <strong class="mini-stat-number">{{ number_format($averageBookingValue, 0, ',', '.') }} ₫</strong>
+                </span>
+            </a>
+            @endif
+            @if($canOperateBooking)
+            <a href="{{ route('book.tour.index', ['b_status' => \App\Models\BookTour::STATUS_CONFIRMED]) }}"
+                class="mini-stat-tile" style="--tile-color:#2563eb;">
+                <span class="mini-stat-icon"><i class="fas fa-check-circle"></i></span>
+                <span>
+                    <span class="mini-stat-label">Tỷ lệ xác nhận</span>
+                    <strong class="mini-stat-number">{{ $bookingConfirmationRate }}%</strong>
+                </span>
+            </a>
+            <a href="{{ route('book.tour.index', ['b_assigned_staff_id' => 'unassigned', 'b_status' => 'pending']) }}"
+                class="mini-stat-tile" style="--tile-color:#b45309;">
+                <span class="mini-stat-icon"><i class="fas fa-user-clock"></i></span>
+                <span>
+                    <span class="mini-stat-label">Chưa phân công</span>
+                    <strong class="mini-stat-number">{{ number_format($unassignedActiveBookingCount) }} đơn</strong>
+                </span>
+            </a>
+            <a href="{{ route('book.tour.index') }}"
+                class="mini-stat-tile" style="--tile-color:#7c3aed;">
+                <span class="mini-stat-icon"><i class="fas fa-redo-alt"></i></span>
+                <span>
+                    <span class="mini-stat-label">Khách quay lại</span>
+                    <strong class="mini-stat-number">{{ $returningCustomerRate }}%</strong>
+                </span>
+            </a>
+            @endif
+            @if($canViewRevenue)
+            <a href="{{ route('admin.revenue.month', ['select_month' => Request::get('select_month', date('m')), 'select_year' => Request::get('select_year', date('Y'))]) }}"
+                class="mini-stat-tile" style="--tile-color:#dc2626;">
+                <span class="mini-stat-icon"><i class="fas fa-chart-line"></i></span>
+                <span>
+                    <span class="mini-stat-label">Dự thu hiệu lực</span>
+                    <strong class="mini-stat-number">{{ number_format($expectedRevenue, 0, ',', '.') }} ₫</strong>
+                </span>
+            </a>
+            @endif
+        </div>
+        @endif
+        <div class="dashboard-main-grid {{ $canViewRevenue ? 'dashboard-main-grid--revenue' : '' }} {{ $canOperateBooking ? 'dashboard-main-grid--booking' : '' }}">
+            @if($canViewRevenue)
             <div class="card dashboard-card chart-card dashboard-grid-card dashboard-revenue-card">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <div class="chart-title-group">
@@ -698,16 +862,9 @@
                                 <option value="{{$i}}" {{ (Request::get('select_year') ?? $year) == $i ? 'selected' : '' }}>Năm {{$i}}</option>
                             @endfor
                         </select>
-                        <input type="date" name="date_from" value="{{ $selectedDateFrom }}" class="form-control form-control-sm mr-2" title="Từ ngày">
-                        <input type="date" name="date_to" value="{{ $selectedDateTo }}" class="form-control form-control-sm mr-2" title="Đến ngày">
                         <button type="submit" class="btn btn-primary btn-sm admin-search-btn">
                             <i class="fas fa-filter"></i> Lọc
                         </button>
-                        @if($selectedDateFrom || $selectedDateTo)
-                            <a href="{{ route('admin.home') }}" class="btn btn-outline-secondary btn-sm ml-2">
-                                <i class="fas fa-sync-alt"></i> Xóa
-                            </a>
-                        @endif
                     </form>
                 </div>
                 <div class="card-body pt-0 pt-md-2 dashboard-chart-body">
@@ -717,7 +874,9 @@
                     </div>
                 </div>
             </div>
+            @endif
 
+            @if($canOperateBooking)
             <div class="card dashboard-card compact-card dashboard-grid-card dashboard-status-card">
                 <div class="card-header border-0">
                     <h3 class="card-title font-weight-bold">Trạng thái booking</h3>
@@ -726,20 +885,28 @@
                     <div id="container" data-json="{{ $statusTransaction }}"></div>
                 </div>
             </div>
+            @endif
 
+            @if($canViewRevenue)
             <div class="card dashboard-card dashboard-grid-card dashboard-monthly-card">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">
-                        <i class="fas fa-chart-bar text-success mr-1"></i> Doanh thu dự kiến theo tháng
+                        <i class="fas fa-chart-bar text-success mr-1"></i> Doanh thu tháng
                     </h3>
-                    <span class="badge badge-light border">{{ Request::get('select_year', date('Y')) }}</span>
+                    <div class="text-right">
+                        <div class="admin-list-meta mt-1">
+                            Quý này: {{ number_format($totalRevenueQuarter, 0, ',', '.') }} ₫ · Năm nay: {{ number_format($totalRevenueYear, 0, ',', '.') }} ₫
+                        </div>
+                    </div>
                 </div>
                 <div class="card-body pt-0 pt-md-2 dashboard-chart-body">
                     <div id="monthlyBookingRevenueChart" data-labels="{{ $monthlyLabels }}"
                         data-bookings="{{ $monthlyBookingCounts }}" data-revenue="{{ $monthlyRevenueTotals }}"></div>
                 </div>
             </div>
+            @endif
 
+            @if($canOperateBooking)
             <div class="card dashboard-card dashboard-grid-card dashboard-bookings-card">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">
@@ -773,9 +940,12 @@
                     @endforelse
                 </div>
             </div>
+            @endif
         </div>
+        @if($canViewTour || $canOperateBooking || $canViewRevenue)
         <div class="card dashboard-card mt-1">
             <div class="dashboard-follow-up">
+                @if($canViewTour)
                 <section class="dashboard-follow-up-section">
                     <div class="dashboard-follow-up-heading">
                         <h4><i class="fas fa-fire text-danger mr-1"></i> Tour được đặt nhiều</h4>
@@ -796,25 +966,54 @@
                         <div class="text-center text-muted py-4">Chưa có tour được đặt.</div>
                     @endforelse
                 </section>
+                @endif
+                @if($canOperateBooking)
                 <section class="dashboard-follow-up-section">
                     <div class="dashboard-follow-up-heading">
-                        <h4><i class="fas fa-comment-dots text-success mr-1"></i> Bình luận mới</h4>
-                        <a href="{{ route('comment.index') }}" class="btn btn-sm btn-link">Kiểm duyệt</a>
+                        <h4><i class="fas fa-calendar-day text-info mr-1"></i> Booking sắp khởi hành</h4>
+                        <a href="{{ route('admin.booking.overview', ['upcoming' => 1]) }}" class="btn btn-sm btn-link">Xem lịch</a>
                     </div>
-                    @forelse($latestComments as $latestComment)
+                    @forelse($upcomingBookings as $upcomingBooking)
                         <div class="admin-list-item">
                             <div>
-                                <div class="admin-list-title">{{ optional($latestComment->user)->name ?: 'Khách hàng' }}</div>
-                                <div class="admin-list-meta">{{ Str::limit(strip_tags($latestComment->cm_content), 86) }}</div>
+                                <div class="admin-list-title">{{ $upcomingBooking->display_code }} - {{ $upcomingBooking->b_name }}</div>
+                                <div class="admin-list-meta">
+                                    {{ optional($upcomingBooking->tour)->t_title ?: 'Tour không tồn tại' }}
+                                    &nbsp;•&nbsp; {{ $upcomingBooking->b_start_date ? $upcomingBooking->b_start_date->format('d/m/Y') : '---' }}
+                                </div>
                             </div>
-                            <span class="badge badge-light border align-self-start">{{ $latestComment->created_at ? $latestComment->created_at->format('d/m') : '--' }}</span>
+                            <span class="badge badge-info align-self-start">{{ number_format($upcomingBooking->total_guests) }} khách</span>
                         </div>
                     @empty
-                        <div class="text-center text-muted py-4">Chưa có bình luận mới.</div>
+                        <div class="text-center text-muted py-4">Chưa có booking sắp khởi hành.</div>
                     @endforelse
                 </section>
+                @endif
+                @if($canViewRevenue)
+                <section class="dashboard-follow-up-section">
+                    <div class="dashboard-follow-up-heading">
+                        <h4><i class="fas fa-coins text-success mr-1"></i> Doanh thu theo tour</h4>
+                        <a href="{{ route('admin.revenue.month', ['select_month' => Request::get('select_month', date('m')), 'select_year' => Request::get('select_year', date('Y'))]) }}" class="btn btn-sm btn-link">Xem doanh thu</a>
+                    </div>
+                    @forelse($topRevenueTours as $topRevenueTour)
+                        <div class="admin-list-item">
+                            <div>
+                                <div class="admin-list-title">{{ Str::limit(optional($topRevenueTour->tour)->t_title ?: 'Tour không tồn tại', 52) }}</div>
+                                <div class="admin-list-meta">
+                                    {{ number_format($topRevenueTour->bookings_count) }} đơn &nbsp;•&nbsp;
+                                    {{ number_format($topRevenueTour->guests_count) }} khách
+                                </div>
+                            </div>
+                            <span class="badge badge-success align-self-start">{{ number_format($topRevenueTour->revenue_total, 0, ',', '.') }} ₫</span>
+                        </div>
+                    @empty
+                        <div class="text-center text-muted py-4">Chưa có doanh thu theo tour.</div>
+                    @endforelse
+                </section>
+                @endif
             </div>
         </div>
+        @endif
     </div>
 </section>
 @stop
@@ -872,6 +1071,7 @@
     });
 
     // 1. Pie Chart (Status)
+    if ($("#container").length) {
     Highcharts.chart('container', {
         chart: { type: 'pie', backgroundColor: 'transparent' },
         title: { text: null },
@@ -891,8 +1091,10 @@
         }],
         credits: { enabled: false }
     });
+    }
 
     // 2. Combo Chart (Revenue + Guests)
+    if ($("#revenueGuestChart").length) {
     Highcharts.chart('revenueGuestChart', {
         chart: {
             backgroundColor: 'transparent',
@@ -1028,8 +1230,10 @@
         },
         credits: { enabled: false }
     });
+    }
 
     // 3. Monthly Booking + Revenue Chart
+    if ($("#monthlyBookingRevenueChart").length) {
     Highcharts.chart('monthlyBookingRevenueChart', {
         chart: {
             backgroundColor: 'transparent',
@@ -1044,7 +1248,7 @@
             labels: { style: { color: '#6b7280', fontSize: '11px' } }
         },
         yAxis: [{
-            title: { text: 'Doanh thu dự kiến', style: { color: '#059669', fontWeight: '700' } },
+            title: { text: 'Doanh thu tháng', style: { color: '#059669', fontWeight: '700' } },
             labels: {
                 style: { color: '#059669' },
                 formatter: function () { return formatMoneyShort(this.value); }
@@ -1074,7 +1278,7 @@
             borderRadius: 10,
             backgroundColor: '#ffffff',
             formatter: function () {
-                let html = '<div style="min-width:180px;color:#111827;"><strong>' + this.x + '</strong>';
+                let html = '<div style="min-width:180px;color:#111827;">';
                 this.points.forEach(point => {
                     const value = point.series.userOptions.isMoney
                         ? Highcharts.numberFormat(point.y, 0, ',', '.') + ' ₫'
@@ -1101,7 +1305,7 @@
         },
         series: [{
             type: 'column',
-            name: 'Doanh thu dự kiến theo tháng',
+            name: 'Doanh thu tháng',
             data: monthlyRevenueTotals,
             color: {
                 linearGradient: { x1: 0, y1: 0, x2: 0, y2: 1 },
@@ -1110,12 +1314,13 @@
             isMoney: true
         }, {
             type: 'spline',
-            name: 'Booking theo tháng',
-            data: monthlyBookingCounts,
+            name: 'Booking trong tháng',
+             data: monthlyBookingCounts,
             color: '#2563eb',
             yAxis: 1
         }],
         credits: { enabled: false }
     });
+    }
 </script>
 @stop

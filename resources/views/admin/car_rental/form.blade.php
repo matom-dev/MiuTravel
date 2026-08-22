@@ -1,4 +1,4 @@
-<div class="container-fluid">
+<div class="container-fluid admin-form-page">
     <form role="form" action="" method="post" enctype="multipart/form-data">
         @csrf
         <div class="row">
@@ -43,13 +43,29 @@
                         <div class="row mb-4">
                             <div class="col-md-3 mb-3 mb-md-0">
                                 <label class="control-label font-weight-bold text-muted">Loại xe</label>
-                                <input type="text" class="form-control px-3 py-2" name="cr_vehicle_type" placeholder="SUV, Sedan, Limousine..." value="{{ old('cr_vehicle_type', isset($carRental) ? $carRental->cr_vehicle_type : '') }}" style="border-radius:5px;">
+                                @php $vehicleType = old('cr_vehicle_type', isset($carRental) ? strtolower((string) $carRental->cr_vehicle_type) : ''); @endphp
+                                <select name="cr_vehicle_type" class="form-control custom-select px-3 py-2" style="border-radius:5px;">
+                                    <option value="">Đang cập nhật</option>
+                                    @foreach(\App\Models\CarRental::VEHICLE_TYPES as $key => $label)
+                                        <option value="{{ $key }}" {{ $vehicleType === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
                             </div>
-                            <div class="col-md-3 mb-3 mb-md-0">
+                            <div class="col-md-2 mb-3 mb-md-0">
                                 <label class="control-label font-weight-bold text-muted">Số chỗ</label>
                                 <input type="number" min="1" class="form-control px-3 py-2" name="cr_number_seats" placeholder="4, 7, 16..." value="{{ old('cr_number_seats', isset($carRental) ? $carRental->cr_number_seats : '') }}" style="border-radius:5px;">
                             </div>
                             <div class="col-md-3 mb-3 mb-md-0">
+                                <label class="control-label font-weight-bold text-muted">Hình thức thuê</label>
+                                @php $driverOption = old('cr_driver_option', isset($carRental) ? $carRental->cr_driver_option : ''); @endphp
+                                <select name="cr_driver_option" class="form-control custom-select px-3 py-2" style="border-radius:5px;">
+                                    <option value="">Linh hoạt</option>
+                                    @foreach(\App\Models\CarRental::DRIVER_OPTIONS as $key => $label)
+                                        <option value="{{ $key }}" {{ $driverOption === $key ? 'selected' : '' }}>{{ $label }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-md-2 mb-3 mb-md-0">
                                 <label class="control-label font-weight-bold text-muted">Hộp số</label>
                                 <select name="cr_transmission" class="form-control custom-select px-3 py-2" style="border-radius:5px;">
                                     @php $transmission = old('cr_transmission', isset($carRental) ? $carRental->cr_transmission : ''); @endphp
@@ -58,7 +74,7 @@
                                     <option value="Số sàn" {{ $transmission == 'Số sàn' ? 'selected' : '' }}>Số sàn</option>
                                 </select>
                             </div>
-                            <div class="col-md-3">
+                            <div class="col-md-2">
                                 <label class="control-label font-weight-bold text-muted">Nhiên liệu</label>
                                 <input type="text" class="form-control px-3 py-2" name="cr_fuel" placeholder="Xăng, dầu, điện..." value="{{ old('cr_fuel', isset($carRental) ? $carRental->cr_fuel : '') }}" style="border-radius:5px;">
                             </div>

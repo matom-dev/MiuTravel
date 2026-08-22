@@ -3,33 +3,60 @@
 @section('style-css')
     <style>
         .booking-summary-card {
-            border: 0;
+            border: 1px solid #eef2f7;
             border-radius: 12px;
-            background: #123f55;
-            color: #fff;
+            background: #fff;
             overflow: hidden;
+            box-shadow: 0 8px 26px rgba(15, 23, 42, .06);
         }
-        .booking-summary-card .card-body {
-            position: relative;
-            z-index: 1;
+        .booking-summary-grid {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+        .booking-summary-item {
+            align-items: center;
+            background: #f8fafc;
+            border: 1px solid #edf1f5;
+            border-left: 4px solid var(--summary-color, #2563eb);
+            border-radius: 10px;
+            display: flex;
+            gap: 12px;
+            min-height: 92px;
+            padding: 14px 16px;
+        }
+        .booking-summary-icon {
+            align-items: center;
+            background: rgba(37, 99, 235, .08);
+            border-radius: 10px;
+            color: var(--summary-color, #2563eb);
+            display: inline-flex;
+            flex: 0 0 auto;
+            font-size: 18px;
+            height: 44px;
+            justify-content: center;
+            width: 44px;
         }
         .booking-summary-card .booking-label {
-            color: rgba(255, 255, 255, .78);
+            color: #6b7280;
             font-size: 13px;
+            font-weight: 800;
             letter-spacing: .04em;
+            line-height: 1.2;
             text-transform: uppercase;
         }
         .booking-summary-card .booking-number {
-            font-size: 34px;
+            color: #111827;
+            font-size: 28px;
             font-weight: 800;
             line-height: 1.15;
+            margin-top: 3px;
         }
-        .booking-summary-card .booking-icon {
-            position: absolute;
-            right: 22px;
-            bottom: 12px;
-            color: rgba(255, 255, 255, .14);
-            font-size: 74px;
+        .booking-summary-card small {
+            color: #6b7280;
+            display: block;
+            font-size: 12px;
+            margin-top: 3px;
         }
         .booking-overview-table th {
             background: #f8fafc;
@@ -49,6 +76,11 @@
             color: #f15b2a;
             font-weight: 800;
             white-space: nowrap;
+        }
+        @media (max-width: 991.98px) {
+            .booking-summary-grid {
+                grid-template-columns: 1fr;
+            }
         }
     </style>
 @stop
@@ -73,10 +105,32 @@
         <div class="container-fluid">
             <div class="card booking-summary-card shadow-sm mb-4">
                 <div class="card-body">
-                    <div class="booking-label">Tổng lượt đặt tour</div>
-                    <div class="booking-number">{{ number_format($bookingCount) }}</div>
-                    <small>{{ number_format($filteredBookingCount) }} đơn đang hiển thị - {{ number_format($filteredGuestCount) }} khách</small>
-                    <i class="fas fa-shopping-cart booking-icon"></i>
+                    <div class="booking-summary-grid">
+                        <div class="booking-summary-item" style="--summary-color:#2563eb;">
+                            <span class="booking-summary-icon"><i class="fas fa-shopping-cart"></i></span>
+                            <div>
+                                <div class="booking-label">Tổng lượt đặt tour</div>
+                                <div class="booking-number">{{ number_format($bookingCount) }}</div>
+                                <small>Tất cả đơn trong hệ thống</small>
+                            </div>
+                        </div>
+                        <div class="booking-summary-item" style="--summary-color:#f15b2a;">
+                            <span class="booking-summary-icon"><i class="fas fa-filter"></i></span>
+                            <div>
+                                <div class="booking-label">Đơn đang hiển thị</div>
+                                <div class="booking-number">{{ number_format($filteredBookingCount) }}</div>
+                                <small>Theo bộ lọc hiện tại</small>
+                            </div>
+                        </div>
+                        <div class="booking-summary-item" style="--summary-color:#059669;">
+                            <span class="booking-summary-icon"><i class="fas fa-users"></i></span>
+                            <div>
+                                <div class="booking-label">Tổng khách</div>
+                                <div class="booking-number">{{ number_format($filteredGuestCount) }}</div>
+                                <small>Trong danh sách đang hiển thị</small>
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
@@ -129,87 +183,7 @@
                 </div>
             </div>
 
-            <div class="card shadow-sm">
-                <div class="card-header border-0 d-flex justify-content-between align-items-center">
-                    <h3 class="card-title font-weight-bold">Danh sách lịch đặt tour</h3>
-                </div>
-                <div class="card-body p-0 table-responsive">
-                    <table class="table table-hover booking-overview-table m-0">
-                        <thead>
-                            <tr>
-                                <th width="6%" class="text-center">STT</th>
-                                <th width="10%">Mã đơn</th>
-                                <th width="24%">Tour</th>
-                                <th width="20%">Khách hàng</th>
-                                <th width="12%">Ngày đặt</th>
-                                <th width="12%">Ngày đi mong muốn</th>
-                                <th width="8%" class="text-center">Khách</th>
-                                <th width="10%" class="text-center">Trạng thái</th>
-                                <th width="6%" class="text-center">Chi tiết</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            @if (!$bookings->isEmpty())
-                                @php $i = $bookings->firstItem(); @endphp
-                                @foreach($bookings as $booking)
-                                    @php
-                                        $guestCount = (int) $booking->b_number_adults
-                                            + (int) $booking->b_number_children
-                                            + (int) $booking->b_number_child6
-                                            + (int) $booking->b_number_child2;
-                                        $departureDate = $booking->b_start_date;
-                                        $endDate = $booking->b_end_date;
-                                        $badgeClass = str_replace('btn-', 'badge-', $classStatus[$booking->b_status] ?? 'badge-secondary');
-                                    @endphp
-                                    <tr>
-                                        <td class="text-center text-muted">{{ $i }}</td>
-                                        <td><span class="badge badge-light border">#{{ $booking->id }}</span></td>
-                                        <td>
-                                            <div class="booking-tour-name">{{ optional($booking->tour)->t_title ?? '---' }}</div>
-                                            <small class="text-muted">{{ optional($booking->tour)->t_journeys ?? '' }}</small>
-                                        </td>
-                                        <td>
-                                            <div class="font-weight-bold">{{ $booking->b_name }}</div>
-                                            <small class="text-muted">{{ $booking->b_phone }}{{ $booking->b_email ? ' - ' . $booking->b_email : '' }}</small>
-                                        </td>
-                                        <td>{{ $booking->created_at ? $booking->created_at->format('d/m/Y') : '---' }}</td>
-                                        <td>
-                                            {{ $departureDate ? date('d/m/Y', strtotime($departureDate)) : '---' }}
-                                            @if($endDate)
-                                                <small class="d-block text-muted">Về: {{ date('d/m/Y', strtotime($endDate)) }}</small>
-                                            @endif
-                                        </td>
-                                        <td class="text-center booking-guest-count">{{ number_format($guestCount) }}</td>
-                                        <td class="text-center">
-                                            <span class="badge {{ $badgeClass }}">{{ $status[$booking->b_status] ?? 'Không rõ' }}</span>
-                                        </td>
-                                        <td class="text-center">
-                                            <a href="{{ route('book.tour.index', ['booking_id' => $booking->id]) }}" class="btn btn-sm btn-outline-primary" title="Xem chi tiết đơn">
-                                                <i class="fas fa-eye"></i>
-                                            </a>
-                                        </td>
-                                    </tr>
-                                    @php $i++ @endphp
-                                @endforeach
-                            @else
-                                <tr>
-                                    <td colspan="9" class="text-center py-5 text-muted">
-                                        <i class="fas fa-shopping-cart fa-3x mb-3 opacity-50"></i><br>
-                                        Chưa có đơn đặt tour nào phù hợp.
-                                    </td>
-                                </tr>
-                            @endif
-                        </tbody>
-                    </table>
-                </div>
-                @if($bookings->hasPages())
-                    <div class="card-footer bg-white">
-                        <div class="pagination-wrapper">
-                            {{ $bookings->appends(request()->query())->links() }}
-                        </div>
-                    </div>
-                @endif
-            </div>
+            @include('admin.home._booking_list_table', ['listTitle' => 'Danh sách lịch đặt tour'])
         </div>
     </section>
 @stop

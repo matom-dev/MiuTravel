@@ -5,8 +5,8 @@
     });
 @endphp
 
-<button type="button" class="hotel-filter-toggle" id="hotel-filter-toggle"
-    aria-expanded="false" aria-controls="hotel-filter-panel">
+<button type="button" class="hotel-filter-toggle" id="hotel-filter-toggle" aria-expanded="false"
+    aria-controls="hotel-filter-panel">
     <span><i class="fa fa-sliders"></i> Bộ lọc</span>
     @if($activeFilterCount)
         <strong>{{ $activeFilterCount }}</strong>
@@ -24,7 +24,6 @@
 
         <div class="hotel-filter-panel__header">
             <div>
-                <span class="hotel-filter-panel__eyebrow">Thu hẹp kết quả</span>
                 <h2>Bộ lọc khách sạn</h2>
             </div>
             @if($activeFilterCount)
@@ -41,8 +40,7 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="types[]" value="{{ $key }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="types[]" value="{{ $key }}" {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
                         {{ $label }}
                     </span>
                     <small>{{ $count }}</small>
@@ -59,8 +57,7 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="stars[]" value="{{ $star }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="stars[]" value="{{ $star }}" {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
                         <span class="hotel-filter-stars" aria-label="{{ $star }} sao">{{ str_repeat('★', $star) }}</span>
                     </span>
                     <small>{{ $count }}</small>
@@ -77,8 +74,7 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="amenities[]" value="{{ $key }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="amenities[]" value="{{ $key }}" {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
                         {{ $label }}
                     </span>
                     <small>{{ $count }}</small>
@@ -95,8 +91,8 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="room_facilities[]" value="{{ $key }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="room_facilities[]" value="{{ $key }}" {{ $checked ? 'checked' : '' }}
+                            {{ !$count && !$checked ? 'disabled' : '' }}>
                         {{ $label }}
                     </span>
                     <small>{{ $count }}</small>
@@ -113,8 +109,8 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="property_policies[]" value="{{ $key }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="property_policies[]" value="{{ $key }}" {{ $checked ? 'checked' : '' }}
+                            {{ !$count && !$checked ? 'disabled' : '' }}>
                         {{ $label }}
                     </span>
                     <small>{{ $count }}</small>
@@ -131,8 +127,7 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="meal_plans[]" value="{{ $key }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="meal_plans[]" value="{{ $key }}" {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
                         {{ $label }}
                     </span>
                     <small>{{ $count }}</small>
@@ -149,8 +144,7 @@
                 @endphp
                 <label class="hotel-filter-option {{ !$count && !$checked ? 'is-disabled' : '' }}">
                     <span>
-                        <input type="checkbox" name="suitable_for[]" value="{{ $key }}"
-                            {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
+                        <input type="checkbox" name="suitable_for[]" value="{{ $key }}" {{ $checked ? 'checked' : '' }} {{ !$count && !$checked ? 'disabled' : '' }}>
                         {{ $label }}
                     </span>
                     <small>{{ $count }}</small>

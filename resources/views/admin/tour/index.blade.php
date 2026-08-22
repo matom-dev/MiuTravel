@@ -18,8 +18,16 @@
     </section>
     
     <!-- Main content -->
-    <section class="content">
-        <div class="container-fluid">
+<section class="content">
+    <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canPublishTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'duyet-xuat-ban-tour']);
+                $canViewTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
+                $canCreateTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
+                $canEditTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
+                $canDeleteTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'xoa-tour']);
+            @endphp
             
             <!-- Form Tìm kiếm -->
             <div class="card shadow-sm mb-4">
@@ -65,9 +73,16 @@
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">Danh sách Tour</h3>
                     <div class="card-tools ml-auto">
+                        @if($canViewTour)
+                        <a href="{{ route('tour.calendar') }}" class="btn btn-outline-primary btn-sm">
+                            <i class="fas fa-calendar-alt mr-1"></i> Calendar
+                        </a>
+                        @endif
+                        @if($canCreateTour)
                         <a href="{{ route('tour.create') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle mr-1"></i> Thêm Mới
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive">
@@ -76,8 +91,8 @@
                             <tr>
                                 <th width="5%" class="text-center">STT</th>
                                 <th width="20%">Tiêu Đề & Hình Ảnh</th>
-                                <th width="25%">Thời Gian / Giá</th>
-                                <th width="25%">Thông Tin / Địa Điểm</th>
+                                <th width="22%">Thời Gian / Giá</th>
+                                <th width="24%">Vận hành / Nhân sự</th>
                                 <th class="text-center">Trạng Thái</th>
                                 <th width="10%" class="text-center">Hành Động</th>
                             </tr>
@@ -87,7 +102,7 @@
                                 @php $i = $tours->firstItem(); @endphp
                                 @foreach($tours as $tour)
                                     @php
-                                        $reservedGuests = (int) $tour->t_number_registered + (int) $tour->t_follow;
+                                        $reservedGuests = (int) $tour->confirmed_guests_count + (int) $tour->pending_guests_count;
                                     @endphp
                                     <tr>
                                         <td class="text-center text-muted align-middle">{{ $i }}</td>
@@ -118,12 +133,21 @@
                                             <div class="mb-1"><i class="fas fa-bus text-info mr-1" style="width:16px;"></i> <b>Di chuyển:</b> <span class="text-muted">{{ $tour->t_move_method }}</span></div>
                                             <div class="mb-1"><i class="fas fa-plane-departure text-secondary mr-1" style="width:16px;"></i> <b>Xuất phát:</b> <span class="text-muted">{{ $tour->t_starting_gate }}</span></div>
                                             <div class="mt-2">
-                                                <span class="badge badge-light border mr-1"><i class="fas fa-calendar-check text-info mr-1"></i>Khách tự chọn ngày</span>
+                                                <span class="badge badge-light border mr-1"><i class="fas fa-user-clock text-warning mr-1"></i>{{ number_format($tour->pending_guests_count) }} chờ xác nhận</span>
+                                                <span class="badge badge-success mr-1"><i class="fas fa-user-check mr-1"></i>{{ number_format($tour->confirmed_guests_count) }} đã xác nhận</span>
+                                                <span class="badge badge-light border mr-1"><i class="fas fa-calendar-check text-info mr-1"></i>{{ number_format($tour->active_schedules_count) }} lịch chốt</span>
                                                 <span class="badge badge-light border mr-1"><i class="fas fa-hiking text-primary mr-1"></i>{{ count($tour->t_activities ?: []) }} hoạt động</span>
-                                                <span class="badge badge-light border"><i class="fas fa-user-tie text-success mr-1"></i>{{ count($tour->t_guides ?: []) }} HDV</span>
+                                                <span class="badge badge-light border"><i class="fas fa-user-tie text-success mr-1"></i>{{ number_format($tour->guide_assignments_count) }} nhân sự</span>
                                             </div>
+                                            @if($tour->guideAssignments->isNotEmpty())
+                                                <div class="small text-muted mt-2">
+                                                    @foreach($tour->guideAssignments->take(2) as $assignment)
+                                                        <div><i class="fas fa-user-tie mr-1"></i>{{ optional($assignment->guide)->tg_name ?: 'Nhân sự không tồn tại' }}</div>
+                                                    @endforeach
+                                                </div>
+                                            @endif
                                         </td>
-                                        
+
                                         <td class="text-center align-middle">
                                             <span class="badge {{ $tour->status_badge_class }} px-2 py-1">
                                                 <i class="{{ $tour->status_icon }} mr-1"></i> {{ $tour->status_label }}
@@ -135,12 +159,39 @@
                                         
                                         <td class="text-center align-middle">
                                             <div class="btn-group-vertical">
-                                                <a href="{{ route('tour.update', $tour->id) }}" class="btn btn-info btn-sm mb-1 rounded" title="Chỉnh sửa">
-                                                    <i class="fas fa-edit"></i> Sửa
+                                                @if($canViewTour || $canEditTour)
+                                                <a href="{{ route('tour.preview', $tour->id) }}" class="btn btn-outline-secondary btn-sm mb-1 rounded" title="Preview">
+                                                    <i class="fas fa-eye"></i> Preview
                                                 </a>
-                                                <a href="{{ route('tour.delete', $tour->id) }}" class="btn btn-danger btn-sm btn-confirm-delete rounded" title="Xóa">
-                                                    <i class="fas fa-trash-alt"></i> Xóa
-                                                </a>
+                                                @endif
+                                                @if($canPublishTour && (int) $tour->t_status !== \App\Models\Tour::STATUS_BOOKABLE)
+                                                    <form action="{{ route('tour.publish', ['id' => $tour->id, 'status' => \App\Models\Tour::STATUS_BOOKABLE]) }}" method="POST" class="mb-1">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit" class="btn btn-success btn-sm rounded w-100" title="Duyệt hiển thị">
+                                                            <i class="fas fa-check-circle"></i> Duyệt
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                                @if($canPublishTour && (int) $tour->t_status === \App\Models\Tour::STATUS_BOOKABLE)
+                                                    <form action="{{ route('tour.publish', ['id' => $tour->id, 'status' => \App\Models\Tour::STATUS_PAUSED]) }}" method="POST" class="mb-1">
+                                                        @csrf
+                                                        @method('PATCH')
+                                                        <button type="submit" class="btn btn-warning btn-sm rounded w-100" title="Tạm ngưng nhận đặt">
+                                                            <i class="fas fa-pause-circle"></i> Tạm ngưng
+                                                        </button>
+                                                    </form>
+                                                @endif
+                                                @if($canEditTour)
+                                                    <a href="{{ route('tour.update', $tour->id) }}" class="btn btn-info btn-sm mb-1 rounded" title="Chỉnh sửa">
+                                                        <i class="fas fa-edit"></i> Sửa
+                                                    </a>
+                                                @endif
+                                                @if($canDeleteTour)
+                                                    <a href="{{ route('tour.delete', $tour->id) }}" class="btn btn-danger btn-sm btn-confirm-delete rounded" title="Xóa">
+                                                        <i class="fas fa-trash-alt"></i> Xóa
+                                                    </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

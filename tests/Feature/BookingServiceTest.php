@@ -2,6 +2,8 @@
 
 namespace Tests\Feature;
 
+use App\Jobs\CreateAppNotification;
+use App\Jobs\SendBookingStatusMail;
 use App\Models\AppNotification;
 use App\Models\AdminAuditLog;
 use App\Models\BookingStatusHistory;
@@ -13,6 +15,8 @@ use App\Models\Tour;
 use App\Models\User;
 use App\Services\BookingService;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Support\Facades\Config;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Mail;
 use Tests\TestCase;
 
@@ -20,7 +24,7 @@ class BookingServiceTest extends TestCase
 {
     use RefreshDatabase;
 
-    public function test_it_creates_booking_and_holds_requested_seats(): void
+    public function test_it_creates_booking_without_reserving_legacy_seat_counters(): void
     {
         $user = User::factory()->create();
         $tour = $this->createTour([
@@ -41,11 +45,13 @@ class BookingServiceTest extends TestCase
 
         $this->assertInstanceOf(BookTour::class, $result['book']);
         $this->assertSame(1, (int) $result['book']->b_status);
+        $this->assertMatchesRegularExpression('/^MT-\d{4}-\d{6}$/', $result['book']->b_code);
+        $this->assertSame($result['book']->b_code, $result['book']->display_code);
         $this->assertSame($startDate, $result['book']->b_start_date->format('Y-m-d'));
         $this->assertSame(now()->addDays(7)->format('Y-m-d'), $result['book']->b_end_date->format('Y-m-d'));
         $this->assertSame(900000, (int) $result['book']->b_price_adults);
         $this->assertSame(450000, (int) $result['book']->b_price_children);
-        $this->assertSame(4, (int) $tour->fresh()->t_follow);
+        $this->assertSame(1, (int) $tour->fresh()->t_follow);
         $notification = AppNotification::where('type', 'booking_created')->first();
         $this->assertNotNull($notification);
         $this->assertSame('admins', $notification->receiver_guard);
@@ -118,6 +124,66 @@ class BookingServiceTest extends TestCase
         ]);
     }
 
+    public function test_booking_notifications_can_be_persisted_to_database_queue(): void
+    {
+        Config::set('queue.default', 'database');
+        Config::set('queue.connections.database.connection', null);
+        Config::set('queue.connections.database.queue', 'bookings');
+        Config::set('queue.connections.database.after_commit', false);
+
+        $user = User::factory()->create();
+        $tour = $this->createTour();
+
+        app(BookingService::class)->createForTour($tour->id, $user, $this->bookingPayload());
+
+        $this->assertDatabaseCount('app_notifications', 0);
+        $this->assertDatabaseHas('jobs', [
+            'queue' => 'bookings',
+            'attempts' => 0,
+        ]);
+
+        $payload = json_decode(DB::table('jobs')->first()->payload, true);
+
+        $this->assertSame(CreateAppNotification::class, $payload['displayName']);
+        $this->assertSame(3, $payload['maxTries']);
+        $this->assertSame('10,60,300', $payload['backoff']);
+        $this->assertSame(20, $payload['timeout']);
+        $this->assertTrue($payload['failOnTimeout']);
+    }
+
+    public function test_database_queue_defaults_are_ready_for_production_booking_jobs(): void
+    {
+        $this->assertSame('database', config('queue.connections.database.driver'));
+        $this->assertSame('jobs', config('queue.connections.database.table'));
+        $this->assertSame('bookings', config('queue.connections.database.queue'));
+        $this->assertSame(120, config('queue.connections.database.retry_after'));
+        $this->assertTrue(config('queue.connections.database.after_commit'));
+        $this->assertSame('database-uuids', config('queue.failed.driver'));
+        $this->assertSame('failed_jobs', config('queue.failed.table'));
+    }
+
+    public function test_booking_queue_jobs_define_safe_retry_limits(): void
+    {
+        $notificationJob = new CreateAppNotification([
+            'receiver_guard' => 'admins',
+            'type' => 'booking_created',
+        ]);
+        $mailJob = new SendBookingStatusMail(1, 2, 3, [
+            'view' => 'email',
+            'subject' => 'Xác nhận booking',
+        ]);
+
+        $this->assertSame(3, $notificationJob->tries);
+        $this->assertSame([10, 60, 300], $notificationJob->backoff);
+        $this->assertSame(20, $notificationJob->timeout);
+        $this->assertTrue($notificationJob->failOnTimeout);
+
+        $this->assertSame(3, $mailJob->tries);
+        $this->assertSame([60, 300, 900], $mailJob->backoff);
+        $this->assertSame(30, $mailJob->timeout);
+        $this->assertTrue($mailJob->failOnTimeout);
+    }
+
     public function test_booking_form_explains_flexible_departure_and_confirmation_modal(): void
     {
         $user = User::factory()->create();
@@ -140,7 +206,7 @@ class BookingServiceTest extends TestCase
             ->assertSee('Miu Travel sẽ liên hệ xác nhận lại lịch trình trước khi chốt booking.');
     }
 
-    public function test_it_confirms_booking_and_moves_seats_from_follow_to_registered(): void
+    public function test_it_confirms_booking_without_changing_legacy_seat_counters(): void
     {
         $user = User::factory()->create();
         $tour = $this->createTour([
@@ -159,8 +225,8 @@ class BookingServiceTest extends TestCase
 
         $this->assertSame(BookTour::STATUS_CONFIRMED, (int) $result['bookTour']->b_status);
         $this->assertSame('email', $result['mail']['view']);
-        $this->assertSame(0, (int) $tour->fresh()->t_follow);
-        $this->assertSame(7, (int) $tour->fresh()->t_number_registered);
+        $this->assertSame(3, (int) $tour->fresh()->t_follow);
+        $this->assertSame(4, (int) $tour->fresh()->t_number_registered);
         $this->assertDatabaseHas('app_notifications', [
             'receiver_guard' => 'users',
             'receiver_id' => $user->id,
@@ -214,7 +280,7 @@ class BookingServiceTest extends TestCase
         }
     }
 
-    public function test_it_cancels_pending_booking_and_releases_followed_seats(): void
+    public function test_it_cancels_pending_booking_without_changing_legacy_seat_counters(): void
     {
         $user = User::factory()->create();
         $tour = $this->createTour(['t_follow' => 2]);
@@ -223,11 +289,17 @@ class BookingServiceTest extends TestCase
             'b_status' => 1,
         ]);
 
-        $result = app(BookingService::class)->changeStatus($booking, BookTour::STATUS_CANCELLED);
+        $result = app(BookingService::class)->changeStatus($booking, BookTour::STATUS_CANCELLED, 'Khách đổi kế hoạch');
 
         $this->assertSame(BookTour::STATUS_CANCELLED, (int) $result['bookTour']->b_status);
+        $this->assertSame('Khách đổi kế hoạch', $result['bookTour']->b_cancel_reason);
         $this->assertSame('emailhuy', $result['mail']['view']);
-        $this->assertSame(0, (int) $tour->fresh()->t_follow);
+        $this->assertSame(2, (int) $tour->fresh()->t_follow);
+        $this->assertDatabaseHas('booking_status_histories', [
+            'book_tour_id' => $booking->id,
+            'new_status' => BookTour::STATUS_CANCELLED,
+            'note' => 'Khách đổi kế hoạch',
+        ]);
     }
 
     public function test_it_supports_full_valid_booking_status_transition_flow(): void
@@ -254,11 +326,8 @@ class BookingServiceTest extends TestCase
         ], BookingStatusHistory::where('book_tour_id', $booking->id)->whereNotNull('old_status')->pluck('new_status')->all());
     }
 
-    public function test_it_prevents_overbooking_when_capacity_is_configured(): void
+    public function test_it_allows_flexible_departure_booking_even_when_legacy_capacity_is_lower_than_guest_count(): void
     {
-        $this->expectException(\DomainException::class);
-        $this->expectExceptionMessage('Tour không còn đủ chỗ cho số khách yêu cầu');
-
         $user = User::factory()->create();
         $tour = $this->createTour([
             't_number_guests' => 3,
@@ -268,7 +337,17 @@ class BookingServiceTest extends TestCase
 
         app(BookingService::class)->createForTour($tour->id, $user, $this->bookingPayload([
             'b_number_adults' => 2,
+            'b_number_children' => 2,
         ]));
+
+        $this->assertDatabaseHas('book_tours', [
+            'b_tour_id' => $tour->id,
+            'b_user_id' => $user->id,
+            'b_number_adults' => 2,
+            'b_number_children' => 2,
+        ]);
+        $this->assertSame(1, (int) $tour->fresh()->t_number_registered);
+        $this->assertSame(1, (int) $tour->fresh()->t_follow);
     }
 
     public function test_admin_can_filter_booking_by_customer_and_status_and_audit_status_change(): void
@@ -276,7 +355,8 @@ class BookingServiceTest extends TestCase
         Mail::fake();
 
         $admin = User::factory()->create();
-        $this->grantPermissions($admin, ['quan-ly-dat-tour', 'xoa-va-cap-nhat-trang-thai']);
+        $this->grantPermissions($admin, ['xem-dat-tour', 'xuat-dat-tour', 'cap-nhat-trang-thai-dat-tour']);
+        $this->attachRole($admin, 'quan-ly-van-hanh', 'Quản lý vận hành');
         $user = User::factory()->create(['name' => 'Tran Customer', 'email' => 'customer@example.com', 'phone' => '0901234567']);
         $tour = $this->createTour(['t_follow' => 1]);
         $booking = $this->createBooking($tour, $user, [
@@ -296,8 +376,29 @@ class BookingServiceTest extends TestCase
                 'b_status' => BookTour::STATUS_PENDING,
             ]))
             ->assertOk()
+            ->assertSee('<th width="5%" class="text-center">STT</th>', false)
             ->assertSee('Tran Customer')
+            ->assertDontSee('STT ' . $booking->id)
             ->assertDontSee('Other Guest');
+
+        $exportResponse = $this->actingAs($admin, 'admins')
+            ->get(route('book.tour.export', [
+                'format' => 'csv',
+                'customer' => 'Customer',
+                'b_status' => BookTour::STATUS_PENDING,
+            ]));
+
+        $exportResponse
+            ->assertOk()
+            ->assertHeader('content-type', 'text/csv; charset=UTF-8');
+
+        $this->assertStringContainsString($booking->display_code, $exportResponse->streamedContent());
+        $this->assertStringNotContainsString('Other Guest', $exportResponse->streamedContent());
+
+        $this->actingAs($admin, 'admins')
+            ->get(route('book.tour.confirmation', $booking->id))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
 
         $this->actingAs($admin, 'admins')
             ->patch(route('book.tour.update.status', [
@@ -312,6 +413,144 @@ class BookingServiceTest extends TestCase
             'subject_type' => BookTour::class,
             'subject_id' => $booking->id,
         ]);
+    }
+
+    public function test_admin_can_assign_booking_owner_internal_note_and_filter_operations(): void
+    {
+        $admin = User::factory()->create();
+        $this->grantPermissions($admin, ['xem-dat-tour', 'xuat-dat-tour', 'cap-nhat-trang-thai-dat-tour']);
+        $this->attachRole($admin, 'quan-ly-van-hanh', 'Quản lý vận hành');
+        $staff = User::factory()->create(['name' => 'CSKH Alpha']);
+        $this->attachRole($staff, 'cskh-alpha', 'CSKH Alpha');
+        $user = User::factory()->create(['name' => 'Khach can cham soc']);
+        $tour = $this->createTour();
+        $targetBooking = $this->createBooking($tour, $user, [
+            'b_name' => 'Khach can cham soc',
+            'b_start_date' => '2026-09-10 00:00:00',
+            'b_end_date' => '2026-09-12 23:59:59',
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+        $this->createBooking($tour, User::factory()->create(), [
+            'b_name' => 'Khach ngoai khoang ngay',
+            'b_start_date' => '2026-10-10 00:00:00',
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($admin, 'admins')
+            ->patch(route('book.tour.update.operation', $targetBooking->id), [
+                'b_assigned_staff_id' => $staff->id,
+                'b_internal_note' => 'Đã gọi lần 1, chờ khách xác nhận điểm đón',
+            ])
+            ->assertRedirect();
+
+        $this->assertDatabaseHas('book_tours', [
+            'id' => $targetBooking->id,
+            'b_assigned_staff_id' => $staff->id,
+            'b_internal_note' => 'Đã gọi lần 1, chờ khách xác nhận điểm đón',
+        ]);
+        $this->assertDatabaseHas('admin_audit_logs', [
+            'actor_id' => $admin->id,
+            'action' => 'booking.operation_updated',
+            'subject_type' => BookTour::class,
+            'subject_id' => $targetBooking->id,
+        ]);
+
+        $this->actingAs($admin, 'admins')
+            ->get(route('book.tour.index', [
+                'b_assigned_staff_id' => $staff->id,
+                'b_start_date_from' => '2026-09-01',
+                'b_start_date_to' => '2026-09-30',
+                'b_status' => BookTour::STATUS_PENDING,
+            ]))
+            ->assertOk()
+            ->assertSee('CSKH Alpha')
+            ->assertSee('Đã gọi lần 1, chờ khách xác nhận điểm đón')
+            ->assertSee('Khach can cham soc')
+            ->assertDontSee('Khach ngoai khoang ngay');
+
+        $exportResponse = $this->actingAs($admin, 'admins')
+            ->get(route('book.tour.export', [
+                'format' => 'csv',
+                'b_assigned_staff_id' => $staff->id,
+            ]));
+
+        $exportResponse->assertOk();
+        $this->assertStringContainsString('Nhân viên phụ trách', $exportResponse->streamedContent());
+        $this->assertStringContainsString('CSKH Alpha', $exportResponse->streamedContent());
+    }
+
+    public function test_booking_staff_can_operate_only_assigned_bookings(): void
+    {
+        $staff = User::factory()->create(['name' => 'Booking Staff']);
+        $this->grantPermissions($staff, ['xem-dat-tour', 'cap-nhat-trang-thai-dat-tour']);
+        $this->attachRole($staff, 'nhan-vien-booking', 'Nhân viên booking');
+        $user = User::factory()->create();
+        $tour = $this->createTour();
+        $assignedBooking = $this->createBooking($tour, $user, [
+            'b_name' => 'Assigned guest',
+            'b_assigned_staff_id' => $staff->id,
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+        $unassignedBooking = $this->createBooking($tour, $user, [
+            'b_name' => 'Unassigned guest',
+            'b_status' => BookTour::STATUS_PENDING,
+        ]);
+
+        $this->actingAs($staff, 'admins')
+            ->get(route('book.tour.index'))
+            ->assertOk()
+            ->assertSee('Assigned guest')
+            ->assertDontSee('Unassigned guest')
+            ->assertSee(route('book.tour.update.status', [
+                'status' => BookTour::STATUS_CONFIRMED,
+                'id' => $assignedBooking->id,
+            ]), false);
+
+        $this->actingAs($staff, 'admins')
+            ->patch(route('book.tour.update.status', [
+                'status' => BookTour::STATUS_CONFIRMED,
+                'id' => $assignedBooking->id,
+            ]))
+            ->assertRedirect(route('book.tour.index'));
+
+        $this->assertSame(BookTour::STATUS_CONFIRMED, (int) $assignedBooking->fresh()->b_status);
+
+        $this->actingAs($staff, 'admins')
+            ->patch(route('book.tour.update.status', [
+                'status' => BookTour::STATUS_CONFIRMED,
+                'id' => $unassignedBooking->id,
+            ]))
+            ->assertForbidden();
+    }
+
+    public function test_booking_manager_does_not_see_status_history_in_admin_list(): void
+    {
+        $admin = User::factory()->create(['name' => 'Booking Viewer']);
+        $this->grantPermissions($admin, ['xem-dat-tour']);
+        $user = User::factory()->create();
+        $tour = $this->createTour();
+        $booking = $this->createBooking($tour, $user, [
+            'b_status' => BookTour::STATUS_CONFIRMED,
+        ]);
+
+        BookingStatusHistory::create([
+            'book_tour_id' => $booking->id,
+            'old_status' => BookTour::STATUS_PENDING,
+            'new_status' => BookTour::STATUS_CONFIRMED,
+            'changed_by' => $admin->id,
+            'changed_guard' => 'admins',
+            'note' => 'Admin xác nhận thủ công',
+        ]);
+
+        $this->actingAs($admin, 'admins')
+            ->get(route('book.tour.index'))
+            ->assertOk()
+            ->assertDontSee('Lịch sử trạng thái booking')
+            ->assertDontSee('Admin xác nhận thủ công')
+            ->assertDontSee(route('book.tour.update.status', [
+                'status' => BookTour::STATUS_PAID,
+                'id' => $booking->id,
+            ]), false);
     }
 
     public function test_it_rejects_invalid_status_transition(): void
@@ -334,15 +573,27 @@ class BookingServiceTest extends TestCase
         ]);
 
         foreach ($permissionNames as $permissionName) {
-            $permission = Permission::create([
-                'name' => $permissionName,
-                'display_name' => $permissionName,
-            ]);
+            $permission = Permission::firstOrCreate(
+                ['name' => $permissionName],
+                ['display_name' => $permissionName]
+            );
 
             $role->permissionRole()->attach($permission->id);
         }
 
         $user->userRole()->attach($role->id);
+        $user->unsetRelation('userRole');
+    }
+
+    private function attachRole(User $user, string $name, string $displayName): void
+    {
+        $role = Role::firstOrCreate(
+            ['name' => $name],
+            ['display_name' => $displayName]
+        );
+
+        $user->userRole()->syncWithoutDetaching([$role->id]);
+        $user->unsetRelation('userRole');
     }
 
     private function createTour(array $attributes = []): Tour

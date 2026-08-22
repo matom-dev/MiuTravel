@@ -32,7 +32,20 @@ class CommentController extends Controller
             if ($request->email) {
                 $q->where('email', $request->email);
             }
-        })->orderByDesc('id')->paginate(NUMBER_PAGINATION);
+        });
+
+        if ($request->filled('status') && array_key_exists((int) $request->status, Comment::STATUS)) {
+            $comments->where('cm_status', (int) $request->status);
+        }
+
+        if ($request->filled('rating')) {
+            $rating = (int) $request->rating;
+            if ($rating >= 1 && $rating <= 5) {
+                $comments->where('cm_rating', $rating);
+            }
+        }
+
+        $comments = $comments->orderByDesc('id')->paginate(NUMBER_PAGINATION)->withQueryString();
 
         return view('admin.comment.index', compact('comments'));
     }

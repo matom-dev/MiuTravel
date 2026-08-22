@@ -1,4 +1,4 @@
-<div class="container-fluid">
+<div class="container-fluid admin-form-page">
     <form role="form" action="" method="post" enctype="multipart/form-data">
         @csrf
         <div class="row">

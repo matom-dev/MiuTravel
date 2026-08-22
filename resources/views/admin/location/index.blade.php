@@ -20,6 +20,12 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canCreateLocation = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canEditLocation = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-noi-dung']);
+                $canDeleteLocation = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'xoa-noi-dung']);
+            @endphp
             <!-- Form Tìm kiếm -->
             <div class="card shadow-sm mb-4">
                 <div class="card-header border-0 bg-white pb-0">
@@ -46,9 +52,11 @@
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">Danh sách Địa điểm</h3>
                     <div class="card-tools ml-auto">
+                        @if($canCreateLocation)
                         <a href="{{ route('location.create') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle mr-1"></i> Thêm Mới
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive">
@@ -89,12 +97,16 @@
                                         </td>
                                         <td class="text-center align-middle">
                                             <div class="btn-group">
+                                                @if($canEditLocation)
                                                 <a href="{{ route('location.update', $location->id) }}" class="btn btn-info btn-sm" title="Chỉnh sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endif
+                                                @if($canDeleteLocation)
                                                 <a href="{{ route('location.delete', $location->id) }}" class="btn btn-danger btn-sm btn-confirm-delete" title="Xóa">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

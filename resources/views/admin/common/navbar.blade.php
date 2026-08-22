@@ -96,9 +96,12 @@
                 </li>
                 <!-- Menu Footer -->
                 <li class="user-footer" style="padding: 12px 16px; background: #f9fafb; border-top: 1px solid #f3f4f6;">
+                    <a href="{{ route('admin.change.password') }}" class="btn btn-outline-primary btn-sm btn-block mb-2">
+                        <i class="fas fa-key mr-1"></i> Đổi mật khẩu
+                    </a>
                     <form method="POST" action="{{ route('admin.logout') }}" onsubmit="return confirm('Bạn có chắc muốn đăng xuất?')" style="margin:0;">
                         @csrf
-                        <button type="submit" class="btn btn-danger btn-sm float-right">
+                        <button type="submit" class="btn btn-danger btn-sm btn-block">
                             <i class="fas fa-sign-out-alt mr-1"></i> Đăng xuất
                         </button>
                     </form>

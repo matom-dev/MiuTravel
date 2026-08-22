@@ -65,7 +65,7 @@
     }
 </style>
 
-<div class="container-fluid article-form-shell">
+<div class="container-fluid admin-form-page article-form-shell">
     <form role="form" action="" method="post" enctype="multipart/form-data">
         @csrf
         <div class="row">

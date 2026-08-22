@@ -57,33 +57,28 @@
 
                 <div class="hotel-card__img-overlay"></div>
 
-                <div class="hotel-card__connection-badge">
-                    <i class="fa fa-phone"></i> Liên hệ khách sạn
-                </div>
-
             </a>
 
             <div class="hotel-card__body">
-                @if($hotel->h_address)
-                    <div class="hotel-card__location">
-                        <i class="fa fa-map-marker"></i>
-                        <span>{{ the_excerpt($hotel->h_address, 65) }}</span>
-                    </div>
-                @endif
-
-                <div class="hotel-card__meta">
-                    <span>{{ \App\Models\Hotel::ACCOMMODATION_TYPES[$hotel->h_accommodation_type] ?? 'Khách sạn' }}</span>
-                    @if($hotel->h_star_rating)
-                        <span class="hotel-card__stars" aria-label="{{ $hotel->h_star_rating }} sao">{{ str_repeat('★', $hotel->h_star_rating) }}</span>
-                    @endif
-                </div>
-
                 <h3 class="hotel-card__title">
                     <a href="{{ $hotelDetailUrl }}"
                        title="{{ $hotel->h_name }}">
                         {{ the_excerpt($hotel->h_name, 70) }}
                     </a>
                 </h3>
+
+                @if($hotel->h_star_rating)
+                    <div class="hotel-card__rating" aria-label="{{ $hotel->h_star_rating }} sao">
+                        {{ str_repeat('★', $hotel->h_star_rating) }}
+                    </div>
+                @endif
+
+                @if($hotel->h_address)
+                    <div class="hotel-card__location">
+                        <i class="fa fa-map-marker"></i>
+                        <span>{{ the_excerpt($hotel->h_address, 65) }}</span>
+                    </div>
+                @endif
 
                 @if($hotel->h_description)
                     <p class="hotel-card__desc">{!! the_excerpt(strip_tags($hotel->h_description), 90) !!}</p>

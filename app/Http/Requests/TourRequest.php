@@ -2,8 +2,10 @@
 
 namespace App\Http\Requests;
 
+use App\Models\Tour;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Request;
+use Illuminate\Validation\Rule;
 
 class TourRequest extends FormRequest
 {
@@ -29,11 +31,13 @@ class TourRequest extends FormRequest
             //
             't_title' => 'required | max:191 | unique:tours,t_title,'.$this->id,
             't_location_id' => ['required'],
+            't_type' => ['nullable', 'string', Rule::in(array_keys(Tour::TOUR_TYPES))],
             't_price_adults' => ['required'],
             't_price_children' => ['required'],
             't_journeys' => ['required'],
             't_duration_days' => ['required', 'integer', 'min:1', 'max:60'],
             't_duration_nights' => ['required', 'integer', 'min:0', 'max:59'],
+            't_status' => ['nullable', 'integer', Rule::in(array_keys(Tour::STATUS))],
             't_schedule' => ['nullable', 'max:191'],
             'images'  => 'nullable|image|mimes:jpeg,jpg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
             'album_images' => 'nullable|array',
@@ -75,6 +79,7 @@ class TourRequest extends FormRequest
             't_title.max'            => 'Vượt quá số ký tự cho phép',
             't_title.unique'            => 'Dữ liệu đã bị trùng',
             't_location_id.required'      => 'Dữ liệu không được phép để trống',
+            't_type.in'      => 'Loại tour không hợp lệ',
             't_price_adults.required'      => 'Dữ liệu không được phép để trống',
             't_price_children.required'      => 'Dữ liệu không được phép để trống',
             't_journeys.required'      => 'Dữ liệu không được phép để trống',
@@ -84,6 +89,7 @@ class TourRequest extends FormRequest
             't_duration_nights.required'      => 'Vui lòng nhập số đêm của tour',
             't_duration_nights.integer'      => 'Số đêm không hợp lệ',
             't_duration_nights.min'      => 'Số đêm không được âm',
+            't_status.in'      => 'Trạng thái tour không hợp lệ',
             'images.image'                  => 'Vui lòng nhập đúng định dạng file ảnh',
             'images.mimes'                  => 'Vui lòng nhập đúng định dạng file ảnh',
             'album_images.*.image'          => 'Vui lòng nhập đúng định dạng file ảnh',

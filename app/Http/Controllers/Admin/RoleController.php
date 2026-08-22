@@ -58,11 +58,7 @@ class RoleController extends Controller
             $role->display_name = $request->name;
 
             if ($role->save()) {
-                if(!empty($request->permissions)) {
-                    foreach($request->permissions as $permission) {
-                        \DB::table('permission_role')->insert(['permission_id'=> $permission, 'role_id'=> $role->id]);
-                    }
-                }
+                $role->permissionRole()->sync($request->input('permissions', []));
             }
 
             \DB::commit();
@@ -110,19 +106,12 @@ class RoleController extends Controller
         //
         \DB::beginTransaction();
         try {
-            $role = Role::find($id);
+            $role = Role::findOrFail($id);
             $role->name = safeTitle($request->name);
             $role->display_name = $request->name;
 
             if ($role->save()) {
-                if(!empty($request->permissions)) {
-                    \DB::table('permission_role')->where('role_id', $id)->delete();
-                    if(!empty($request->permissions)) {
-                        foreach($request->permissions as $permission) {
-                            \DB::table('permission_role')->insert(['permission_id'=> $permission, 'role_id'=> $role->id]);
-                        }
-                    }
-                }
+                $role->permissionRole()->sync($request->input('permissions', []));
             }
 
             \DB::commit();

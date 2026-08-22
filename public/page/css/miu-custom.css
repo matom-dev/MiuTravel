@@ -3165,33 +3165,6 @@ body :not(i):not(.fa):not(.fab):not(.far):not(.fas):not(.fal):not(.flaticon):not
     font-family: var(--miu-font-family) !important;
 }
 
-/* Hotel directory cards: Miu Travel introduces hotels, the hotel confirms the stay. */
-.hotel-card__connection-badge {
-    align-items: center;
-    background: rgba(15, 118, 110, .94);
-    border-radius: 6px;
-    color: #fff;
-    display: inline-flex;
-    font-size: 12px;
-    font-weight: 800;
-    gap: 6px;
-    left: 14px;
-    padding: 7px 9px;
-    position: absolute;
-    top: 14px;
-}
-
-.hotel-card__connection-copy {
-    align-items: flex-start;
-    color: #667085;
-    display: flex;
-    font-size: 11.5px;
-    gap: 6px;
-    line-height: 1.4;
-    max-width: 155px;
-}
-
-.hotel-card__connection-copy i,
 .related-hotel-item__contact i {
     color: #0f766e;
     margin-top: 2px;

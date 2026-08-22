@@ -19,6 +19,23 @@ class CarRental extends Model
         2 => 'Bản nháp',
     ];
 
+    const VEHICLE_TYPES = [
+        'sedan' => 'Sedan',
+        'suv' => 'SUV',
+        'mpv' => 'MPV',
+        'van' => 'Van',
+        'motorbike' => 'Xe máy',
+        'multi' => 'Nhiều loại xe',
+        'limousine' => 'Limousine',
+        'bus' => 'Xe khách',
+    ];
+
+    const DRIVER_OPTIONS = [
+        'with_driver' => 'Có tài xế',
+        'self_drive' => 'Tự lái',
+        'both' => 'Có tài xế hoặc tự lái',
+    ];
+
     protected $fillable = [
         'cr_name',
         'cr_image',
@@ -26,6 +43,7 @@ class CarRental extends Model
         'cr_location_id',
         'cr_user_id',
         'cr_vehicle_type',
+        'cr_driver_option',
         'cr_number_seats',
         'cr_transmission',
         'cr_fuel',
@@ -61,6 +79,18 @@ class CarRental extends Model
         $prefix = substr($phone, 0, 1) === '+' ? '+' : '';
 
         return $prefix.preg_replace('/\D+/', '', $phone);
+    }
+
+    public function getVehicleTypeLabelAttribute(): string
+    {
+        $key = strtolower((string) $this->cr_vehicle_type);
+
+        return self::VEHICLE_TYPES[$key] ?? ($this->cr_vehicle_type ?: 'Loại xe');
+    }
+
+    public function getDriverOptionLabelAttribute(): string
+    {
+        return self::DRIVER_OPTIONS[$this->cr_driver_option] ?? 'Linh hoạt';
     }
 
     protected function normalizeAlbumImages($value)

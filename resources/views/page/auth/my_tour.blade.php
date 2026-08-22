@@ -158,7 +158,26 @@
     padding: 2px 9px; border-radius: 6px;
     letter-spacing: .5px; margin-bottom: 6px;
 }
-
+.booking-pdf-link {
+    color: #f15d30;
+    display: inline-flex;
+    font-size: 12px;
+    font-weight: 700;
+    gap: 5px;
+    margin-top: 8px;
+    text-decoration: none;
+}
+.booking-pdf-link:hover { color: #c2410c; text-decoration: none; }
+.cancel-reason-input {
+    border: 1px solid #fecaca;
+    border-radius: 8px;
+    color: #57534e;
+    font-size: 12px;
+    min-height: 58px;
+    padding: 8px 10px;
+    resize: vertical;
+    width: 180px;
+}
 @media (max-width: 900px) {
     .account-layout { flex-direction: column; gap: 20px; }
     .user-sidebar { width: 100%; position: static; }
@@ -224,12 +243,15 @@
                                     <tr>
                                         <td style="font-weight:700;color:#c4c0bb;font-size:13px;">{{ $i }}</td>
                                         <td>
-                                            <div class="booking-id">#{{ $tour->id }}</div>
+                                            <div class="booking-id">{{ $tour->display_code }}</div>
                                             <div class="t-name">{{ $tour->tour->t_title }}</div>
                                             <div class="t-sub">
                                                 <i class="fa fa-map-marker" style="color:#f15d30;margin-right:4px;font-size:11px;"></i>
                                                 {{ $tour->tour->t_starting_gate }}
                                             </div>
+                                            <a class="booking-pdf-link" href="{{ route('my.tour.confirmation', $tour->id) }}">
+                                                <i class="fa fa-file-pdf-o"></i> Tải phiếu xác nhận
+                                            </a>
                                         </td>
                                         <td>
                                             <div class="t-info-row">
@@ -286,6 +308,9 @@
                                                     {{ $status[$tour->b_status] ?? 'Không rõ' }}
                                                 </span>
                                                 <small class="status-note">Lịch trình sẽ được Miu Travel xác nhận trước khi chốt booking.</small>
+                                                @if($tour->b_cancel_reason)
+                                                    <small class="status-note"><strong>Lý do hủy:</strong> {{ $tour->b_cancel_reason }}</small>
+                                                @endif
                                             @else
                                                 <div style="display:flex;flex-direction:column;align-items:center;gap:8px;">
                                                     <span class="t-badge t-badge-pending">
@@ -294,6 +319,7 @@
                                                     <small class="status-note">Lịch trình sẽ được Miu Travel xác nhận trước khi chốt booking.</small>
                                                     <form method="POST" action="{{ route('post.cancel.order.tour', $tour->id) }}" onsubmit="return confirm('Bạn có chắc muốn hủy booking đang chờ xác nhận này?')" style="margin:0;">
                                                         @csrf
+                                                        <textarea name="cancel_reason" class="cancel-reason-input" maxlength="500" required placeholder="Lý do hủy booking"></textarea>
                                                         <button type="submit" class="t-cancel-btn">
                                                             <i class="fa fa-times"></i> Hủy
                                                         </button>

@@ -19,12 +19,20 @@
 
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canCreateCarRental = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-thue-xe']);
+                $canEditCarRental = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-thue-xe']);
+                $canDeleteCarRental = $adminUser && $adminUser->can(['full-quyen-quan-ly']);
+            @endphp
             <div class="card shadow-sm border-0 mb-4">
                 <div class="card-header bg-white border-bottom d-flex align-items-center justify-content-between py-3">
                     <h5 class="card-title font-weight-bold text-muted mb-0"><i class="fas fa-car-side mr-1"></i> Quản lý dịch vụ thuê xe</h5>
+                    @if($canCreateCarRental)
                     <a href="{{ route('car.rental.create') }}" class="btn btn-primary font-weight-bold shadow-sm ml-auto">
                         <i class="fas fa-plus-circle mr-1"></i> Thêm mới
                     </a>
+                    @endif
                 </div>
                 <div class="card-body p-0">
                     <div class="table-responsive">
@@ -60,7 +68,8 @@
                                             </td>
                                             <td>
                                                 <div class="small">
-                                                    <div class="mb-1"><strong><i class="fas fa-car text-muted mr-1"></i>Loại xe:</strong> <span class="text-secondary">{{ $carRental->cr_vehicle_type ?: 'Đang cập nhật' }}</span></div>
+                                                    <div class="mb-1"><strong><i class="fas fa-car text-muted mr-1"></i>Loại xe:</strong> <span class="text-secondary">{{ $carRental->vehicle_type_label }}</span></div>
+                                                    <div class="mb-1"><strong><i class="far fa-id-card text-muted mr-1"></i>Hình thức:</strong> <span class="text-secondary">{{ $carRental->driver_option_label }}</span></div>
                                                     <div class="mb-1"><strong><i class="fas fa-users text-muted mr-1"></i>Số chỗ:</strong> <span class="text-secondary">{{ $carRental->cr_number_seats ?: 'Đang cập nhật' }}</span></div>
                                                     <div class="mb-1"><strong><i class="fas fa-phone-alt text-muted mr-1"></i>Điện thoại:</strong> <span class="text-secondary">{{ $carRental->cr_phone ?: 'Đang cập nhật' }}</span></div>
                                                     <div><strong><i class="fas fa-map-pin text-muted mr-1"></i>Điểm nhận:</strong> <span class="text-secondary">{{ $carRental->cr_address ?: 'Đang cập nhật' }}</span></div>
@@ -74,20 +83,30 @@
                                                 @endif
                                             </td>
                                             <td class="text-center">
+                                                @if($canEditCarRental || $canDeleteCarRental)
                                                 <div class="btn-group">
                                                     <button type="button" class="btn btn-sm btn-outline-secondary dropdown-toggle dropdown-icon" data-toggle="dropdown">
                                                         Tác vụ
                                                     </button>
                                                     <div class="dropdown-menu dropdown-menu-right">
+                                                        @if($canEditCarRental)
                                                         <a class="dropdown-item text-primary" href="{{ route('car.rental.update', $carRental->id) }}">
                                                             <i class="fas fa-edit mr-1"></i> Chỉnh sửa
                                                         </a>
+                                                        @endif
+                                                        @if($canEditCarRental && $canDeleteCarRental)
                                                         <div class="dropdown-divider"></div>
+                                                        @endif
+                                                        @if($canDeleteCarRental)
                                                         <a class="dropdown-item text-danger btn-confirm-delete" href="{{ route('car.rental.delete', $carRental->id) }}">
                                                             <i class="fas fa-trash-alt mr-1"></i> Xóa bỏ
                                                         </a>
+                                                        @endif
                                                     </div>
                                                 </div>
+                                                @else
+                                                    <span class="text-muted">---</span>
+                                                @endif
                                             </td>
                                         </tr>
                                         @php $i++ @endphp

@@ -204,6 +204,79 @@
     border-color:var(--primary,#e84c00);
     background:#fff; box-shadow:0 0 0 4px rgba(232,76,0,.08);
 }
+.hd-map-frame {
+    width: 100%;
+    min-height: 280px;
+    border: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    background: #eef2f7;
+}
+.hd-rating-row {
+    display:flex;
+    align-items:center;
+    gap:10px;
+    margin-bottom:12px;
+}
+.hd-rating-stars {
+    display:inline-flex;
+    flex-direction:row-reverse;
+    gap:4px;
+}
+.hd-rating-stars input {
+    position:absolute;
+    opacity:0;
+    pointer-events:none;
+}
+.hd-rating-stars label {
+    color:#d7dee8;
+    cursor:pointer;
+    font-size:18px;
+    line-height:1;
+    margin:0;
+}
+.hd-rating-stars input:checked ~ label,
+.hd-rating-stars label:hover,
+.hd-rating-stars label:hover ~ label {
+    color:#f7c94b;
+}
+.comment-checkin-box {
+    padding:13px 14px;
+    border:1.5px dashed #ffd2c4;
+    border-radius:12px;
+    background:#fff8f5;
+}
+.comment-checkin-label {
+    display:inline-flex;
+    align-items:center;
+    gap:8px;
+    margin:0;
+    color:#c84a24;
+    font-size:13px;
+    font-weight:850;
+    cursor:pointer;
+}
+.comment-checkin-label input { display:none; }
+.comment-checkin-hint {
+    display:block;
+    margin-top:5px;
+    color:#64748b;
+    font-size:12px;
+}
+.comment-image-preview {
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px;
+    margin-top:10px;
+}
+.comment-image-preview img {
+    width:72px;
+    height:72px;
+    border-radius:8px;
+    object-fit:cover;
+    border:2px solid #fff;
+    box-shadow:0 4px 14px rgba(0,0,0,.12);
+}
 .hd-comment-btn {
     display:inline-flex; align-items:center; gap:8px;
     padding:12px 28px;
@@ -513,6 +586,21 @@
                 </div>
                 @endif
 
+                @if(!empty($mapQuery))
+                <div class="hd-section-card">
+                    <div class="hd-section-title">
+                        <div class="icon-badge"><i class="fa fa-map-marker"></i></div>
+                        Bản đồ khu vực
+                    </div>
+                    <iframe
+                        class="hd-map-frame"
+                        loading="lazy"
+                        referrerpolicy="no-referrer-when-downgrade"
+                        src="https://www.google.com/maps?q={{ urlencode($mapQuery) }}&output=embed"
+                        title="Bản đồ {{ $hotel->h_name }}"></iframe>
+                </div>
+                @endif
+
                 {{-- Bình luận --}}
                 <div class="hd-section-card">
                     <h3 class="hd-comments-title">
@@ -537,12 +625,30 @@
                     </ul>
 
                     @if (Auth::guard('users')->check())
-                        <div class="hd-comment-form">
+                        <form action="#" class="hd-comment-form" enctype="multipart/form-data">
                             <label for="hd-comment-msg">
                                 <i class="fa fa-pencil" style="color:var(--primary);"></i>
                                 Viết bình luận của bạn
                             </label>
+                            <div class="hd-rating-row">
+                                <span style="font-size:13px;font-weight:700;color:#64748b;text-transform:uppercase;">Điểm sao</span>
+                                <div class="hd-rating-stars" aria-label="Chọn điểm đánh giá">
+                                    @for($star = 5; $star >= 1; $star--)
+                                        <input type="radio" id="hotel-rating-{{ $star }}" name="rating" value="{{ $star }}" {{ $star === 5 ? 'checked' : '' }}>
+                                        <label for="hotel-rating-{{ $star }}"><i class="fa fa-star"></i></label>
+                                    @endfor
+                                </div>
+                            </div>
                             <textarea id="hd-comment-msg" name="message" rows="4" placeholder="Chia sẻ trải nghiệm của bạn về khách sạn này..."></textarea>
+                            <div class="comment-checkin-box" style="margin-top:12px;">
+                                <label class="comment-checkin-label" for="hotel_checkin_images">
+                                    <i class="fa fa-camera"></i>
+                                    Thêm ảnh thực tế
+                                    <input type="file" id="hotel_checkin_images" name="checkin_images[]" accept="image/jpeg,image/png,image/webp" multiple>
+                                </label>
+                                <span class="comment-checkin-hint">Tối đa 5 ảnh, mỗi ảnh không quá 5MB.</span>
+                                <div class="comment-image-preview"></div>
+                            </div>
                             <span class="text-errors-comment" style="display:none;color:#ef4444;font-size:13px;margin:6px 0 0;display:block;">
                                 Vui lòng nhập nội dung bình luận!
                             </span>
@@ -551,7 +657,7 @@
                                     <i class="fa fa-paper-plane-o"></i> Gửi bình luận
                                 </button>
                             </div>
-                        </div>
+                        </form>
                     @else
                         <div style="text-align:center;padding:24px;background:#f8fafc;border-radius:14px;border:1.5px dashed #e2e8f0;">
                             <i class="fa fa-lock" style="font-size:1.8rem;color:#cbd5e1;display:block;margin-bottom:10px;"></i>

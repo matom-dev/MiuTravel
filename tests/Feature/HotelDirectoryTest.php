@@ -3,12 +3,16 @@
 namespace Tests\Feature;
 
 use App\Http\Requests\HotelRequest;
+use App\Models\Comment;
 use App\Models\Hotel;
 use App\Models\Location;
+use App\Models\User;
 use Illuminate\Database\Schema\Blueprint;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\UploadedFile;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Schema;
+use Illuminate\Support\Facades\Storage;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Support\Facades\View;
 use Illuminate\Support\MessageBag;
@@ -49,6 +53,10 @@ class HotelDirectoryTest extends TestCase
             ->assertOk()
             ->assertSee($matchingHotel->h_name)
             ->assertDontSee('Khach san song Han')
+            ->assertDontSee('Còn phòng')
+            ->assertDontSee('Hết phòng')
+            ->assertDontSee('hotel-card__availability', false)
+            ->assertDontSee('Liên hệ khách sạn')
             ->assertSee('name="check_in"', false)
             ->assertSee('name="check_out"', false)
             ->assertSee('name="adults"', false)
@@ -64,6 +72,7 @@ class HotelDirectoryTest extends TestCase
         $location = $this->createLocation('Quang Binh');
         $hotel = $this->createHotel($location, [
             'h_name' => 'Khach san Nhat Le',
+            'h_address' => 'Bao Ninh, Dong Hoi, Quang Binh',
             'h_phone' => '0232 388 9999',
         ]);
 
@@ -81,6 +90,8 @@ class HotelDirectoryTest extends TestCase
         ]))
             ->assertOk()
             ->assertSee('Gọi trực tiếp lễ tân')
+            ->assertSee('Bản đồ khu vực')
+            ->assertSee('google.com/maps', false)
             ->assertSee('tel:02323889999', false)
             ->assertSee('Nhu cầu lưu trú của bạn')
             ->assertDontSee('Miu Travel chỉ cung cấp thông tin kết nối')
@@ -89,6 +100,52 @@ class HotelDirectoryTest extends TestCase
             ->assertDontSee('Miễn phí hủy phòng')
             ->assertDontSee('Giá tốt nhất')
             ->assertDontSee('(4.5/5)');
+    }
+
+    public function test_hotel_comment_can_upload_real_images_for_review(): void
+    {
+        Storage::fake('uploads');
+
+        $location = $this->createLocation('Quang Binh');
+        $hotel = $this->createHotel($location, [
+            'h_name' => 'Khach san co anh review',
+        ]);
+        $user = User::create([
+            'name' => 'Nguoi danh gia',
+            'email' => 'hotel-review@example.test',
+            'password' => bcrypt('password'),
+        ]);
+
+        $this->actingAs($user, 'users')
+            ->get(route('hotel.detail', ['id' => $hotel->id, 'slug' => safeTitle($hotel->h_name)]))
+            ->assertOk()
+            ->assertSee('enctype="multipart/form-data"', false)
+            ->assertSee('name="checkin_images[]"', false);
+
+        $this->actingAs($user, 'users')
+            ->withHeaders(['X-Requested-With' => 'XMLHttpRequest'])
+            ->post(route('comment'), [
+                'hotel_id' => $hotel->id,
+                'rating' => 5,
+                'message' => 'Phong sach va vi tri thuan tien.',
+                'checkin_images' => [
+                    UploadedFile::fake()->image('hotel-review.jpg', 80, 80),
+                ],
+            ])
+            ->assertOk()
+            ->assertJson(['code' => 200]);
+
+        $comment = Comment::where('cm_hotel_id', $hotel->id)->first();
+
+        $this->assertNotNull($comment);
+        $this->assertSame(Comment::STATUS_PENDING, (int) $comment->cm_status);
+        $this->assertSame(5, (int) $comment->cm_rating);
+        $this->assertNotEmpty($comment->cm_images);
+        $this->assertDatabaseHas('app_notifications', [
+            'receiver_guard' => 'admins',
+            'type' => 'comment_pending',
+            'url' => route('comment.index', ['status' => Comment::STATUS_PENDING], false),
+        ]);
     }
 
     public function test_hotel_directory_filters_by_verified_metadata(): void
@@ -144,26 +201,57 @@ class HotelDirectoryTest extends TestCase
             ->assertSee('name="meal_plans[]"', false)
             ->assertSee('id="hotel-filter-form"', false)
             ->assertDontSee('Áp dụng bộ lọc');
+
+        $html = $this->get(route('hotel'))->getContent();
+        $cardStart = strpos($html, '<div class="hotel-card__body">');
+        $cardEnd = strpos($html, '<div class="hotel-card__divider">', $cardStart);
+        $cardHtml = substr($html, $cardStart, $cardEnd - $cardStart);
+
+        $this->assertStringNotContainsString('hotel-card__meta', $cardHtml);
+        $this->assertLessThan(strpos($cardHtml, 'hotel-card__rating'), strpos($cardHtml, 'hotel-card__title'));
+        $this->assertLessThan(strpos($cardHtml, 'hotel-card__location'), strpos($cardHtml, 'hotel-card__rating'));
     }
 
-    public function test_hotel_directory_displays_nine_cards_per_page(): void
+    public function test_hidden_hotel_is_not_shown_on_public_directory(): void
+    {
+        $location = $this->createLocation('Quang Binh');
+        $hotel = $this->createHotel($location, [
+            'h_name' => 'Khach san dang an',
+            'h_status' => Hotel::STATUS_HIDDEN,
+        ]);
+
+        $this->get(route('hotel'))
+            ->assertOk()
+            ->assertDontSee($hotel->h_name)
+            ->assertDontSee('hotel-card__availability', false);
+    }
+
+    public function test_hotel_directory_displays_fifteen_hotels_per_page(): void
     {
         $location = $this->createLocation('Quang Binh');
 
-        foreach (range(1, 10) as $number) {
+        foreach (range(1, 16) as $number) {
             $this->createHotel($location, ['h_name' => 'Khach san '.$number]);
         }
 
         $response = $this->get(route('hotel'));
         $hotels = $response->viewData('hotels');
 
-        $response->assertOk();
-        $this->assertSame(9, $hotels->count());
-        $this->assertSame(9, $hotels->perPage());
-        $this->assertSame(10, $hotels->total());
+        $response
+            ->assertOk()
+            ->assertSee('class="block-27', false);
+        $this->assertSame(15, $hotels->count());
+        $this->assertSame(15, $hotels->perPage());
+        $this->assertSame(16, $hotels->total());
+
+        $secondPage = $this->get(route('hotel', ['page' => 2]));
+        $secondPageHotels = $secondPage->viewData('hotels');
+
+        $secondPage->assertOk();
+        $this->assertCount(1, $secondPageHotels);
     }
 
-    public function test_admin_hotel_form_has_no_price_and_requires_phone_for_published_hotels(): void
+    public function test_admin_hotel_form_has_no_price_and_requires_phone_for_visible_hotels(): void
     {
         $location = $this->createLocation('Quang Binh');
 
@@ -175,6 +263,9 @@ class HotelDirectoryTest extends TestCase
 
         $this->assertStringContainsString('Số điện thoại lễ tân', $html);
         $this->assertStringContainsString('Địa chỉ chi tiết', $html);
+        $this->assertStringContainsString('Trạng thái', $html);
+        $this->assertStringContainsString('Hiển thị', $html);
+        $this->assertStringContainsString('Ẩn', $html);
         $this->assertStringContainsString('name="h_address"', $html);
         $this->assertStringNotContainsString('name="h_location_id"', $html);
         $this->assertStringContainsString('name="h_accommodation_type"', $html);

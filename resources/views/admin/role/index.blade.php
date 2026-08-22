@@ -20,13 +20,21 @@
     <!-- Main content -->
     <section class="content">
         <div class="container-fluid">
+            @php
+                $adminUser = Auth::guard('admins')->user();
+                $canCreateRole = $adminUser && $adminUser->can(['full-quyen-quan-ly']);
+                $canEditRole = $adminUser && $adminUser->can(['full-quyen-quan-ly']);
+                $canDeleteRole = $adminUser && $adminUser->can(['full-quyen-quan-ly']);
+            @endphp
             <div class="card shadow-sm">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
                     <h3 class="card-title font-weight-bold">Danh sách Vai trò</h3>
                     <div class="card-tools ml-auto">
+                        @if($canCreateRole)
                         <a href="{{ route('role.create') }}" class="btn btn-primary btn-sm">
                             <i class="fas fa-plus-circle mr-1"></i> Thêm Mới
                         </a>
+                        @endif
                     </div>
                 </div>
                 <div class="card-body p-0 table-responsive">
@@ -64,12 +72,16 @@
                                         <td class="align-middle text-muted" style="font-size: 13.5px;">{{ $role->description ?: '---' }}</td>
                                         <td class="text-center align-middle">
                                             <div class="btn-group">
+                                                @if($canEditRole)
                                                 <a href="{{ route('role.update', $role->id) }}" class="btn btn-info btn-sm" title="Chỉnh sửa">
                                                     <i class="fas fa-edit"></i>
                                                 </a>
+                                                @endif
+                                                @if($canDeleteRole)
                                                 <a href="{{ route('role.delete', $role->id) }}" class="btn btn-danger btn-sm btn-confirm-delete" title="Xóa">
                                                     <i class="fas fa-trash-alt"></i>
                                                 </a>
+                                                @endif
                                             </div>
                                         </td>
                                     </tr>

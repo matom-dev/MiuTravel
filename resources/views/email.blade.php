@@ -17,7 +17,7 @@
 
         <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.7;">
             Chào <strong>{{ $user->name }}</strong>,<br>
-            Đơn đặt tour của quý khách đã được xác nhận theo ngày khởi hành mong muốn. Quý khách vui lòng thanh toán trước thời hạn để giữ chỗ.
+            Đơn đặt tour của quý khách đã được xác nhận theo ngày khởi hành mong muốn. Quý khách vui lòng thanh toán trước thời hạn để hoàn tất booking.
         </p>
 
         <div style="background: #f8fafc; border: 1px solid #dbeafe; border-radius: 10px; padding: 18px; margin-bottom: 18px;">

@@ -4,13 +4,14 @@ namespace App\Http\Controllers\Page;
 
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
+use App\Models\Comment;
 use App\Models\Hotel;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\Validation\Rule;
 
 class HotelController extends Controller
 {
-    private const HOTEL_PER_PAGE = 9;
+    private const HOTEL_PER_PAGE = 15;
 
     //
     public function index(Request $request)
@@ -98,7 +99,10 @@ class HotelController extends Controller
             });
         }
 
-        $hotels = $hotels->active()->orderByDesc('id')->paginate(self::HOTEL_PER_PAGE)->withQueryString();
+        $hotels = $hotels->active()
+            ->orderByDesc('id')
+            ->paginate(self::HOTEL_PER_PAGE)
+            ->withQueryString();
         $searchContext = [
             'destination' => $destination,
             'check_in' => $validated['check_in'] ?? null,
@@ -122,9 +126,9 @@ class HotelController extends Controller
     {
         $hotel = Hotel::with(['comments' => function($query) use ($id){
             $query->with(['user', 'replies' => function($q) {
-                $q->with('user')->limit(10);
+                $q->with('user')->where('cm_status', Comment::STATUS_APPROVED)->limit(10);
             }])->where('cm_hotel_id', $id)
-              ->where('cm_status', '!=', 3) // Ẩn những BL admin đã ẩn (status=3)
+              ->where('cm_status', Comment::STATUS_APPROVED)
               ->limit(20)->orderByDesc('id');
         }])->find($id);
         if (!$hotel) {
@@ -153,7 +157,9 @@ class HotelController extends Controller
             'rooms' => 1,
         ], $stayValidator->fails() ? [] : $stayValidator->validated());
 
-        return view('page.hotel.detail', compact('hotel', 'hotels', 'stayContext'));
+        $mapQuery = trim((string) ($hotel->h_address ?: optional($hotel->location)->l_name));
+
+        return view('page.hotel.detail', compact('hotel', 'hotels', 'stayContext', 'mapQuery'));
     }
 
     public function bookTour()

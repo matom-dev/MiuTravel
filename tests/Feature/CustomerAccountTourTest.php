@@ -48,10 +48,14 @@ class CustomerAccountTourTest extends TestCase
             ->assertSee('12/09/2026')
             ->assertSee('Tổng khách: 4')
             ->assertSee('2.750.000')
+            ->assertSee($pendingBooking->display_code)
+            ->assertSee('Tải phiếu xác nhận')
             ->assertSee('Chờ xác nhận')
             ->assertSee('Đã xác nhận')
+            ->assertDontSee('Timeline trạng thái')
             ->assertSee('Lịch trình sẽ được Miu Travel xác nhận trước khi chốt booking.')
             ->assertSee(route('post.cancel.order.tour', $pendingBooking->id), false)
+            ->assertSee(route('my.tour.confirmation', $pendingBooking->id), false)
             ->assertDontSee(route('post.cancel.order.tour', $confirmedBooking->id), false);
     }
 
@@ -71,11 +75,14 @@ class CustomerAccountTourTest extends TestCase
         ]);
 
         $this->actingAs($user, 'users')
-            ->post(route('post.cancel.order.tour', $pendingBooking->id))
+            ->post(route('post.cancel.order.tour', $pendingBooking->id), [
+                'cancel_reason' => 'Gia đình đổi lịch đi',
+            ])
             ->assertRedirect()
             ->assertSessionHas('success');
 
         $this->assertSame(5, (int) $pendingBooking->fresh()->b_status);
+        $this->assertSame('Gia đình đổi lịch đi', $pendingBooking->fresh()->b_cancel_reason);
 
         $this->actingAs($user, 'users')
             ->post(route('post.cancel.order.tour', $confirmedBooking->id))
@@ -83,6 +90,24 @@ class CustomerAccountTourTest extends TestCase
             ->assertSessionHas('error', 'Chỉ có thể hủy booking đang chờ xác nhận');
 
         $this->assertSame(2, (int) $confirmedBooking->fresh()->b_status);
+    }
+
+    public function test_customer_can_download_own_booking_confirmation_pdf(): void
+    {
+        $user = User::factory()->create();
+        $otherUser = User::factory()->create();
+        $tour = $this->createTour();
+        $booking = $this->createBooking($tour, $user);
+        $otherBooking = $this->createBooking($tour, $otherUser);
+
+        $this->actingAs($user, 'users')
+            ->get(route('my.tour.confirmation', $booking->id))
+            ->assertOk()
+            ->assertHeader('content-type', 'application/pdf');
+
+        $this->actingAs($user, 'users')
+            ->get(route('my.tour.confirmation', $otherBooking->id))
+            ->assertNotFound();
     }
 
     private function createTour(array $attributes = []): Tour

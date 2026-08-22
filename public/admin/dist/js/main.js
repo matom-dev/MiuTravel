@@ -1,6 +1,6 @@
 var config = {};
 
-function submitProtectedAction(url, method) {
+function submitProtectedAction(url, method, extraData) {
     var token = $('meta[name="csrf-token"]').attr('content');
     var form = $('<form>', {
         method: 'POST',
@@ -20,6 +20,16 @@ function submitProtectedAction(url, method) {
             name: '_method',
             value: method.toUpperCase()
         }));
+    }
+
+    if (extraData) {
+        $.each(extraData, function (name, value) {
+            form.append($('<input>', {
+                type: 'hidden',
+                name: name,
+                value: value
+            }));
+        });
     }
 
     $('body').append(form);
@@ -281,6 +291,18 @@ $(function () {
 
     $('.update_book_tour').click(function () {
         var url = $(this).attr('url');
-        submitProtectedAction(url, 'PATCH');
+        var extraData = {};
+
+        if ($(this).data('requires-reason')) {
+            var reason = window.prompt('Nhập lý do hủy booking:');
+
+            if (!reason || !reason.trim()) {
+                return;
+            }
+
+            extraData.cancel_reason = reason.trim();
+        }
+
+        submitProtectedAction(url, 'PATCH', extraData);
     })
 })
