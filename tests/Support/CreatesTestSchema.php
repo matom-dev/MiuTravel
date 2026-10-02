@@ -131,6 +131,19 @@ trait CreatesTestSchema
             });
         }
 
+        if (!Schema::hasTable('chat_messages')) {
+            Schema::create('chat_messages', function (Blueprint $table) {
+                $table->id();
+                $table->unsignedBigInteger('user_id')->nullable();
+                $table->string('guest_token', 96)->nullable()->index();
+                $table->string('sender', 20);
+                $table->longText('message');
+                $table->timestamps();
+
+                $table->index(['user_id', 'created_at']);
+            });
+        }
+
         if (!Schema::hasTable('book_tours')) {
             Schema::create('book_tours', function (Blueprint $table) {
                 $table->id();

@@ -103,11 +103,12 @@
 <div class="container-fluid admin-form-page">
     @php
         $adminUser = Auth::guard('admins')->user();
-        $canPublishTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'duyet-xuat-ban-tour']);
+        $isAgencyForm = $isAgencyForm ?? false;
+        $canPublishTour = ! $isAgencyForm && $adminUser && $adminUser->can(['full-quyen-quan-ly', 'duyet-xuat-ban-tour']);
         $canCreateTourStaff = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-nhan-su-tour']);
-        $tourStatusValue = old('t_status', isset($tour->t_status) ? $tour->t_status : \App\Models\Tour::STATUS_PENDING_REVIEW);
+        $tourStatusValue = old('t_status', isset($tour->t_status) ? $tour->t_status : ($isAgencyForm ? \App\Models\Tour::STATUS_HIDDEN : \App\Models\Tour::STATUS_PENDING_REVIEW));
     @endphp
-    <form role="form" action="" method="post" enctype="multipart/form-data">
+    <form role="form" action="{{ $formAction ?? '' }}" method="post" enctype="multipart/form-data">
         @csrf
         <div class="row">
             <div class="col-md-9">
@@ -163,7 +164,16 @@
                             <div class="col-sm-12 col-md-4">
                                 <div class="form-group mb-0">
                                     <label class="control-label font-weight-bold text-muted">Trạng thái</label>
-                                    @if($canPublishTour)
+                                    @if($isAgencyForm)
+                                        <select class="form-control custom-select px-3 py-2" name="t_status" style="border-radius: 5px;">
+                                            @if(isset($tour) && $tour->exists && in_array((int) $tour->t_status, [1, 2], true))
+                                                <option value="{{ $tour->t_status }}" @selected((string) $tourStatusValue === (string) $tour->t_status)>Giữ trạng thái hiện tại ({{ $tour->status_label }})</option>
+                                            @endif
+                                            <option value="3" @selected((string) $tourStatusValue === '3')>Lưu nháp / tạm ẩn</option>
+                                            <option value="4" @selected((string) $tourStatusValue === '4')>Gửi quản trị viên duyệt</option>
+                                        </select>
+                                        <small class="text-muted d-block mt-1">Tour chỉ hiển thị công khai sau khi được duyệt.</small>
+                                    @elseif($canPublishTour)
                                         <select class="form-control custom-select px-3 py-2" name="t_status" style="border-radius: 5px;">
                                             @foreach($status as $key => $statu)
                                                 <option {{ (string) $tourStatusValue === (string) $key ? 'selected="selected"' : '' }} value="{{$key}}">
@@ -309,6 +319,15 @@
                             </div>
                         </div>
 
+                        @if($isAgencyForm)
+                            <div class="form-group mb-4">
+                                <label for="cancellation_policy" class="control-label font-weight-bold text-muted">Chính sách hủy / hoàn tiền <sup class="text-danger">(*)</sup></label>
+                                <textarea name="cancellation_policy" id="cancellation_policy" rows="5" class="form-control" required>{{ old('cancellation_policy', $tour->cancellation_policy ?? '') }}</textarea>
+                                <small class="text-muted">Chính sách tại thời điểm đặt tour được lưu riêng cho từng đăng ký.</small>
+                                @error('cancellation_policy')<span class="text-danger small d-block">{{ $message }}</span>@enderror
+                            </div>
+                        @endif
+
                         @php
                             $oldActivityTitles = old('activity_title');
                             if (is_array($oldActivityTitles)) {
@@ -330,11 +349,11 @@
                             $selectedLeaderId = old('tour_leader_id');
                             $selectedGuideIds = old('tour_guide_ids');
 
-                            if ($selectedLeaderId === null && isset($tour)) {
+                            if (! $isAgencyForm && $selectedLeaderId === null && isset($tour)) {
                                 $selectedLeaderId = optional($tour->guideAssignments->firstWhere('tga_role', 'leader'))->tga_guide_id;
                             }
 
-                            if ($selectedGuideIds === null && isset($tour)) {
+                            if (! $isAgencyForm && $selectedGuideIds === null && isset($tour)) {
                                 $selectedGuideIds = $tour->guideAssignments
                                     ->where('tga_role', 'guide')
                                     ->pluck('tga_guide_id')
@@ -381,6 +400,7 @@
                             </div>
                         </div>
 
+                        @unless($isAgencyForm)
                         <style>
                             .staff-picker-layout {
                                 display: grid;
@@ -626,6 +646,7 @@
                                 @endif
                             </div>
                         </div>
+                        @endunless
                     </div>
                 </div>
             </div>
@@ -637,7 +658,7 @@
                     </div>
                     <div class="card-body">
                         <div class="d-flex flex-column gap-2" style="gap: 10px;">
-                            <button type="submit" name="submit" value="{{ isset($tour) ? 'update' : 'create' }}" class="btn btn-primary w-100 py-2 font-weight-bold rounded">
+                            <button type="submit" name="submit" value="{{ isset($tour) && $tour->exists ? 'update' : 'create' }}" class="btn btn-primary w-100 py-2 font-weight-bold rounded">
                                 <i class="fas fa-save mr-1"></i> Lưu dữ liệu
                             </button>
                             <button type="reset" name="reset" value="reset" class="btn btn-outline-secondary w-100 py-2 rounded mt-2">
@@ -700,11 +721,19 @@
                                 @foreach($tourAlbumImages as $index => $albumImg)
                                     <div class="album-img-item" style="position:relative; width:100%; aspect-ratio: 1;">
                                         <img src="{{ asset(pare_url_file($albumImg)) }}" alt="" class="rounded shadow-sm w-100 h-100" style="object-fit:cover; border:1px solid #ddd;">
+                                        @if($isAgencyForm)
+                                        <label class="btn btn-sm btn-danger d-flex align-items-center justify-content-center p-0" title="Xóa ảnh khi lưu"
+                                           style="position:absolute; top:-5px; right:-5px; border-radius:50%; width:20px; height:20px; cursor:pointer; box-shadow:0 2px 4px rgba(0,0,0,0.2);">
+                                            <input type="checkbox" name="remove_album_images[]" value="{{ $index }}" class="d-none" onchange="this.closest('.album-img-item').style.opacity=this.checked?'.35':'1'">
+                                            <i class="fas fa-times" style="font-size: 10px;"></i>
+                                        </label>
+                                        @else
                                         <a href="{{ route('admin.tour.remove-album-image', ['id' => $tour->id, 'index' => $index]) }}"
                                            class="btn btn-sm btn-danger btn-confirm-delete d-flex align-items-center justify-content-center p-0"
                                            style="position:absolute; top:-5px; right:-5px; border-radius:50%; width:20px; height:20px; text-decoration:none; box-shadow: 0 2px 4px rgba(0,0,0,0.2);">
                                             <i class="fas fa-times" style="font-size: 10px;"></i>
                                         </a>
+                                        @endif
                                     </div>
                                 @endforeach
                             </div>

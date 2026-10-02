@@ -528,9 +528,24 @@ class Tour extends Model
         return $this->belongsTo(User::class, 't_user_id', 'id');
     }
 
+    public function agency()
+    {
+        return $this->belongsTo(Agency::class, 'agency_id', 'id');
+    }
+
     public function comments()
     {
         return $this->hasMany(Comment::class, 'cm_tour_id', 'id');
+    }
+
+    public function latestApprovedReview()
+    {
+        return $this->hasOne(Comment::class, 'cm_tour_id', 'id')
+            ->where('cm_status', Comment::STATUS_APPROVED)
+            ->whereNull('cm_reply_id')
+            ->ofMany(['id' => 'MAX'], fn ($query) => $query
+                ->where('cm_status', Comment::STATUS_APPROVED)
+                ->whereNull('cm_reply_id'));
     }
     public function booktour()
     {

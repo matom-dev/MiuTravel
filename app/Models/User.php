@@ -57,6 +57,11 @@ class User extends Authenticatable
         return $this->userRole();
     }
 
+    public function agency()
+    {
+        return $this->hasOne(Agency::class, 'user_id', 'id');
+    }
+
     public function can($permissions, $arguments = [])
     {
         if (is_string($permissions)) {
@@ -91,6 +96,11 @@ class User extends Authenticatable
         return $this->userRole()
             ->whereIn('name', $roles)
             ->exists();
+    }
+
+    public function chatMessages()
+    {
+        return $this->hasMany(ChatMessage::class);
     }
 
     public $timestamps = true;

@@ -184,6 +184,7 @@
                     <h3>Thông tin đặt tour</h3>
                 </div>
                 <div class="form-card__body">
+                    @if($tour->agency_id)<div class="date-confirm-note"><strong>Chính sách hủy / hoàn:</strong> {{ $tour->cancellation_policy }}</div>@endif
                     <form id="bookTourForm" action="{{ route('post.book.tour', $tour->id) }}" method="POST">
                         @csrf
 
@@ -234,7 +235,14 @@
                                         $oldStartDate = old('b_start_date');
                                         $startDateValue = $oldStartDate ? date('Y-m-d', strtotime($oldStartDate)) : '';
                                     @endphp
+                                    @if($tour->agency_id)
+                                    <select name="b_start_date" required><option value="">Chọn đợt khởi hành</option>
+                                    @foreach($tour->activeSchedules()->whereDate('registration_deadline','>=',today())->whereDate('ts_start_date','>',today())->get() as $departure)
+                                    <option value="{{ substr($departure->ts_start_date,0,10) }}" data-adult="{{ $departure->adult_price }}" data-child="{{ $departure->child_price }}" data-end="{{ substr($departure->ts_end_date,0,10) }}" @selected($startDateValue===substr($departure->ts_start_date,0,10))>{{ substr($departure->ts_start_date,0,10) }} — Người lớn {{ number_format($departure->adult_price) }} đ / Trẻ em {{ number_format($departure->child_price) }} đ</option>
+                                    @endforeach</select>
+                                    @else
                                     <input type="date" name="b_start_date" value="{{ $startDateValue }}" min="{{ now()->addDay()->format('Y-m-d') }}" required>
+                                    @endif
                                 </div>
                                 <div class="date-business-note">
                                     <div class="date-business-item">
@@ -309,9 +317,14 @@
                             </div>
                         </div>
 
-                        <button type="submit" class="btn-book">
+                        <input type="hidden" name="payment_method" id="bookingPaymentMethod" value="later">
+                        <button type="submit" class="btn-book" data-payment="later">
                             <i class="fa fa-check-square-o"></i> Kiểm tra thông tin đặt tour
                         </button>
+                        <button type="submit" class="btn-book" data-payment="vnpay" style="margin-top:12px;background:#005baa;">
+                            <i class="fa fa-credit-card"></i> Thanh toán online
+                        </button>
+                        <p style="margin-top:12px;">Thanh toán qua VNPay. Miu Travel sẽ liên hệ xác nhận lịch trình của bạn.</p>
                     </form>
                 </div>
             </div>
@@ -336,7 +349,7 @@
                         </div>
                     </div>
 
-                    <div class="price-section-label"><i class="fa fa-tag"></i> Bảng giá</div>
+                    <div class="price-section-label"><i class="fa fa-tag"></i> Bảng giá{{ $tour->agency_id ? " tham khảo; giá đợt đã chọn hiển thị khi xác nhận" : "" }}</div>
                     <table class="price-table">
                         <thead>
                             <tr><th>Độ tuổi</th><th>Giá / người</th></tr>
@@ -490,6 +503,8 @@ function changeCount(fieldId, delta) {
             return '';
         }
 
+        var selected = field('b_start_date').selectedOptions;
+        if (selected && selected[0] && selected[0].dataset.end) return selected[0].dataset.end;
         var date = new Date(value + 'T00:00:00');
         if (Number.isNaN(date.getTime())) {
             return '';
@@ -527,6 +542,13 @@ function changeCount(fieldId, delta) {
     }
 
     function buildConfirmCard() {
+        var selected = field('b_start_date').selectedOptions;
+        if (selected && selected[0] && selected[0].dataset.adult) {
+            prices.adults = Number(selected[0].dataset.adult);
+            prices.children = Number(selected[0].dataset.child);
+            prices.child6 = prices.children * 0.5;
+            prices.child2 = prices.children * 0.25;
+        }
         var guests = {
             adults: numberValue('b_number_adults'),
             children: numberValue('b_number_children'),
@@ -577,6 +599,9 @@ function changeCount(fieldId, delta) {
             return;
         }
 
+        var online = event.submitter && event.submitter.dataset.payment === 'vnpay';
+        field('payment_method').value = online ? 'vnpay' : 'later';
+        confirmButton.textContent = online ? 'Xác nhận và thanh toán online' : 'Xác nhận đặt';
         buildConfirmCard();
         openModal();
     });

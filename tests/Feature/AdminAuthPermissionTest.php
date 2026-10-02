@@ -6,6 +6,7 @@ use App\Models\Permission;
 use App\Models\Role;
 use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
+use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Route;
 use Tests\TestCase;
@@ -240,27 +241,26 @@ class AdminAuthPermissionTest extends TestCase
 
         foreach ($expectedRoutes as $routeName) {
             $route = Route::getRoutes()->getByName($routeName);
-            $this->assertNotNull($route, 'Route missing: ' . $routeName);
+            $this->assertNotNull($route, 'Route missing: '.$routeName);
             $this->assertTrue(
                 collect($route->gatherMiddleware())->contains(fn ($middleware) => str_starts_with($middleware, 'throttle:')),
-                'Route is missing throttle middleware: ' . $routeName
+                'Route is missing throttle middleware: '.$routeName
             );
         }
 
-        $adminLogin = collect(Route::getRoutes()->match(\Illuminate\Http\Request::create('/admin/login', 'POST'))->gatherMiddleware());
+        $adminLogin = collect(Route::getRoutes()->match(Request::create('/admin/login', 'POST'))->gatherMiddleware());
         $this->assertTrue($adminLogin->contains(fn ($middleware) => str_starts_with($middleware, 'throttle:')));
     }
 
     private function grantPermissions(User $user, array $permissionNames): void
     {
         $role = Role::create([
-            'name' => 'admin-role-' . $user->id,
+            'name' => 'admin-role-'.$user->id,
             'display_name' => 'Admin role',
         ]);
 
         foreach ($permissionNames as $permissionName) {
-            $permission = Permission::create([
-                'name' => $permissionName,
+            $permission = Permission::firstOrCreate(['name' => $permissionName], [
                 'display_name' => $permissionName,
             ]);
 

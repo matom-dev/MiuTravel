@@ -76,6 +76,32 @@
                 </li>
                 @endif
 
+                @if($sidebarAdmin && $sidebarAdmin->can('quan-ly-dai-ly') && \App\Models\Agency::where('user_id', $sidebarAdmin->id)->where('active', true)->exists())
+                <li class="nav-header" style="font-size: 10px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; color: rgba(255,255,255,.3); padding: 16px 16px 4px;">
+                    Đại lý du lịch
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('agency.profile.show') }}" class="nav-link {{ request()->routeIs('agency.profile.show') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-id-card"></i><p>Hồ sơ đại lý</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('agency.dashboard') }}" class="nav-link {{ request()->routeIs('agency.dashboard') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-chart-line"></i><p>Thống kê & tài chính</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('agency.tours.index') }}" class="nav-link {{ request()->routeIs('agency.tours.*') || request()->routeIs('agency.tour.form.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-route"></i><p>Tour & khởi hành</p>
+                    </a>
+                </li>
+                <li class="nav-item">
+                    <a href="{{ route('agency.bookings.index') }}" class="nav-link {{ request()->routeIs('agency.bookings.*') ? 'active' : '' }}">
+                        <i class="nav-icon fas fa-clipboard-list"></i><p>Đăng ký & hành khách</p>
+                    </a>
+                </li>
+                @endif
+
                 @if(Auth::guard('admins')->user()->can(['full-quyen-quan-ly', 'quan-ly-nhan-su-tour']))
                 <li class="nav-item">
                     <a href="{{ route('tour.guide.index') }}" class="nav-link {{ isset($tour_guide_active) ? $tour_guide_active : '' }}">

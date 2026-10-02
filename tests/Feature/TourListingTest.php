@@ -2,8 +2,11 @@
 
 namespace Tests\Feature;
 
+use App\Models\Agency;
+use App\Models\Comment;
 use App\Models\Location;
 use App\Models\Tour;
+use App\Models\User;
 use Illuminate\Foundation\Testing\RefreshDatabase;
 use Tests\TestCase;
 
@@ -88,6 +91,84 @@ class TourListingTest extends TestCase
             ->assertSee('itinerary-timeline', false)
             ->assertSee('Ngày 1: Động Phong Nha')
             ->assertSee('Ngày 2: Suối Moọc');
+    }
+
+    public function test_tour_detail_shows_organizing_agency_without_private_verification_data(): void
+    {
+        $agency = Agency::create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'Đại lý A',
+            'logo' => '2026-09-30__agency.png',
+            'description' => 'Chuyên tour miền Trung',
+            'address' => '12 Nguyễn Huệ, Đà Nẵng',
+            'phone' => '090 123 4567',
+            'email' => 'dailya@example.com',
+            'verification_information' => 'Số giấy phép riêng tư 123',
+        ]);
+        $tour = $this->createTour(['t_title' => 'Tour của đại lý']);
+        $tour->forceFill(['agency_id' => $agency->id])->save();
+
+        $this->get(route('tour.detail', ['id' => $tour->id, 'slug' => 'tour-cua-dai-ly']))
+            ->assertOk()
+            ->assertSee('Đại lý tổ chức')
+            ->assertSee('Đại lý A')
+            ->assertSee('Chuyên tour miền Trung')
+            ->assertSee('12 Nguyễn Huệ, Đà Nẵng')
+            ->assertSee('tel:0901234567', false)
+            ->assertSee('dailya@example.com')
+            ->assertSee('Logo Đại lý A')
+            ->assertDontSee('Số giấy phép riêng tư 123');
+
+        $legacyTour = $this->createTour(['t_title' => 'Tour cũ']);
+        $this->get(route('tour.detail', ['id' => $legacyTour->id, 'slug' => 'tour-cu']))
+            ->assertOk()
+            ->assertDontSee('Đại lý tổ chức');
+    }
+
+    public function test_customer_can_open_agency_profile_and_see_only_public_tour_totals(): void
+    {
+        $agency = Agency::create([
+            'user_id' => User::factory()->create()->id,
+            'name' => 'Đại lý Miền Trung',
+            'description' => 'Tổ chức tour miền Trung',
+            'address' => 'Đà Nẵng',
+            'verification_information' => 'Giấy phép nội bộ bí mật',
+        ]);
+        $published = $this->createTour(['t_title' => 'Tour Đà Nẵng']);
+        $published->forceFill(['agency_id' => $agency->id])->save();
+        $paused = $this->createTour(['t_title' => 'Tour Huế', 't_status' => 2]);
+        $paused->forceFill(['agency_id' => $agency->id])->save();
+        $hidden = $this->createTour(['t_title' => 'Tour chưa công khai', 't_status' => 3]);
+        $hidden->forceFill(['agency_id' => $agency->id])->save();
+        $reviewer = User::factory()->create(['name' => 'Khách An']);
+        Comment::create(['cm_tour_id' => $published->id, 'cm_user_id' => $reviewer->id, 'cm_content' => 'Chuyến đi rất tốt', 'cm_rating' => 5, 'cm_status' => Comment::STATUS_APPROVED]);
+        Comment::create(['cm_tour_id' => $published->id, 'cm_user_id' => $reviewer->id, 'cm_content' => 'Hướng dẫn tận tình', 'cm_rating' => 4, 'cm_status' => Comment::STATUS_APPROVED]);
+        Comment::create(['cm_tour_id' => $published->id, 'cm_user_id' => $reviewer->id, 'cm_content' => 'Bình luận chưa duyệt', 'cm_rating' => 1, 'cm_status' => Comment::STATUS_PENDING]);
+        Comment::create(['cm_tour_id' => $hidden->id, 'cm_user_id' => $reviewer->id, 'cm_content' => 'Bình luận tour ẩn', 'cm_rating' => 5, 'cm_status' => Comment::STATUS_APPROVED]);
+
+        $url = route('agency.public', $agency->id);
+        $this->get(route('tour'))->assertOk()->assertSee($url, false);
+        $this->get(route('tour.detail', ['id' => $published->id, 'slug' => 'tour-da-nang']))
+            ->assertOk()->assertSee($url, false)->assertSee('Xem hồ sơ và các tour của đại lý');
+        $this->get($url)->assertOk()
+            ->assertSee('Đại lý Miền Trung')
+            ->assertSee('Tour Đà Nẵng')
+            ->assertSee('Tour Huế')
+            ->assertSee('Hướng dẫn tận tình')
+            ->assertSee('Khách An')
+            ->assertSee('4,5/5')
+            ->assertSee('2 đánh giá đã duyệt')
+            ->assertSee('Chưa có đánh giá từ khách hàng.')
+            ->assertSee('public-agency-list', false)
+            ->assertDontSee('Đặt tour')
+            ->assertDontSee('Bình luận chưa duyệt')
+            ->assertDontSee('Bình luận tour ẩn')
+            ->assertDontSee('Tour chưa công khai')
+            ->assertDontSee('Giấy phép nội bộ bí mật')
+            ->assertViewHas('tourCount', 2);
+
+        $privateAgency = Agency::create(['user_id' => User::factory()->create()->id, 'name' => 'Chưa công khai']);
+        $this->get(route('agency.public', $privateAgency->id))->assertNotFound();
     }
 
     public function test_newest_tour_is_displayed_first_within_the_same_status(): void

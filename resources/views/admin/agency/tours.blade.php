@@ -1,0 +1,15 @@
+@extends('admin.agency.layout')
+@section('agency-heading', 'Tour & khởi hành')
+@section('agency-description', 'Tạo, chỉnh sửa tour và quản lý các đợt khởi hành của đại lý.')
+@section('agency-action')<a class="btn btn-light font-weight-bold" href="{{ route('agency.tour.form.create') }}"><i class="fas fa-plus mr-1"></i> Tạo tour mới</a>@endsection
+@section('agency-body')
+<section class="agency-panel" id="tours"><div class="agency-panel__head"><h2><i class="fas fa-map-marked-alt text-info mr-2"></i>Tour & đợt khởi hành</h2><a class="btn btn-primary btn-sm" href="{{ route('agency.tour.form.create') }}"><i class="fas fa-plus mr-1"></i> Thêm tour</a></div><div class="agency-panel__body">
+        @forelse($tours as $tour)
+            <details @if(request('tour_id')==$tour->id) open @endif><summary>{{ $tour->t_title }} <small class="agency-muted">#{{ $tour->id }} · {{ number_format($tour->t_price_adults) }} VND</small><span class="badge {{ $tour->status_badge_class }} float-right">{{ $tour->status_label }}</span></summary><div class="agency-inner"><div class="d-flex justify-content-between align-items-center flex-wrap mb-3" style="gap:10px"><span class="agency-muted">{{ $tour->t_journeys ?: 'Chưa có hành trình' }} · {{ $tour->duration_text }} · {{ $tour->schedules->count() }} đợt</span><a class="btn btn-outline-primary btn-sm" href="{{ route('agency.tour.form.edit',$tour->id) }}"><i class="fas fa-edit mr-1"></i> Chỉnh sửa tour</a></div>
+                <div class="agency-scroll"><table class="agency-table"><thead><tr><th>Ngày đi – về</th><th>Giá người lớn / trẻ em</th><th>Đã giữ / sức chứa</th><th>Lấp đầy</th><th>Trạng thái</th></tr></thead><tbody>@forelse($tour->schedules as $schedule)@php $filled=(int)($occupancy[$schedule->id]??0);$capacity=max(1,(int)$schedule->ts_number_guests); @endphp<tr><td>{{ substr($schedule->ts_start_date,0,10) }} – {{ substr($schedule->ts_end_date,0,10) }}</td><td>{{ number_format($schedule->adult_price) }} / {{ number_format($schedule->child_price) }}</td><td>{{ $filled }} / {{ $schedule->ts_number_guests }}</td><td><div class="agency-progress"><span style="width:{{ min(100,round($filled*100/$capacity)) }}%"></span></div><small>{{ round($filled*100/$capacity,1) }}%</small></td><td>{{ $schedule->ts_status?'Mở':'Đóng' }}</td></tr>@empty<tr><td colspan="5">Chưa có đợt khởi hành.</td></tr>@endforelse</tbody></table></div>
+                @foreach($tour->schedules as $schedule)<details><summary>Sửa đợt {{ substr($schedule->ts_start_date,0,10) }}</summary><div class="agency-inner">@include('agency.schedule-form')</div></details>@endforeach
+                <details><summary><i class="fas fa-plus mr-1"></i> Thêm đợt khởi hành</summary><div class="agency-inner">@include('agency.schedule-form',['schedule'=>new \App\Models\TourSchedule])</div></details>
+            </div></details>
+        @empty<p class="text-muted">Đại lý chưa có tour nào.</p><a class="btn btn-primary" href="{{ route('agency.tour.form.create') }}">Tạo tour đầu tiên</a>@endforelse
+    </div></section>
+@endsection

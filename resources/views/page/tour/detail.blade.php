@@ -83,6 +83,56 @@
 .content-card__body {
     padding: 22px 24px 24px;
 }
+.agency-profile {
+    display: flex;
+    align-items: flex-start;
+    gap: 18px;
+}
+.agency-profile__logo {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex: 0 0 84px;
+    width: 84px;
+    height: 84px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: #f8fafc;
+    color: #126b70;
+    font-size: 30px;
+    overflow: hidden;
+}
+.agency-profile__logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+}
+.agency-profile__details { min-width: 0; }
+.agency-profile__name {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--text-dark);
+    font-size: 20px;
+    line-height: 1.3;
+}
+.agency-profile__name:hover { color: #126b70; text-decoration: underline; }
+.agency-profile__description {
+    margin: 0 0 14px;
+    color: #475569;
+    line-height: 1.6;
+    white-space: pre-line;
+}
+.agency-profile__contacts {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 10px 20px;
+    color: #475569;
+    font-size: 14px;
+}
+.agency-profile__contacts span,
+.agency-profile__contacts a { overflow-wrap: anywhere; }
+.agency-profile__contacts a { color: #126b70; }
+.agency-profile__contacts i { margin-right: 5px; }
 .section-label {
     display: flex;
     align-items: center;
@@ -714,6 +764,7 @@
     .album-grid { grid-template-columns: 1fr; }
     .price-table { font-size: 13px; }
     .price-table td:last-child { white-space: normal; }
+    .agency-profile { flex-direction: column; }
 }
 </style>
 @stop
@@ -733,7 +784,7 @@
                 'image' => [$tourSeoImage],
                 'brand' => [
                     '@type' => 'Brand',
-                    'name' => 'Miu Travel',
+                    'name' => $tour->agency?->name ?: 'Miu Travel',
                 ],
                 'offers' => [
                     '@type' => 'Offer',
@@ -813,7 +864,12 @@
                         <h2 class="tour-title">{{ $tour->t_title }}</h2>
                         <div class="tour-status-line">
                             <span class="{{ $publicStatusClass }}"><i class="{{ $tour->public_status_icon }}"></i> {{ $tour->status_label }}</span>
-                            <span><i class="fa fa-calendar-check-o"></i> Khách tự chọn ngày khởi hành mong muốn</span>
+                            @if($tour->agency)
+                                <span><i class="fa fa-building-o"></i> Tổ chức bởi <a href="{{ route('agency.public', $tour->agency->id) }}">{{ $tour->agency->name }}</a></span>
+                                <span><i class="fa fa-calendar-check-o"></i> Chọn đợt khởi hành khi đặt tour</span>
+                            @else
+                                <span><i class="fa fa-calendar-check-o"></i> Khách tự chọn ngày khởi hành mong muốn</span>
+                            @endif
                         </div>
                     </div>
                     <div class="content-card__body">
@@ -870,9 +926,47 @@
                     </div>
                 </div>
 
+                @if($tour->agency)
+                    <div class="content-card" id="agency">
+                        <div class="content-card__body">
+                            <div class="section-label"><i class="fa fa-building-o"></i> Đại lý tổ chức</div>
+                            <div class="agency-profile">
+                                <div class="agency-profile__logo">
+                                    @if($tour->agency->logo)
+                                        <img src="{{ asset(pare_url_file($tour->agency->logo)) }}" alt="Logo {{ $tour->agency->name }}" loading="lazy">
+                                    @else
+                                        <i class="fa fa-building-o" aria-hidden="true"></i>
+                                    @endif
+                                </div>
+                                <div class="agency-profile__details">
+                                    <a class="agency-profile__name" href="{{ route('agency.public', $tour->agency->id) }}">{{ $tour->agency->name }}</a>
+                                    @if($tour->agency->description)
+                                        <p class="agency-profile__description">{{ $tour->agency->description }}</p>
+                                    @endif
+                                    <div class="agency-profile__contacts">
+                                        @if($tour->agency->address)
+                                            <span><i class="fa fa-map-marker"></i> {{ $tour->agency->address }}</span>
+                                        @endif
+                                        @if($tour->agency->phone)
+                                            <a href="tel:{{ preg_replace('/[^0-9+]/', '', $tour->agency->phone) }}"><i class="fa fa-phone"></i> {{ $tour->agency->phone }}</a>
+                                        @endif
+                                        @if($tour->agency->email)
+                                            <a href="mailto:{{ $tour->agency->email }}"><i class="fa fa-envelope-o"></i> {{ $tour->agency->email }}</a>
+                                        @endif
+                                    </div>
+                                    <a href="{{ route('agency.public', $tour->agency->id) }}" class="btn btn-outline-primary mt-3">Xem hồ sơ và các tour của đại lý <i class="fa fa-arrow-right ml-1"></i></a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                @endif
+
                 <div class="content-card" id="prices">
                     <div class="content-card__body">
                         <div class="section-label"><i class="fa fa-tags"></i> Bảng giá theo nhóm tuổi</div>
+                        @if($tour->agency)
+                            <p class="agency-profile__description">Giá dưới đây là giá tham khảo. Giá áp dụng cho từng đợt khởi hành sẽ hiển thị khi đặt tour.</p>
+                        @endif
                         <table class="price-table">
                             <thead>
                                 <tr>
@@ -1094,7 +1188,7 @@
                             </div>
                             <div class="mini-info-row">
                                 <i class="fa fa-calendar-check-o mi-icon"></i>
-                                <div><strong>Lịch khởi hành:</strong> Không áp ngày đi cố định</div>
+                                <div><strong>Lịch khởi hành:</strong> {{ $tour->agency ? 'Chọn đợt khởi hành khi đặt tour' : 'Không áp ngày đi cố định' }}</div>
                             </div>
                         </div>
 
@@ -1104,7 +1198,7 @@
 
                         @if($tour->is_bookable)
                             <a href="{{ route('book.tour', ['id' => $tour->id, 'slug' => safeTitle($tour->t_title)]) }}" class="btn-book-main">
-                                <i class="fa fa-calendar-plus-o"></i> Đặt tour theo ngày mong muốn
+                                <i class="fa fa-calendar-plus-o"></i> {{ $tour->agency ? 'Chọn đợt và đặt tour' : 'Đặt tour theo ngày mong muốn' }}
                             </a>
                         @else
                             <span class="btn-sold-out"><i class="{{ $tour->public_status_icon }}"></i> {{ $tour->status_label }}</span>
@@ -1113,13 +1207,15 @@
                             </div>
                         @endif
 
-                        <div class="hotline-mini">
-                            <i class="fa fa-phone-square"></i>
-                            <div>
-                                <small>Tư vấn lịch trình</small>
-                                <strong>0886 733 538</strong>
+                        @if(!$tour->agency || $tour->agency->phone)
+                            <div class="hotline-mini">
+                                <i class="fa fa-phone-square"></i>
+                                <div>
+                                    <small>{{ $tour->agency ? 'Liên hệ đại lý tổ chức' : 'Tư vấn lịch trình' }}</small>
+                                    <strong>{{ $tour->agency?->phone ?: '0886 733 538' }}</strong>
+                                </div>
                             </div>
-                        </div>
+                        @endif
                     </div>
                 </div>
 

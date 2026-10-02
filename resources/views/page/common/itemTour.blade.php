@@ -53,6 +53,12 @@
                     <i class="fa fa-clock-o"></i>
                     <span>Thời gian: {{ $durationText }}</span>
                 </div>
+                @if($tour->agency)
+                    <div class="tour-card__meta-item">
+                        <i class="fa fa-building-o"></i>
+                        <span>Tổ chức bởi <a href="{{ route('agency.public', $tour->agency->id) }}">{{ $tour->agency->name }}</a></span>
+                    </div>
+                @endif
             </div>
 
             <div class="tour-card__actions">

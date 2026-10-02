@@ -228,6 +228,7 @@ Route::group(['namespace' => 'Page'], function() {
     Route::get('/lien-he.html', 'HomeController@contact')->name('contact.index');
     Route::post('/lien-he.html', 'HomeController@sendContact')->name('contact.send')->middleware('throttle:3,1');
     Route::get('/tour.html', 'TourController@index')->name('tour');
+    Route::get('/dai-ly/{id}.html', 'AgencyController@show')->name('agency.public');
     Route::get('book-tour/{id}/{slug}.html', 'TourController@bookTour')->name('book.tour');
     Route::post('book/tour/{id}', 'TourController@postBookTour')->name('post.book.tour')->middleware('throttle:5,1');
     Route::get('/tour/{id}/{slug}/hoat-dong.html', 'TourController@activities')->name('tour.activities');
@@ -239,3 +240,16 @@ Route::group(['namespace' => 'Page'], function() {
     Route::post('/comment', 'CommentController@comment')->name('comment')->middleware('throttle:10,1');
     Route::post('/reply-comment', 'CommentController@replyComment')->name('reply.comment')->middleware('throttle:10,1');
 });
+
+
+Route::get('/chat/messages', [App\Http\Controllers\ChatbotController::class, 'fetchMessages']);
+Route::post('/chat/send',[App\Http\Controllers\ChatbotController::class, 'sendMessages']);
+
+Route::middleware('users')->group(function () {
+    Route::get('/thanh-toan/vnpay/{id}', [App\Http\Controllers\Page\VnpayController::class, 'checkout'])->name('vnpay.checkout');
+    Route::post('/thanh-toan/vnpay/{id}', [App\Http\Controllers\Page\VnpayController::class, 'pay'])->middleware('throttle:5,1')->name('vnpay.pay');
+});
+Route::get('/vnpay/return', [App\Http\Controllers\Page\VnpayController::class, 'result'])->name('vnpay.return');
+
+Route::redirect('/agency', '/admin/agency');
+require __DIR__.'/agency.php';

@@ -32,7 +32,7 @@ class HomeController extends Controller
             ->get();
 
         $perPage = self::HOME_TOURS_PER_PAGE;
-        $tours = Tour::with('location')
+        $tours = Tour::with(['location', 'agency'])
             ->visibleToCustomers()
             ->orderByDesc('id')
             ->paginate($perPage);
@@ -70,7 +70,7 @@ class HomeController extends Controller
         $perPage = self::HOME_TOURS_PER_PAGE;
         $page    = max(1, (int) $request->get('page', 1));
 
-        $tours = Tour::with('location')
+        $tours = Tour::with(['location', 'agency'])
             ->visibleToCustomers()
             ->orderByDesc('id')
             ->paginate($perPage, ['*'], 'page', $page);

@@ -225,6 +225,13 @@
                                     <td class="text-center align-middle text-muted font-weight-bold">{{ $i }}</td>
                                     <td class="text-center align-middle">
                                         <span class="booking-code">{{ $book->display_code }}</span>
+                                        @foreach($book->vnpayPayments as $payment)
+                                            <div class="small mt-2">
+                                                <strong>VNPay:</strong> {{ ['pending' => 'Chờ kết quả', 'paid' => 'Đã thanh toán', 'failed' => 'Không thành công', 'review' => 'Cần đối soát'][$payment->status] ?? $payment->status }}
+                                                <br>{{ number_format($payment->amount, 0, ',', '.') }} đ · {{ $payment->reference }}
+                                                @if($payment->transaction_no)<br>Mã VNPay: {{ $payment->transaction_no }}@endif
+                                            </div>
+                                        @endforeach
                                     </td>
                                     <td class="align-middle">
                                         <p class="font-weight-medium mb-1 text-primary">

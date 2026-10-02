@@ -37,7 +37,7 @@ class TourController extends Controller
             'tour_type' => ['nullable', 'string', Rule::in(array_keys(Tour::TOUR_TYPES))],
         ]);
 
-        $tours = Tour::with(['user', 'location']);
+        $tours = Tour::with(['user', 'location', 'agency']);
 
         if (!empty($validated['key_tour'])) {
             $tours->where('t_title', 'like', '%' . $validated['key_tour'] . '%');
@@ -100,7 +100,7 @@ class TourController extends Controller
 
     public function detail(Request $request, $id)
     {
-        $tour = Tour::with(['comments' => function ($query) use ($id) {
+        $tour = Tour::with(['agency', 'comments' => function ($query) use ($id) {
             $query->with(['user', 'replies' => function ($q) {
                 $q->with('user')->where('cm_status', Comment::STATUS_APPROVED)->limit(10);
             }])
@@ -192,7 +192,7 @@ class TourController extends Controller
         }
 
         try {
-            $params = $request->except(['_token']);
+            $params = $request->except(['_token', 'payment_method']);
             $user = Auth::guard('users')->user();
             $bookingData = $this->bookingService->createForTour((int) $id, $user, $params);
 
@@ -207,6 +207,10 @@ class TourController extends Controller
                 });
             } catch (\Exception $mailException) {
                 // Không rollback DB khi mail lỗi.
+            }
+
+            if ($request->input('payment_method') === 'vnpay') {
+                return redirect()->route('vnpay.checkout', $bookingData['book']->id);
             }
 
             return redirect()->route('page.home')->with('success', 'Cám ơn bạn đã đặt tour chúng tôi sẽ liên hệ sớm để xác nhận.');

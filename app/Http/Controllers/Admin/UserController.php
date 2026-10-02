@@ -2,16 +2,19 @@
 
 namespace App\Http\Controllers\Admin;
 
-use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Http\Requests\UserRequest;
-use App\Models\User;
+use App\Models\Agency;
 use App\Models\Role;
+use App\Models\User;
 use App\Services\AdminAuditLogger;
+use Illuminate\Http\Request;
+use Illuminate\Http\Response;
 
 class UserController extends Controller
 {
     private const CUSTOMER_ROLE_NAMES = ['khach-hang', 'khach_hang', 'customer'];
+
     private const CUSTOMER_ROLE_DISPLAY_NAMES = ['Khách hàng', 'Khach hang', 'Customer'];
 
     protected $auditLogger;
@@ -28,10 +31,11 @@ class UserController extends Controller
 
         $this->auditLogger = $auditLogger;
     }
+
     /**
      * Display a listing of the resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function index(Request $request)
     {
@@ -156,7 +160,7 @@ class UserController extends Controller
     /**
      * Show the form for creating a new resource.
      *
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function create()
     {
@@ -167,15 +171,15 @@ class UserController extends Controller
     /**
      * Store a newly created resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
-     * @return \Illuminate\Http\Response
+     * @param  Request  $request
+     * @return Response
      */
     public function store(UserRequest $request)
     {
         //
         \DB::beginTransaction();
         try {
-            $user = new User();
+            $user = new User;
             $user->name = $request->name;
             $user->email = $request->email;
             $user->phone = $request->phone;
@@ -183,11 +187,13 @@ class UserController extends Controller
             $user->status = $request->status;
             if ($request->hasFile('images')) {
                 $image = upload_image('images');
-                if ($image['code'] == 1)
+                if ($image['code'] == 1) {
                     $user->avatar = $image['name'];
+                }
             }
             if ($user->save()) {
-                \DB::table('role_user')->insert(['role_id'=> $request->role, 'user_id'=> $user->id]);
+                \DB::table('role_user')->insert(['role_id' => $request->role, 'user_id' => $user->id]);
+                $this->syncAgencyProfile($user, $request);
             }
             $this->auditLogger->log('user.created', $user, [
                 'role_id' => (int) $request->role,
@@ -195,47 +201,48 @@ class UserController extends Controller
             ], $request);
 
             \DB::commit();
-            return redirect()->back()->with('success','Thêm mới thành công');
+
+            return redirect()->back()->with('success', 'Thêm mới thành công');
         } catch (\Exception $exception) {
             \DB::rollBack();
+
             return redirect()->back()->with('error', 'Đã xảy ra lỗi khi lưu dữ liệu');
         }
     }
-
 
     /**
      * Show the form for editing the specified resource.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function edit($id)
     {
         //
-        $user = User::with([
-            'userRole' => function($userRole)
-            {
+        $user = User::with(['agency',
+            'userRole' => function ($userRole) {
                 $userRole->select('*');
-            }
+            },
         ])->find($id);
         $listRoleUser = \DB::table('role_user')->where('user_id', $id)->first();
-        if(!$user) {
+        if (! $user) {
             return redirect()->route('get.list.user')->with('danger', 'Quyền không tồn tại');
         }
 
         $viewData = [
             'user' => $user,
-            'listRoleUser' => $listRoleUser
+            'listRoleUser' => $listRoleUser,
         ];
+
         return view('admin.user.create', $viewData);
     }
 
     /**
      * Update the specified resource in storage.
      *
-     * @param  \Illuminate\Http\Request  $request
+     * @param  Request  $request
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function update(UserRequest $request, $id)
     {
@@ -250,13 +257,15 @@ class UserController extends Controller
 
             if ($request->hasFile('images')) {
                 $image = upload_image('images');
-                if ($image['code'] == 1)
+                if ($image['code'] == 1) {
                     $user->avatar = $image['name'];
+                }
             }
             if ($user->save()) {
                 $oldRole = \DB::table('role_user')->where('user_id', $id)->value('role_id');
                 \DB::table('role_user')->where('user_id', $id)->delete();
-                \DB::table('role_user')->insert(['role_id'=> $request->role, 'user_id'=> $user->id]);
+                \DB::table('role_user')->insert(['role_id' => $request->role, 'user_id' => $user->id]);
+                $this->syncAgencyProfile($user, $request);
             }
             $this->auditLogger->log('user.updated', $user, [
                 'old_role_id' => isset($oldRole) ? (int) $oldRole : null,
@@ -265,9 +274,11 @@ class UserController extends Controller
             ], $request);
 
             \DB::commit();
-            return redirect()->back()->with('success','Chỉnh sửa thành công');
+
+            return redirect()->back()->with('success', 'Chỉnh sửa thành công');
         } catch (\Exception $exception) {
             \DB::rollBack();
+
             return redirect()->back()->with('error', 'Đã xảy ra lỗi khi lưu dữ liệu');
         }
     }
@@ -276,13 +287,13 @@ class UserController extends Controller
      * Remove the specified resource from storage.
      *
      * @param  int  $id
-     * @return \Illuminate\Http\Response
+     * @return Response
      */
     public function delete($id)
     {
         //
         $user = User::find($id);
-        if (!$user) {
+        if (! $user) {
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
         \DB::beginTransaction();
@@ -293,10 +304,24 @@ class UserController extends Controller
             ]);
             $user->delete();
             \DB::commit();
-            return redirect()->back()->with('success','Đã xóa thành công');
+
+            return redirect()->back()->with('success', 'Đã xóa thành công');
         } catch (\Exception $exception) {
             \DB::rollBack();
+
             return redirect()->back()->with('error', 'Đã xảy ra lỗi khi lưu dữ liệu');
         }
+    }
+
+    private function syncAgencyProfile(User $user, UserRequest $request): void
+    {
+        if (! Role::whereKey($request->role)->where('name', 'dai-ly-du-lich')->exists()) {
+            return;
+        }
+
+        Agency::updateOrCreate(
+            ['user_id' => $user->id],
+            ['name' => $request->agency_name, 'email' => $user->email]
+        );
     }
 }

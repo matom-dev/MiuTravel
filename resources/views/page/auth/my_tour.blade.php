@@ -303,6 +303,9 @@
                                                     default => 't-badge-cancel'
                                                 };
                                             @endphp
+                                            @if(in_array((int) $tour->b_status, [\App\Models\BookTour::STATUS_PENDING, \App\Models\BookTour::STATUS_CONFIRMED], true))
+                                                <a class="btn btn-primary" style="margin-bottom:10px;" href="{{ route('vnpay.checkout', $tour->id) }}">Thanh toán online</a>
+                                            @endif
                                             @if($tour->b_status != 1)
                                                 <span class="t-badge {{ $badgeClass }}">
                                                     {{ $status[$tour->b_status] ?? 'Không rõ' }}

@@ -52,7 +52,10 @@
         </a>
     </div>
 
+
     @include('page.common.script')
+
+     @include('page.partials.chat_ai')
     @yield('script')
 </body>
 </html>

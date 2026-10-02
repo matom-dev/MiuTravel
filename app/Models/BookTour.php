@@ -46,6 +46,11 @@ class BookTour extends Model
         'b_end_date' => 'datetime',
     ];
 
+    public function vnpayPayments()
+    {
+        return $this->hasMany(VnpayPayment::class, 'book_tour_id')->latest('id');
+    }
+
     public function tour()
     {
         return $this->belongsTo(Tour::class, 'b_tour_id', 'id');

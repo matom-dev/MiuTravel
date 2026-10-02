@@ -24,6 +24,7 @@ class BookTourRequest extends FormRequest
     public function rules()
     {
         return [
+            'payment_method' => 'nullable|in:later,vnpay',
             'b_name'  => 'required|string|max:191',
             'b_email' => 'required|email|max:191',
             'b_phone' => 'required|string|max:20',

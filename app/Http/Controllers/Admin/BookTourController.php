@@ -184,7 +184,7 @@ class BookTourController extends Controller
 
     private function filteredBookings(Request $request)
     {
-        $bookTours = BookTour::with(['tour', 'user', 'schedule', 'assignedStaff']);
+        $bookTours = BookTour::with(['tour', 'user', 'schedule', 'assignedStaff', 'vnpayPayments']);
         $admin = auth('admins')->user();
         $canManageAllBookings = $this->canManageAllBookings($admin);
         $bookingCode = trim((string) $request->input('booking_code', $request->input('booking_id', '')));

@@ -49,6 +49,12 @@ class AclSeeder extends Seeder
                     'quan-ly-nhan-su-tour' => 'Quản lý nhân sự tour',
                 ],
             ],
+            'Đại lý' => [
+                'description' => 'Quản lý dữ liệu của đại lý du lịch',
+                'permissions' => [
+                    'quan-ly-dai-ly' => 'Quản lý đại lý du lịch',
+                ],
+            ],
             'Dịch vụ' => [
                 'description' => 'Quyền quản lý dịch vụ phụ trợ',
                 'permissions' => [
@@ -97,6 +103,11 @@ class AclSeeder extends Seeder
         }
 
         $roles = [
+            'dai-ly-du-lich' => [
+                'display_name' => 'Đại lý du lịch',
+                'description' => 'Nhân sự quản lý dữ liệu đại lý của mình',
+                'permissions' => ['truy-cap-he-thong', 'quan-ly-dai-ly'],
+            ],
             'super-admin' => [
                 'display_name' => 'Super Admin',
                 'description' => 'Toàn quyền quản trị hệ thống',
@@ -192,7 +203,7 @@ class AclSeeder extends Seeder
             $adminEmail = env('ADMIN_EMAIL', 'admin@gmail.com');
             $admin = User::firstOrNew(['email' => $adminEmail]);
 
-            if (!$admin->exists) {
+            if (! $admin->exists) {
                 $admin->forceFill([
                     'name' => env('ADMIN_NAME', 'Super Admin'),
                     'password' => Hash::make(env('ADMIN_PASSWORD', 'password')),

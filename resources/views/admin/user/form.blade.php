@@ -154,11 +154,12 @@
                                     <label class="font-weight-bold text-muted">
                                         Vai trò <sup class="text-danger">(*)</sup>
                                     </label>
-                                    <select name="role" class="form-control custom-select px-3 py-2" style="border-radius: 8px;">
+                                    <select name="role" id="roleSelect" class="form-control custom-select px-3 py-2" style="border-radius: 8px;">
                                         <option value="">-- Chọn vai trò --</option>
                                         @if($roles)
                                             @foreach($roles as $role)
                                                 <option {{ old('role', isset($listRoleUser->role_id) ? $listRoleUser->role_id : '') == $role->id ? 'selected' : '' }}
+                                                        data-agency="{{ $role->name === 'dai-ly-du-lich' ? '1' : '0' }}"
                                                         value="{{ $role->id }}">
                                                     {{ $role->display_name }}
                                                 </option>
@@ -170,6 +171,16 @@
                                             <i class="fas fa-exclamation-circle mr-1"></i>{{ $errors->first('role') }}
                                         </span>
                                     @endif
+                                </div>
+                            </div>
+
+                            <div class="col-md-6" id="agencyNameField" hidden>
+                                <div class="form-group mb-4">
+                                    <label for="agencyName" class="font-weight-bold text-muted">Tên đại lý du lịch <sup class="text-danger">(*)</sup></label>
+                                    <input type="text" id="agencyName" name="agency_name" class="form-control px-3 py-2"
+                                           value="{{ old('agency_name', $user->agency->name ?? '') }}" maxlength="255">
+                                    @error('agency_name')<span class="text-danger small mt-1 d-block">{{ $message }}</span>@enderror
+                                    <small class="text-muted">Nhân sự này chỉ quản lý tour và đăng ký thuộc đại lý được cấp.</small>
                                 </div>
                             </div>
 
@@ -202,14 +213,14 @@
                                     <div class="d-flex" style="gap: 24px;">
                                         <div class="icheck-primary">
                                             <input type="radio" id="statusActive" name="status" value="1"
-                                                {{ isset($user->status) && $user->status == 1 ? 'checked' : '' }}>
+                                                {{ old('status', $user->status ?? 1) == 1 ? 'checked' : '' }}>
                                             <label for="statusActive" class="d-flex align-items-center" style="gap: 6px;">
                                                 <span class="badge badge-success" style="font-size: 11px;">Hoạt động</span>
                                             </label>
                                         </div>
                                         <div class="icheck-primary">
                                             <input type="radio" id="statusLocked" name="status" value="2"
-                                                {{ isset($user->status) && $user->status == 2 ? 'checked' : '' }}>
+                                                {{ old('status', $user->status ?? 1) == 2 ? 'checked' : '' }}>
                                             <label for="statusLocked" class="d-flex align-items-center" style="gap: 6px;">
                                                 <span class="badge badge-danger" style="font-size: 11px;">Đã khóa</span>
                                             </label>
@@ -223,6 +234,21 @@
             </div>
         </div>
     </form>
+    <style>#agencyNameField[hidden] { display: none !important; }</style>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            var select = document.getElementById('roleSelect');
+            var field = document.getElementById('agencyNameField');
+            var name = document.getElementById('agencyName');
+            function updateAgencyField() {
+                var agency = select.selectedOptions[0] && select.selectedOptions[0].dataset.agency === '1';
+                field.hidden = !agency;
+                name.required = agency;
+            }
+            select.addEventListener('change', updateAgencyField);
+            updateAgencyField();
+        });
+    </script>
 </div>
 
 <script>
