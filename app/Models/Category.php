@@ -31,7 +31,7 @@ class Category extends Model
     }
 
     public function parent(){
-        return $this->hasOne(self::class, 'id', 'c_parent_id')->select('id', 'c_name');
+        return $this->belongsTo(self::class, 'c_parent_id');
     }
 
     public function getParents()
@@ -57,6 +57,7 @@ class Category extends Model
             if ($image['code'] == 1)
                 $params['c_banner'] = $image['name'];
         }
+        $params['c_parent_id'] = $request->input('c_parent_id') ?: null;
         $params['c_slug'] = Str::slug($request->c_name);
         $params['c_user_id'] = Auth::guard('admins')->id();
         if ($id) {
@@ -64,4 +65,10 @@ class Category extends Model
         }
         return $this->create($params);
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'c_user_id');
+    }
+
 }

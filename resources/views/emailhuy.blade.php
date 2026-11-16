@@ -35,11 +35,11 @@
                     <td style="padding: 8px 0; color: #0f172a;">{{ $bookTour->b_address }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày khởi hành mong muốn</strong></td>
+                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày khởi hành</strong></td>
                     <td style="padding: 8px 0; color: #0f172a;">{{ $bookTour->b_start_date ? \Carbon\Carbon::parse($bookTour->b_start_date)->format('d/m/Y') : '---' }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày về dự kiến</strong></td>
+                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày về</strong></td>
                     <td style="padding: 8px 0; color: #0f172a;">{{ $bookTour->b_end_date ? \Carbon\Carbon::parse($bookTour->b_end_date)->format('d/m/Y') : '---' }}</td>
                 </tr>
             </table>

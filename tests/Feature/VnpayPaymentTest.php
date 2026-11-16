@@ -172,6 +172,13 @@ class VnpayPaymentTest extends TestCase
         $this->get(route('book.tour', [$book->b_tour_id, 'tour-vnpay']))->assertOk()->assertSee('Thanh toán online');
         $payload = $book->only(['b_name', 'b_email', 'b_phone', 'b_address', 'b_number_adults', 'b_number_children', 'b_number_child6', 'b_number_child2']);
         $payload['b_start_date'] = now()->addDays(5)->format('Y-m-d');
+        $schedule = $book->tour->schedules()->create([
+            'ts_start_date'=>$payload['b_start_date'], 'ts_end_date'=>today()->addDays(6)->toDateString(),
+            'ts_number_guests'=>100, 'ts_status'=>1,
+        ]);
+        $schedule->forceFill(['registration_deadline'=>today()->addDays(4)->toDateString()])->save();
+        $book->b_tour_schedule_id = $schedule->id;
+        $book->save();
         $payload['payment_method'] = 'vnpay';
         $response = $this->post(route('post.book.tour', $book->b_tour_id), $payload);
         $newBook = BookTour::latest('id')->first();

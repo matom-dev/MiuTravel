@@ -228,21 +228,18 @@
                             </div>
 
                             <div class="field-group field-span-2">
-                                <label>Ngày khởi hành mong muốn <sup>*</sup></label>
+                                <label>Đợt khởi hành <sup>*</sup></label>
                                 <div class="field-wrap">
                                     <i class="fa fa-calendar field-icon"></i>
                                     @php
                                         $oldStartDate = old('b_start_date');
                                         $startDateValue = $oldStartDate ? date('Y-m-d', strtotime($oldStartDate)) : '';
                                     @endphp
-                                    @if($tour->agency_id)
                                     <select name="b_start_date" required><option value="">Chọn đợt khởi hành</option>
-                                    @foreach($tour->activeSchedules()->whereDate('registration_deadline','>=',today())->whereDate('ts_start_date','>',today())->get() as $departure)
-                                    <option value="{{ substr($departure->ts_start_date,0,10) }}" data-adult="{{ $departure->adult_price }}" data-child="{{ $departure->child_price }}" data-end="{{ substr($departure->ts_end_date,0,10) }}" @selected($startDateValue===substr($departure->ts_start_date,0,10))>{{ substr($departure->ts_start_date,0,10) }} — Người lớn {{ number_format($departure->adult_price) }} đ / Trẻ em {{ number_format($departure->child_price) }} đ</option>
+                                    @foreach($tour->activeSchedules()->availableForBooking()->get() as $departure)
+                                    <option @disabled($departure->remaining_seats < 1) value="{{ substr($departure->ts_start_date,0,10) }}" data-adult="{{ $departure->adult_price ?? $adultPrice }}" data-child="{{ $departure->child_price ?? $childPrice }}" data-end="{{ substr($departure->ts_end_date,0,10) }}" @selected($startDateValue===substr($departure->ts_start_date,0,10))>{{ substr($departure->ts_start_date,0,10) }} — Còn {{ $departure->remaining_seats }}/{{ $departure->ts_number_guests }} chỗ — Người lớn {{ number_format($departure->adult_price ?? $adultPrice) }} đ / Trẻ em {{ number_format($departure->child_price ?? $childPrice) }} đ</option>
                                     @endforeach</select>
-                                    @else
-                                    <input type="date" name="b_start_date" value="{{ $startDateValue }}" min="{{ now()->addDay()->format('Y-m-d') }}" required>
-                                    @endif
+
                                 </div>
                                 <div class="date-business-note">
                                     <div class="date-business-item">
@@ -255,14 +252,14 @@
                                     <div class="date-business-item">
                                         <i class="fa fa-flag-checkered"></i>
                                         <div>
-                                            <small>Ngày về dự kiến</small>
-                                            <strong id="expectedEndHint">Tự tính sau khi chọn ngày đi</strong>
+                                            <small>Ngày về</small>
+                                            <strong id="expectedEndHint">Theo đợt khởi hành đã chọn</strong>
                                         </div>
                                     </div>
                                 </div>
                                 <div class="date-confirm-note">
                                     <i class="fa fa-info-circle"></i>
-                                    <span>Miu Travel sẽ liên hệ xác nhận lại lịch trình trước khi chốt booking.</span>
+                                    <span>Mỗi hành khách chiếm một chỗ. Đơn chờ xác nhận được giữ chỗ; đơn hủy sẽ trả chỗ.</span>
                                 </div>
                                 @if ($errors->first('b_start_date'))<div class="field-error"><i class="fa fa-exclamation-circle"></i> {{ $errors->first('b_start_date') }}</div>@endif
                             </div>
@@ -349,7 +346,7 @@
                         </div>
                     </div>
 
-                    <div class="price-section-label"><i class="fa fa-tag"></i> Bảng giá{{ $tour->agency_id ? " tham khảo; giá đợt đã chọn hiển thị khi xác nhận" : "" }}</div>
+                    <div class="price-section-label"><i class="fa fa-tag"></i> Bảng giá{{ " tham khảo; giá đợt đã chọn hiển thị khi xác nhận" }}</div>
                     <table class="price-table">
                         <thead>
                             <tr><th>Độ tuổi</th><th>Giá / người</th></tr>
@@ -398,8 +395,8 @@
                 <div class="confirm-item"><small>Email</small><strong id="confirmEmail"></strong></div>
                 <div class="confirm-item"><small>Số điện thoại</small><strong id="confirmPhone"></strong></div>
                 <div class="confirm-item"><small>Địa chỉ</small><strong id="confirmAddress"></strong></div>
-                <div class="confirm-item"><small>Ngày khởi hành mong muốn</small><strong id="confirmStartDate"></strong></div>
-                <div class="confirm-item"><small>Ngày về dự kiến</small><strong id="confirmEndDate"></strong></div>
+                <div class="confirm-item"><small>Đợt khởi hành</small><strong id="confirmStartDate"></strong></div>
+                <div class="confirm-item"><small>Ngày về</small><strong id="confirmEndDate"></strong></div>
                 <div class="confirm-item"><small>Tổng số khách</small><strong id="confirmGuestTotal"></strong></div>
                 <div class="confirm-item confirm-note"><small>Ghi chú</small><strong id="confirmNote"></strong></div>
             </div>
@@ -526,7 +523,7 @@ function changeCount(fieldId, delta) {
         var endDate = expectedEndDate(textValue('b_start_date'));
         expectedEndHint.textContent = endDate
             ? dateText(endDate)
-            : 'Tự tính sau khi chọn ngày đi';
+            : 'Theo đợt khởi hành đã chọn';
     }
 
     function openModal() {

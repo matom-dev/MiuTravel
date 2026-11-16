@@ -9,4 +9,10 @@ class VnpayPayment extends Model
     protected $guarded = ['id'];
 
     protected $casts = ['amount' => 'integer', 'expires_at' => 'datetime'];
+
+    public function booking()
+    {
+        return $this->belongsTo(BookTour::class, 'book_tour_id');
+    }
+
 }

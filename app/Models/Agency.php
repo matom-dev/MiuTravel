@@ -14,4 +14,16 @@ class Agency extends Model
     {
         return $this->hasMany(Tour::class, 'agency_id');
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'user_id');
+    }
+
+
+    public function bookings()
+    {
+        return $this->hasMany(BookTour::class, 'agency_id');
+    }
+
 }

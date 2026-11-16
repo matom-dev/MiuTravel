@@ -33,10 +33,10 @@ class CommentController extends Controller
         }
 
         $validator = Validator::make($request->all(), [
-            'tour_id' => 'nullable|integer',
-            'article_id' => 'nullable|integer',
-            'hotel_id' => 'nullable|integer',
-            'reply_id' => 'nullable|integer',
+            'tour_id' => 'nullable|integer|exists:tours,id',
+            'article_id' => 'nullable|integer|exists:articles,id',
+            'hotel_id' => 'nullable|integer|exists:hotels,id',
+            'reply_id' => 'prohibited',
             'rating' => 'nullable|integer|between:1,5',
             'checkin_images' => 'nullable|array|max:5',
             'checkin_images.*' => 'image|mimes:jpg,jpeg,png,webp|mimetypes:image/jpeg,image/png,image/webp|max:5120|dimensions:min_width=1,min_height=1,max_width=8000,max_height=8000',
@@ -47,6 +47,13 @@ class CommentController extends Controller
             'checkin_images.*.mimes' => 'Ảnh check-in chỉ hỗ trợ JPG, PNG hoặc WEBP',
             'checkin_images.*.max' => 'Mỗi ảnh check-in không được vượt quá 5MB',
         ]);
+
+        $validator->after(function ($validator) use ($request) {
+            $targets = collect(['tour_id', 'article_id', 'hotel_id'])->filter(fn ($key) => $request->filled($key));
+            if ($targets->count() !== 1) {
+                $validator->errors()->add('target', 'Bình luận phải thuộc đúng một tour, bài viết hoặc khách sạn.');
+            }
+        });
 
         if ($validator->fails()) {
             return response([

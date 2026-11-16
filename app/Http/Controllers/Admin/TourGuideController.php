@@ -88,7 +88,7 @@ class TourGuideController extends Controller
         }
 
         try {
-            if ($guide->tours()->exists()) {
+            if ($guide->tours()->exists() || $guide->scheduleAssignments()->exists()) {
                 return redirect()->back()->with('error', 'Nhân sự này đang được gán vào tour, không thể xóa');
             }
 

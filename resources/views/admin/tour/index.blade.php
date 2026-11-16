@@ -37,11 +37,22 @@
                 <div class="card-body">
                     <form action="" method="GET" class="admin-search-form">
                         <div class="row align-items-end">
-                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-6 col-lg-3 mb-3">
                                 <label class="text-muted" style="font-size: 13px;">Tiêu đề tour</label>
                                 <input type="text" name="t_title" value="{{ Request::get('t_title') }}" class="form-control" placeholder="Nhập tên tour...">
                             </div>
-                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-6 col-lg-3 mb-3">
+                                <label for="tour-agency-filter" class="text-muted" style="font-size: 13px;">Đại lý / Đơn vị sở hữu</label>
+                                <select id="tour-agency-filter" name="agency_id" class="form-control select2" data-placeholder="Gõ tên để tìm đại lý...">
+                                    <option value="">Tất cả đơn vị</option>
+                                    <option value="agency" {{ Request::get('agency_id') === 'agency' ? 'selected' : '' }}>Tất cả tour đại lý</option>
+                                    <option value="platform" {{ Request::get('agency_id') === 'platform' ? 'selected' : '' }}>Nền tảng Miu Travel</option>
+                                    @foreach($agencies as $agency)
+                                        <option value="{{ $agency->id }}" {{ (string) Request::get('agency_id') === (string) $agency->id ? 'selected' : '' }}>{{ $agency->name }} · #{{ $agency->id }} ({{ $agency->tours_count }} tour)</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div class="col-sm-12 col-md-6 col-lg-3 mb-3">
                                 <label class="text-muted" style="font-size: 13px;">Trạng thái</label>
                                 <select name="t_status" class="form-control custom-select">
                                     <option value="">Tất cả trạng thái</option>
@@ -50,7 +61,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                            <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
+                            <div class="col-sm-12 col-md-6 col-lg-3 mb-3">
                                 <label class="text-muted" style="font-size: 13px;">Sắp xếp</label>
                                 <select name="sort" class="form-control custom-select">
                                     <option value="latest" {{ Request::get('sort', 'latest') === 'latest' ? 'selected' : '' }}>Mới nhất</option>
@@ -59,7 +70,7 @@
                                     <option value="price_desc" {{ Request::get('sort') === 'price_desc' ? 'selected' : '' }}>Giá giảm dần</option>
                                 </select>
                             </div>
-                            <div class="col-sm-12 col-md-3 admin-search-actions">
+                            <div class="col-sm-12 admin-search-actions">
                                 <button type="submit" class="btn btn-primary admin-search-btn"><i class="fas fa-filter mr-1"></i> Tìm kiếm</button>
                                 <a href="{{ route('tour.index') }}" class="btn btn-secondary admin-reset-btn"><i class="fas fa-sync-alt mr-1"></i> Xóa lọc</a>
                             </div>
@@ -71,7 +82,7 @@
             <!-- Danh sách -->
             <div class="card shadow-sm">
                 <div class="card-header border-0 d-flex justify-content-between align-items-center">
-                    <h3 class="card-title font-weight-bold">Danh sách Tour</h3>
+                    <h3 class="card-title font-weight-bold">Danh sách Tour <span class="text-muted small">({{ number_format($tours->total()) }} tour)</span></h3>
                     <div class="card-tools ml-auto">
                         @if($canViewTour)
                         <a href="{{ route('tour.calendar') }}" class="btn btn-outline-primary btn-sm">
@@ -111,6 +122,7 @@
                                             <p class="font-weight-medium mb-2 text-truncate" style="max-width: 250px;" title="{{ $tour->t_title }}">
                                                 {{ $tour->t_title }}
                                             </p>
+                                            @include('admin.tour.owner')
                                             <div class="p-1 border rounded bg-light d-flex align-items-center justify-content-center" style="width: 170px; height: 110px; overflow: hidden;">
                                                 @if(isset($tour) && !empty($tour->t_image))
                                                     <img src="{{ asset(pare_url_file($tour->t_image)) }}" alt="{{ $tour->t_title }}" class="img-fluid rounded" style="max-width: 100%; max-height: 100%; object-fit: cover; width: 100%; height: 100%;">
@@ -182,12 +194,12 @@
                                                         </button>
                                                     </form>
                                                 @endif
-                                                @if($canEditTour)
+                                                @if($canEditTour && $tour->agency_id === null)
                                                     <a href="{{ route('tour.update', $tour->id) }}" class="btn btn-info btn-sm mb-1 rounded" title="Chỉnh sửa">
                                                         <i class="fas fa-edit"></i> Sửa
                                                     </a>
                                                 @endif
-                                                @if($canDeleteTour)
+                                                @if($canDeleteTour && $tour->agency_id === null)
                                                     <a href="{{ route('tour.delete', $tour->id) }}" class="btn btn-danger btn-sm btn-confirm-delete rounded" title="Xóa">
                                                         <i class="fas fa-trash-alt"></i> Xóa
                                                     </a>

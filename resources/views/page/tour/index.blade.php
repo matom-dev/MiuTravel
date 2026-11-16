@@ -503,7 +503,7 @@
                         class="fa fa-chevron-right"></i></a></span>
             <span>Tour</span>
         </p>
-        <h1 class="miu-page-banner-title">Tour linh hoạt theo ngày bạn muốn</h1>
+        <h1 class="miu-page-banner-title">Tour khởi hành cố định, số chỗ giới hạn</h1>
     </div>
 </section>
 

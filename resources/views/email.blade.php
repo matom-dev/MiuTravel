@@ -17,7 +17,7 @@
 
         <p style="margin: 0 0 16px; font-size: 15px; line-height: 1.7;">
             Chào <strong>{{ $user->name }}</strong>,<br>
-            Đơn đặt tour của quý khách đã được xác nhận theo ngày khởi hành mong muốn. Quý khách vui lòng thanh toán trước thời hạn để hoàn tất booking.
+            Đơn đặt tour của quý khách đã được xác nhận theo đợt khởi hành cố định. Quý khách vui lòng thanh toán trước thời hạn để hoàn tất booking.
         </p>
 
         <div style="background: #f8fafc; border: 1px solid #dbeafe; border-radius: 10px; padding: 18px; margin-bottom: 18px;">
@@ -35,11 +35,11 @@
                     <td style="padding: 8px 0; color: #0f172a;">{{ $bookTour->b_address }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày khởi hành mong muốn</strong></td>
+                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày khởi hành</strong></td>
                     <td style="padding: 8px 0; color: #0f172a;">{{ $bookTour->b_start_date ? \Carbon\Carbon::parse($bookTour->b_start_date)->format('d/m/Y') : '---' }}</td>
                 </tr>
                 <tr>
-                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày về dự kiến</strong></td>
+                    <td style="padding: 8px 0; color: #475569;"><strong>Ngày về</strong></td>
                     <td style="padding: 8px 0; color: #0f172a;">{{ $bookTour->b_end_date ? \Carbon\Carbon::parse($bookTour->b_end_date)->format('d/m/Y') : '---' }}</td>
                 </tr>
             </table>

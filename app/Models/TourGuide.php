@@ -95,4 +95,16 @@ class TourGuide extends Model
             ->withPivot('tga_role')
             ->withTimestamps();
     }
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'tg_user_id');
+    }
+
+
+    public function scheduleAssignments()
+    {
+        return $this->hasMany(ScheduleGuideAssignment::class, 'tour_guide_id');
+    }
+
 }

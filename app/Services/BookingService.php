@@ -29,28 +29,44 @@ class BookingService
             $startDate = Carbon::parse($data['b_start_date'])->startOfDay();
             $endDate = $this->expectedEndDate($startDate, $tour);
 
-            $schedule = null;
             $agency = null;
             if ($tour->agency_id) {
                 $agency = Agency::whereKey($tour->agency_id)->where('active', true)->first();
                 if (! $agency) {
                     throw new \DomainException('Đại lý hiện không hoạt động.');
                 }
-                $schedule = $tour->schedules()->whereDate('ts_start_date', $startDate)->where('ts_status', 1)->lockForUpdate()->first();
-                if (! $schedule || ! $schedule->registration_deadline || Carbon::parse($schedule->registration_deadline)->endOfDay()->isPast()) {
-                    throw new \DomainException('Ngày đã chọn không có đợt khởi hành còn nhận khách.');
-                }
-                $guests = array_sum(array_map(fn ($key) => (int) ($data[$key] ?? 0), ['b_number_adults', 'b_number_children', 'b_number_child6', 'b_number_child2']));
-                $reserved = $schedule->bookTours()->where('b_status', '!=', BookTour::STATUS_CANCELLED)->get()->sum('total_guests');
-                if ($guests < 1 || $guests + $reserved > $schedule->ts_number_guests) {
-                    throw new \DomainException('Đợt khởi hành không đủ chỗ.');
-                }
-                $adultPrice = $schedule->adult_price ?? $adultPrice;
-                $childPrice = $schedule->child_price ?? $childPrice;
-                $endDate = Carbon::parse($schedule->ts_end_date)->endOfDay();
             }
+            $schedule = $tour->schedules()->whereDate('ts_start_date', $startDate)
+                ->availableForBooking()->lockForUpdate()->first();
+            if (! $schedule) {
+                throw new \DomainException('Ngày đã chọn không có đợt khởi hành còn nhận khách.');
+            }
+            if ($tour->booktour()->whereNull('b_tour_schedule_id')
+                ->where('b_status', '!=', BookTour::STATUS_CANCELLED)
+                ->whereDate('b_start_date', $startDate)->exists()) {
+                throw new \DomainException('Đợt khởi hành đang đối soát đơn cũ. Vui lòng liên hệ tư vấn.');
+            }
+            $guests = 0;
+            foreach (['b_number_adults', 'b_number_children', 'b_number_child6', 'b_number_child2'] as $key) {
+                $count = filter_var($data[$key] ?? 0, FILTER_VALIDATE_INT);
+                if ($count === false || $count < 0) {
+                    throw new \DomainException('Số lượng khách không hợp lệ.');
+                }
+                $data[$key] = $count;
+                $guests += $count;
+            }
+            if ($guests < 1 || $guests > $schedule->remaining_seats) {
+                throw new \DomainException('Đợt khởi hành không đủ chỗ.');
+            }
+            $adultPrice = $schedule->adult_price ?? $adultPrice;
+            $childPrice = $schedule->child_price ?? $childPrice;
+            $startDate = Carbon::parse($schedule->ts_start_date)->startOfDay();
+            $endDate = Carbon::parse($schedule->ts_end_date)->endOfDay();
 
-            $book = BookTour::create(array_merge($data, [
+            $book = BookTour::create(array_merge(\Illuminate\Support\Arr::only($data, [
+                'b_name', 'b_email', 'b_phone', 'b_address', 'b_note',
+                'b_number_adults', 'b_number_children', 'b_number_child6', 'b_number_child2',
+            ]), [
                 'b_tour_id' => $tour->id,
                 'b_tour_schedule_id' => $schedule?->id,
                 'b_user_id' => $user->id,
@@ -64,7 +80,7 @@ class BookingService
             ]));
 
             $book->policy_snapshot = $tour->cancellation_policy;
-            $book->commission_basis_points = $agency?->commission_basis_points ?? 0;
+            $book->commission_basis_points = $agency ? \App\Models\PlatformFeeSetting::currentBasisPoints() : 0;
             $book->b_code = BookTour::makeCode((int) $book->id, $book->created_at);
             $book->save();
 
@@ -74,7 +90,7 @@ class BookingService
                 'receiver_guard' => 'admins',
                 'type' => 'booking_created',
                 'title' => 'Có đơn đặt tour mới',
-                'message' => 'Khách '.$user->name.' vừa đặt tour theo ngày khởi hành mong muốn '
+                'message' => 'Khách '.$user->name.' vừa đặt tour khởi hành ngày '
                     .$book->b_start_date->format('d/m/Y').' - '.$book->b_end_date->format('d/m/Y')
                     .': "'.$tour->t_title.'".',
                 'url' => route('book.tour.index', [], false),
@@ -116,7 +132,7 @@ class BookingService
                 throw new \DomainException('Thao tác chuyển trạng thái không hợp lệ');
             }
 
-            $agencyTour = Tour::whereKey($bookTour->b_tour_id)->value('agency_id');
+            $agencyTour = $bookTour->agency_id;
             if ($agencyTour && in_array($newStatus, [BookTour::STATUS_PAID, BookTour::STATUS_COMPLETED], true) && $guard !== 'vnpay') {
                 $ledger = AgencyTransaction::where('book_tour_id', $bookTour->id)->get();
                 $paid = $ledger->where('type', 'receipt')->sum('amount') - $ledger->where('type', 'refund')->sum('amount')
@@ -157,9 +173,9 @@ class BookingService
                 'receiver_id' => $bookTour->b_user_id,
                 'type' => 'booking_status_updated',
                 'title' => 'Đơn đặt tour đã cập nhật',
-                'message' => 'Đơn "'.($tour->t_title ?? 'tour').'" theo ngày khởi hành mong muốn '
+                'message' => 'Đơn "'.($tour->t_title ?? 'tour').'" khởi hành ngày '
                     .($bookTour->b_start_date ? $bookTour->b_start_date->format('d/m/Y') : '---')
-                    .' - ngày về dự kiến '
+                    .' - ngày về '
                     .($bookTour->b_end_date ? $bookTour->b_end_date->format('d/m/Y') : '---')
                     .' đã chuyển sang trạng thái '.(BookTour::STATUS[$newStatus] ?? 'mới')
                     .'. Tổng tiền tạm tính: '.number_format($bookTour->total_price, 0, ',', '.').' đ.',

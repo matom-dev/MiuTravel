@@ -68,4 +68,10 @@ class Comment extends Model
     {
         return $this->belongsTo(Hotel::class, 'cm_hotel_id', 'id');
     }
+
+    public function parent()
+    {
+        return $this->belongsTo(Comment::class, 'cm_reply_id');
+    }
+
 }

@@ -1427,10 +1427,10 @@
                     <div class="miu-depth-row">
                         <div class="miu-depth-icon"><i class="fa fa-calendar-plus-o"></i></div>
                         <div>
-                            <h3>Mô hình tour linh hoạt</h3>
+                            <h3>Tour theo lịch khởi hành cố định</h3>
                             <p>
-                                Admin tạo chương trình tour và thời gian rõ ràng. Khách tự chọn ngày đi, hệ thống tự
-                                tính ngày về dự kiến, Miu Travel liên hệ xác nhận lại trước khi chốt booking.
+                                Mỗi tour có các đợt khởi hành với ngày đi, ngày về, giá và số chỗ được công bố rõ ràng.
+                                Bạn chọn đợt còn chỗ phù hợp; Miu Travel liên hệ xác nhận thông tin đặt tour.
                             </p>
                         </div>
                     </div>
@@ -1469,7 +1469,7 @@
                         <div>
                             <h3>Trao đổi rõ trước khi đặt</h3>
                             <p>
-                                Các thông tin về dịch vụ, chi phí, điểm đón, ngày khởi hành mong muốn và những lưu ý
+                                Các thông tin về dịch vụ, chi phí, điểm đón, đợt khởi hành cố định và những lưu ý
                                 quan trọng
                                 được gửi trước để khách chủ động chuẩn bị.
                             </p>

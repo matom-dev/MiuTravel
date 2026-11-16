@@ -37,6 +37,9 @@ Route::group(['namespace' => 'Admin', 'prefix' => 'admin'], function() {
     });
 
     Route::group(['middleware' =>['auth:admins']], function() {
+        Route::get('/platform-fee/report', 'PlatformFeeController@report')->name('admin.platform-fee.report')->middleware('permission:xem-doanh-thu|full-quyen-quan-ly');
+        Route::get('/platform-fee', 'PlatformFeeController@edit')->name('admin.platform-fee.edit')->middleware('permission:full-quyen-quan-ly');
+        Route::post('/platform-fee', 'PlatformFeeController@update')->name('admin.platform-fee.update')->middleware('permission:full-quyen-quan-ly');
         Route::get('/home', 'HomeController@index')->name('admin.home')->middleware('permission:xem-dashboard|full-quyen-quan-ly');
         Route::get('/revenue-month', 'HomeController@revenueMonth')->name('admin.revenue.month')->middleware('permission:xem-doanh-thu|full-quyen-quan-ly');
         Route::get('/booking-overview', 'HomeController@bookingOverview')->name('admin.booking.overview')->middleware('permission:xem-dat-tour|full-quyen-quan-ly');
@@ -124,6 +127,7 @@ Route::group(['namespace' => 'Admin', 'prefix' => 'admin'], function() {
         });
 
         Route::group(['prefix' => 'tour'], function(){
+            Route::post('/{id}/schedules/{scheduleId?}', 'TourController@schedule')->name('admin.tour.schedule.save')->middleware('permission:quan-ly-tour|full-quyen-quan-ly');
             Route::get('/','TourController@index')->name('tour.index')->middleware('permission:quan-ly-tour|full-quyen-quan-ly');
             Route::get('/calendar','TourController@calendar')->name('tour.calendar')->middleware('permission:quan-ly-tour|full-quyen-quan-ly');
             Route::get('/create','TourController@create')->name('tour.create')->middleware('permission:quan-ly-tour|full-quyen-quan-ly');

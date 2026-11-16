@@ -196,6 +196,72 @@ class AdminTourManagementTest extends TestCase
         $this->assertSame(Tour::STATUS_BOOKABLE, (int) $tour->fresh()->t_status);
     }
 
+    public function test_even_full_admin_cannot_modify_agency_tour_but_can_moderate(): void
+    {
+        $admin = User::factory()->create(['status'=>1]);
+        $this->grantPermissions($admin, ['full-quyen-quan-ly']);
+        $owner = User::factory()->create();
+        $agency = \App\Models\Agency::create(['user_id'=>$owner->id, 'name'=>'Đại lý sở hữu']);
+        $tour = Tour::create(['t_title'=>'Tour chỉ đại lý được sửa', 't_status'=>Tour::STATUS_PENDING_REVIEW, 't_anbum_image'=>['original.jpg']]);
+        $tour->forceFill(['agency_id'=>$agency->id])->save();
+        $schedule = $tour->schedules()->create(['ts_start_date'=>today()->addDays(10), 'ts_end_date'=>today()->addDays(12), 'ts_number_guests'=>20, 'ts_status'=>1]);
+        $this->actingAs($admin, 'admins');
+        $this->get(route('tour.update', $tour->id))->assertForbidden();
+        $this->post(route('tour.update', $tour->id), ['t_title'=>'Hacked'])->assertForbidden();
+        $this->post(route('admin.tour.schedule.save', $tour->id), [])->assertForbidden();
+        $this->post(route('admin.tour.schedule.save', [$tour->id, $schedule->id]), [])->assertForbidden();
+        $this->delete(route('admin.tour.remove-album-image', [$tour->id, 0]))->assertForbidden();
+        $this->delete(route('tour.delete', $tour->id))->assertForbidden();
+        $this->assertSame('Tour chỉ đại lý được sửa', $tour->fresh()->t_title);
+        $this->assertSame(['original.jpg'], $tour->fresh()->t_anbum_image);
+        $this->assertEquals(20, $schedule->fresh()->ts_number_guests);
+        $this->get(route('tour.index'))->assertOk()
+            ->assertSee('Đại lý sở hữu')
+            ->assertDontSee(route('tour.update', $tour->id), false)
+            ->assertDontSee(route('tour.delete', $tour->id), false);
+        $this->get(route('tour.preview', $tour->id))->assertOk()
+            ->assertDontSee(route('tour.update', $tour->id), false);
+        $this->patch(route('tour.publish', [$tour->id, Tour::STATUS_BOOKABLE]))->assertSessionHas('success');
+        $this->patch(route('tour.publish', [$tour->id, Tour::STATUS_PAUSED]))->assertSessionHas('success');
+        $this->assertSame(Tour::STATUS_PAUSED, (int)$tour->fresh()->t_status);
+    }
+
+    public function test_admin_can_filter_tours_by_agency_and_combine_existing_filters(): void
+    {
+        $admin = User::factory()->create(['status' => 1]);
+        $this->grantPermissions($admin, ['full-quyen-quan-ly']);
+        $agency = \App\Models\Agency::create(['user_id' => User::factory()->create()->id, 'name' => 'Đại lý Phong Nha']);
+        $otherAgency = \App\Models\Agency::create(['user_id' => User::factory()->create()->id, 'name' => 'Đại lý khác', 'active' => false]);
+        $matching = Tour::create(['t_title' => 'Phong Nha mở bán', 't_status' => Tour::STATUS_BOOKABLE]);
+        $matching->forceFill(['agency_id' => $agency->id])->save();
+        $paused = Tour::create(['t_title' => 'Phong Nha tạm ngưng', 't_status' => Tour::STATUS_PAUSED]);
+        $paused->forceFill(['agency_id' => $agency->id])->save();
+        $other = Tour::create(['t_title' => 'Tour đại lý khác', 't_status' => Tour::STATUS_BOOKABLE]);
+        $other->forceFill(['agency_id' => $otherAgency->id])->save();
+        $platform = Tour::create(['t_title' => 'Tour nền tảng', 't_status' => Tour::STATUS_BOOKABLE]);
+        $this->actingAs($admin, 'admins');
+
+        $this->get(route('tour.index', ['agency_id' => $agency->id]))
+            ->assertOk()
+            ->assertViewHas('tours', fn ($tours) => $tours->pluck('id')->sort()->values()->all() === collect([$matching->id, $paused->id])->sort()->values()->all())
+            ->assertSee('name="agency_id"', false)
+            ->assertSee('Đại lý Phong Nha · #'.$agency->id.' (2 tour)');
+        $this->get(route('tour.index', ['agency_id' => $agency->id, 't_title' => 'Phong Nha', 't_status' => Tour::STATUS_BOOKABLE, 'sort' => 'price_asc']))
+            ->assertOk()
+            ->assertViewHas('tours', fn ($tours) => $tours->pluck('id')->all() === [$matching->id]);
+        $this->get(route('tour.index', ['agency_id' => 'agency']))
+            ->assertOk()
+            ->assertViewHas('tours', fn ($tours) => $tours->total() === 3);
+        $this->get(route('tour.index', ['agency_id' => 'platform']))
+            ->assertOk()
+            ->assertViewHas('tours', fn ($tours) => $tours->pluck('id')->all() === [$platform->id]);
+        $this->get(route('tour.index', ['agency_id' => $otherAgency->id]))
+            ->assertOk()
+            ->assertViewHas('tours', fn ($tours) => $tours->pluck('id')->all() === [$other->id]);
+        $this->get(route('tour.index'))->assertOk()
+            ->assertViewHas('tours', fn ($tours) => $tours->total() === 4);
+    }
+
     private function grantPermissions(User $user, array $permissionNames): void
     {
         $role = Role::create([

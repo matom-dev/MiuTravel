@@ -17,7 +17,7 @@
                 <div style="font-size:12px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#ffb199;">Miu Travel</div>
                 <h1 style="margin:8px 0 8px;font-size:26px;line-height:1.3;color:#ffffff;">Đã tiếp nhận yêu cầu đặt tour</h1>
                 <p style="margin:0;color:rgba(255,255,255,.78);font-size:15px;line-height:1.6;">
-                    Cảm ơn quý khách đã chọn tour theo ngày khởi hành mong muốn. Đơn của quý khách đang chờ Miu Travel xác nhận.
+                    Cảm ơn quý khách đã chọn tour theo ngày khởi hành cố định. Đơn của quý khách đang chờ Miu Travel xác nhận.
                 </p>
             </div>
 
@@ -51,13 +51,13 @@
                             <td style="padding:11px 14px;color:#0f172a;border-bottom:1px solid #e2e8f0;font-weight:bold;">{{ $tour->t_title }}</td>
                         </tr>
                         <tr>
-                            <td style="padding:11px 14px;color:#64748b;border-bottom:1px solid #e2e8f0;">Ngày khởi hành mong muốn</td>
+                            <td style="padding:11px 14px;color:#64748b;border-bottom:1px solid #e2e8f0;">Ngày khởi hành</td>
                             <td style="padding:11px 14px;color:#0f172a;border-bottom:1px solid #e2e8f0;">
                                 {{ $startDate ? \Carbon\Carbon::parse($startDate)->format('d/m/Y') : 'Đang cập nhật' }}
                             </td>
                         </tr>
                         <tr>
-                            <td style="padding:11px 14px;color:#64748b;border-bottom:1px solid #e2e8f0;">Ngày về dự kiến</td>
+                            <td style="padding:11px 14px;color:#64748b;border-bottom:1px solid #e2e8f0;">Ngày về</td>
                             <td style="padding:11px 14px;color:#0f172a;border-bottom:1px solid #e2e8f0;">
                                 {{ $endDate ? \Carbon\Carbon::parse($endDate)->format('d/m/Y') : 'Đang cập nhật' }}
                             </td>

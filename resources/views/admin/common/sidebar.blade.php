@@ -17,6 +17,12 @@
             <ul class="nav nav-pills nav-sidebar flex-column" data-widget="treeview" role="menu" data-accordion="false">
 
                 <!-- ── Tổng quan ── -->
+                @if($sidebarRevenueScope)
+                    <li class="nav-item"><a href="{{ route('admin.platform-fee.report') }}" class="nav-link {{ request()->routeIs('admin.platform-fee.report') ? 'active' : '' }}"><i class="nav-icon fas fa-file-invoice-dollar"></i><p>Phí từ đại lý</p></a></li>
+                @endif
+                @if($sidebarFullAccess)
+                    <li class="nav-item"><a href="{{ route('admin.platform-fee.edit') }}" class="nav-link {{ request()->routeIs('admin.platform-fee.edit', 'admin.platform-fee.update') ? 'active' : '' }}"><i class="nav-icon fas fa-percentage"></i><p>Phí nền tảng</p></a></li>
+                @endif
                 @if(Auth::guard('admins')->user()->can(['full-quyen-quan-ly', 'xem-dashboard']))
                 <li class="nav-item">
                     <a href="{{ route('admin.home') }}" class="nav-link {{ isset($home_active) ? $home_active : '' }}">

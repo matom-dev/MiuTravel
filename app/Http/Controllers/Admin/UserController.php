@@ -296,6 +296,9 @@ class UserController extends Controller
         if (! $user) {
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
+        if ($user->bookings()->exists() || $user->agency()->exists() || \App\Models\AgencyTransaction::where('recorded_by', $id)->exists()) {
+            return redirect()->back()->with('error', 'Tài khoản có lịch sử giao dịch hoặc hồ sơ đại lý. Hãy khóa tài khoản thay vì xóa.');
+        }
         \DB::beginTransaction();
         try {
             $this->auditLogger->log('user.deleted', $user, [

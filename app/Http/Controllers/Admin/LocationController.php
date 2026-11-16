@@ -126,6 +126,9 @@ class LocationController extends Controller
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
 
+        if (\App\Models\Tour::where('t_location_id', $id)->exists() || $location->hotels()->exists() || $location->carRentals()->exists()) {
+            return redirect()->back()->with('error', 'Địa điểm đang được sử dụng, hãy ẩn thay vì xóa.');
+        }
         try {
             $location->delete();
             return redirect()->back()->with('success', 'Xóa thành công');

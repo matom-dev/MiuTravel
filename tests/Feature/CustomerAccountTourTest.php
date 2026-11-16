@@ -42,9 +42,9 @@ class CustomerAccountTourTest extends TestCase
 
         $response
             ->assertOk()
-            ->assertSee('Ngày đi mong muốn')
+            ->assertSee('Ngày khởi hành')
             ->assertSee('10/09/2026')
-            ->assertSee('Ngày về dự kiến')
+            ->assertSee('Ngày về')
             ->assertSee('12/09/2026')
             ->assertSee('Tổng khách: 4')
             ->assertSee('2.750.000')

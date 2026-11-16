@@ -39,6 +39,125 @@ class AgencyPortalTest extends TestCase
         return app(BookingService::class)->createForTour($tour->id, User::factory()->create(), ['b_name' => 'Khách', 'b_email' => 'guest@example.com', 'b_phone' => '0901234567', 'b_address' => 'HCM', 'b_start_date' => $schedule->ts_start_date, 'b_number_adults' => 1, 'b_number_children' => 0, 'b_number_child6' => 0, 'b_number_child2' => 0])['book'];
     }
 
+    public function test_monthly_revenue_chart_scopes_agency_year_status_and_filters(): void
+    {
+        [$user, , $tour, $schedule] = $this->setupAgency();
+        $booking = $this->book($tour, $schedule);
+        $booking->forceFill(['b_status'=>BookTour::STATUS_COMPLETED, 'revenue_recognized_at'=>'2025-03-15 12:00:00', 'commission_basis_points'=>1250])->save();
+        [$other, , $otherTour, $otherSchedule] = $this->setupAgency();
+        $foreignBooking = $this->book($otherTour, $otherSchedule);
+        $foreignBooking->forceFill(['b_status'=>BookTour::STATUS_COMPLETED, 'revenue_recognized_at'=>'2025-03-15 12:00:00'])->save();
+        $uncompleted = $this->book($tour, $schedule);
+        $uncompleted->forceFill(['revenue_recognized_at'=>'2025-03-15 12:00:00'])->save();
+        $this->actingAs($user, 'admins')->get(route('agency.dashboard', ['year'=>2025, 'chart_type'=>'revenue']))
+            ->assertOk()->assertSee('Doanh thu ghi nhận theo tháng')->assertSee('agency-revenue-chart')
+            ->assertViewHas('revenueChart', function ($chart) {
+                return $chart['year'] === 2025 && count($chart['revenue']) === 12
+                    && $chart['revenue'][2] == 2000 && array_sum($chart['revenue']) == 2000
+                    && $chart['commission'][2] == 250 && $chart['net'][2] == 1750;
+            })->assertViewHas('metrics', fn ($metrics) => $metrics['Doanh thu ghi nhận'] == 2000);
+        $this->get(route('agency.dashboard', ['year'=>2025, 'month'=>4]))->assertOk()
+            ->assertViewHas('revenueChart', fn ($chart) => array_sum($chart['revenue']) == 0);
+        $this->get(route('agency.dashboard', ['year'=>2025, 'tour_id'=>$otherTour->id]))->assertOk()
+            ->assertViewHas('revenueChart', fn ($chart) => array_sum($chart['revenue']) == 0);
+        $this->get(route('agency.dashboard'))->assertOk()
+            ->assertViewHas('revenueChart', fn ($chart) => $chart['year'] === now()->year && array_sum($chart['revenue']) == 0);
+        $this->get(route('agency.dashboard', ['year'=>1999]))->assertSessionHasErrors('year');
+    }
+
+    public function test_collected_chart_is_default_and_empty_chart_has_no_canvas(): void
+    {
+        [$user, , $tour, $schedule] = $this->setupAgency();
+        $booking = $this->book($tour, $schedule);
+        $this->actingAs($user, 'admins')->get(route('agency.dashboard'))->assertOk()
+            ->assertSee('Chưa có khoản thu hoặc hoàn tiền')->assertDontSee('<canvas', false);
+        AgencyTransaction::create(['book_tour_id'=>$booking->id, 'recorded_by'=>$user->id, 'type'=>'receipt', 'amount'=>1500, 'note'=>'Chart test', 'reference'=>'CHART-RECEIPT', 'occurred_at'=>now()]);
+        AgencyTransaction::create(['book_tour_id'=>$booking->id, 'recorded_by'=>$user->id, 'type'=>'refund', 'amount'=>200, 'note'=>'Chart test', 'reference'=>'CHART-REFUND', 'occurred_at'=>now()]);
+        [$other, , $foreignTour, $foreignSchedule] = $this->setupAgency();
+        $foreignBooking = $this->book($foreignTour, $foreignSchedule);
+        AgencyTransaction::create(['book_tour_id'=>$foreignBooking->id, 'recorded_by'=>$other->id, 'type'=>'receipt', 'amount'=>9999, 'note'=>'Chart test', 'reference'=>'CHART-FOREIGN', 'occurred_at'=>now()]);
+        $this->get(route('agency.dashboard'))->assertOk()->assertSee('Tiền đã thu theo tháng')->assertSee('<canvas', false)
+            ->assertViewHas('revenueChart', fn ($chart) => $chart['type']==='collected' && array_sum($chart['collected'])==1500 && array_sum($chart['refunded'])==200 && array_sum($chart['cash_net'])==1300 && array_sum($chart['revenue'])==0);
+        $this->get(route('agency.dashboard', ['chart_type'=>'revenue']))->assertOk()
+            ->assertSee('Chưa có doanh thu ghi nhận')->assertDontSee('<canvas', false);
+        $this->get(route('agency.dashboard', ['chart_type'=>'invalid']))->assertSessionHasErrors('chart_type');
+    }
+
+    public function test_global_fee_is_admin_editable_and_only_changes_new_bookings(): void
+    {
+        [$user, , $tour, $schedule] = $this->setupAgency();
+        $old = $this->book($tour, $schedule);
+        $this->assertEquals(1500, $old->commission_basis_points);
+        $this->actingAs($user, 'admins')->post(route('admin.platform-fee.update'), ['percentage'=>1])->assertForbidden();
+        $admin = User::factory()->create(['status'=>1]);
+        $role = Role::create(['name'=>'fee-admin', 'display_name'=>'Fee admin']);
+        $permission = Permission::firstOrCreate(['name'=>'full-quyen-quan-ly'], ['display_name'=>'Full']);
+        $role->permissionRole()->attach($permission->id);
+        $admin->userRole()->attach($role->id);
+        $this->actingAs($admin, 'admins')->get(route('admin.platform-fee.edit'))->assertOk()->assertSee('15');
+        $this->post(route('admin.platform-fee.update'), ['percentage'=>'12.25'])->assertSessionHas('success');
+        $new = $this->book($tour, $schedule);
+        $this->assertEquals(1225, $new->commission_basis_points);
+        $this->assertEquals(1500, $old->fresh()->commission_basis_points);
+        $this->assertEquals(2000, $new->total_price);
+        $this->assertDatabaseHas('admin_audit_logs', ['action'=>'platform_fee.updated']);
+        foreach ([-1, 101, '1.234'] as $invalid) {
+            $this->post(route('admin.platform-fee.update'), ['percentage'=>$invalid])->assertSessionHasErrors('percentage');
+        }
+    }
+
+    public function test_agency_can_add_departure_dates_and_capacity_from_edit_page(): void
+    {
+        [$user, , $tour, $schedule] = $this->setupAgency();
+        $url = route('agency.tour.form.edit', $tour->id);
+        $this->actingAs($user, 'admins')->get($url)->assertOk()
+            ->assertSee('Ngày đi, ngày về và số chỗ')
+            ->assertSee('name="ts_start_date"', false)->assertSee('name="ts_end_date"', false)
+            ->assertSee('name="ts_number_guests"', false)->assertSee(route('agency.schedule.create', $tour->id), false);
+        $data = ['ts_start_date'=>today()->addDays(15)->toDateString(), 'ts_end_date'=>today()->addDays(17)->toDateString(),
+            'registration_deadline'=>today()->addDays(14)->toDateString(), 'ts_number_guests'=>30,
+            'adult_price'=>2000, 'child_price'=>1000, 'ts_status'=>1, 'update_assignments'=>1];
+        $this->from($url)->post(route('agency.schedule.create', $tour->id), $data)->assertRedirect($url)->assertSessionHas('success');
+        $this->assertDatabaseHas('tour_schedules', ['ts_tour_id'=>$tour->id, 'ts_start_date'=>$data['ts_start_date'], 'ts_end_date'=>$data['ts_end_date'], 'ts_number_guests'=>30]);
+        $this->from($url)->post(route('agency.schedule.create', $tour->id), array_merge($data, ['ts_number_guests'=>0]))
+            ->assertRedirect($url)->assertSessionHasErrors('ts_number_guests');
+        $this->get($url)->assertOk()->assertSee('alert-danger', false);
+    }
+
+    public function test_admin_platform_fee_report_uses_booking_snapshots_and_recognition_period(): void
+    {
+        [$user, $agency, $tour, $schedule] = $this->setupAgency();
+        $first = $this->book($tour, $schedule);
+        $first->forceFill(['b_status'=>BookTour::STATUS_COMPLETED, 'revenue_recognized_at'=>'2025-03-01 12:00:00', 'commission_basis_points'=>1500])->save();
+        $pending = $this->book($tour, $schedule);
+        $pending->forceFill(['revenue_recognized_at'=>'2025-03-02 12:00:00'])->save();
+        [$other, $otherAgency, $otherTour, $otherSchedule] = $this->setupAgency();
+        $second = $this->book($otherTour, $otherSchedule);
+        $second->forceFill(['b_status'=>BookTour::STATUS_COMPLETED, 'revenue_recognized_at'=>'2025-03-03 12:00:00', 'commission_basis_points'=>1225])->save();
+        $cancelled = $this->book($otherTour, $otherSchedule);
+        $cancelled->forceFill(['b_status'=>BookTour::STATUS_CANCELLED, 'revenue_recognized_at'=>'2025-03-04 12:00:00'])->save();
+        $url = route('admin.platform-fee.report', ['year'=>2025, 'month'=>3]);
+        $this->get($url)->assertRedirect(route('admin.login'));
+        $this->actingAs($user, 'admins')->get($url)->assertForbidden();
+        $admin = User::factory()->create(['status'=>1]);
+        $role = Role::create(['name'=>'fee-report-reader', 'display_name'=>'Revenue reader']);
+        $permission = Permission::firstOrCreate(['name'=>'xem-doanh-thu'], ['display_name'=>'Revenue']);
+        $role->permissionRole()->attach($permission->id);
+        $admin->userRole()->attach($role->id);
+        $this->actingAs($admin, 'admins')->get($url)->assertOk()->assertSee('Phí nền tảng từ đại lý')
+            ->assertSee($first->display_code)->assertSee($second->display_code)->assertDontSee($pending->display_code)->assertDontSee($cancelled->display_code)
+            ->assertViewHas('totals', fn ($t) => $t['count']==2 && $t['revenue']==4000 && $t['fee']==545 && $t['net']==3455)
+            ->assertViewHas('groups', fn ($g) => $g->count()===2);
+        $this->get(route('admin.platform-fee.report', ['year'=>2025,'month'=>3,'agency_id'=>$agency->id]))->assertOk()
+            ->assertViewHas('totals', fn ($t) => $t['count']==1 && $t['fee']==300)->assertDontSee($second->display_code);
+        $this->get(route('admin.platform-fee.report', ['year'=>2025,'month'=>4]))->assertOk()
+            ->assertViewHas('totals', fn ($t) => $t['count']==0 && $t['fee']==0)->assertSee('Chưa có phí nền tảng');
+        $this->get(route('admin.platform-fee.report', ['year'=>2025,'month'=>'']))->assertOk()
+            ->assertViewHas('totals', fn ($t) => $t['fee']==545);
+        $this->get(route('admin.platform-fee.edit'))->assertForbidden();
+        $this->get(route('admin.platform-fee.report', ['month'=>13]))->assertSessionHasErrors('month');
+    }
+
     public function test_portal_denies_customers_and_scopes_every_resource(): void
     {
         [$user,$agency,$tour,$schedule] = $this->setupAgency();
@@ -89,7 +208,7 @@ class AgencyPortalTest extends TestCase
         $schedule->forceFill(['adult_price' => 9000])->save();
         $this->assertEquals(2000, $booking->fresh()->total_price);
         $this->assertEquals('Hoàn theo chính sách A', $booking->fresh()->policy_snapshot);
-        $this->assertEquals(1000, $booking->fresh()->commission_basis_points);
+        $this->assertEquals(1500, $booking->fresh()->commission_basis_points);
         $this->book($tour, $schedule);
         $this->expectException(\DomainException::class);
         $this->book($tour, $schedule);
@@ -133,7 +252,7 @@ class AgencyPortalTest extends TestCase
         $this->assertNotNull($booking->fresh()->revenue_recognized_at);
         $this->post($url.'/passengers', ['name' => 'Khách', 'attendance' => 'completed'])->assertSessionHasNoErrors();
         $this->post($url.'/passengers', ['name' => 'Thừa', 'attendance' => 'completed'])->assertSessionHasErrors();
-        $this->get('/admin/agency')->assertOk()->assertViewHas('metrics', fn ($m) => $m['Doanh thu ghi nhận'] == 2000 && $m['Phí nền tảng'] == 200 && $m['Đại lý được hưởng'] == 1800);
+        $this->get('/admin/agency')->assertOk()->assertViewHas('metrics', fn ($m) => $m['Doanh thu ghi nhận'] == 2000 && $m['Phí nền tảng'] == 300 && $m['Đại lý được hưởng'] == 1700);
     }
 
     public function test_schedule_cannot_reduce_capacity_or_move_booked_dates(): void
@@ -293,5 +412,46 @@ class AgencyPortalTest extends TestCase
             ->assertRedirect(route('agency.dashboard'));
         $this->assertAuthenticatedAs($user, 'admins');
         $this->get('/agency')->assertRedirect('/admin/agency');
+    }
+
+    public function test_transferring_a_tour_does_not_transfer_booking_access_or_revenue(): void
+    {
+        [$owner, $originalAgency, $tour, $schedule] = $this->setupAgency();
+        $booking = $this->book($tour, $schedule);
+        [$newOwner, $newAgency] = $this->setupAgency();
+        $tour->forceFill(['agency_id' => $newAgency->id])->save();
+        $this->assertEquals($originalAgency->id, $booking->fresh()->agency_id);
+        $this->actingAs($owner, 'admins')->get(route('agency.bookings.index'))->assertOk()->assertSee($booking->display_code);
+        $this->get(route('agency.dashboard'))->assertOk()->assertViewHas('metrics', fn ($metrics) => $metrics['Giá trị đặt tour'] === 2000);
+        $this->actingAs($newOwner, 'admins')->get(route('agency.bookings.index'))->assertOk()->assertDontSee($booking->display_code);
+        $this->post(route('agency.booking.status', $booking->id), ['status' => 2])->assertNotFound();
+        $this->post(route('agency.transaction', $booking->id), [])->assertNotFound();
+    }
+
+    public function test_schedule_guides_are_scoped_and_override_general_tour_assignments(): void
+    {
+        [$owner, , $tour, $schedule] = $this->setupAgency();
+        $general = \App\Models\TourGuide::create(['tg_name' => 'General guide', 'tg_role' => 'guide', 'tg_status' => 1]);
+        $own = \App\Models\TourGuide::create(['tg_name' => 'Departure guide', 'tg_role' => 'guide', 'tg_status' => 1, 'tg_user_id' => $owner->id]);
+        $foreign = \App\Models\TourGuide::create(['tg_name' => 'Other agency guide', 'tg_role' => 'guide', 'tg_status' => 1]);
+        $tour->staffGuides()->attach($general->id, ['tga_role' => 'guide']);
+        $this->assertEquals($general->id, $schedule->fresh()->effective_guides->first()['guide']->id);
+        $payload = [
+            'ts_start_date' => substr($schedule->ts_start_date, 0, 10),
+            'ts_end_date' => substr($schedule->ts_end_date, 0, 10),
+            'registration_deadline' => substr($schedule->registration_deadline, 0, 10),
+            'ts_number_guests' => 2, 'adult_price' => 2000, 'child_price' => 1000, 'ts_status' => 1,
+            'update_assignments' => 1, 'guide_ids' => [$own->id],
+        ];
+        $url = route('agency.schedule.update', [$tour->id, $schedule->id]);
+        $this->actingAs($owner, 'admins')->post($url, $payload)->assertSessionHasNoErrors();
+        $this->assertEquals($own->id, $schedule->fresh()->effective_guides->first()['guide']->id);
+        $this->get(route('agency.tours.index'))->assertOk()->assertSee('Departure guide')->assertDontSee('Other agency guide');
+        $payload['guide_ids'] = [$foreign->id];
+        $this->post($url, $payload)->assertSessionHasErrors();
+        $this->assertEquals($own->id, $schedule->fresh()->effective_guides->first()['guide']->id);
+        $payload['guide_ids'] = [];
+        $this->post($url, $payload)->assertSessionHasNoErrors();
+        $this->assertEquals($general->id, $schedule->fresh()->effective_guides->first()['guide']->id);
     }
 }

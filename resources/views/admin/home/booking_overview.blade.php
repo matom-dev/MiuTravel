@@ -142,7 +142,7 @@
                     <form action="{{ route('admin.booking.overview') }}" method="GET" class="admin-search-form">
                         <div class="row align-items-end">
                             <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
-                                <label class="text-muted" style="font-size: 13px;">Ngày khởi hành mong muốn</label>
+                                <label class="text-muted" style="font-size: 13px;">Ngày khởi hành</label>
                                 <input type="date" name="b_start_date" value="{{ $selectedStartDate }}" class="form-control">
                             </div>
                             <div class="col-sm-12 col-md-3 mb-3 mb-md-0">

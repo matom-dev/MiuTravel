@@ -116,7 +116,7 @@
                                 placeholder="Nhập email...">
                         </div>
                         <div class="col-sm-12 col-md-3 mb-3 mb-md-0">
-                            <label class="text-muted" style="font-size: 13px;">Ngày khởi hành mong muốn</label>
+                            <label class="text-muted" style="font-size: 13px;">Ngày khởi hành</label>
                             <input type="date" name="b_start_date" value="{{ Request::get('b_start_date') }}"
                                 class="form-control">
                         </div>
@@ -193,9 +193,8 @@
             <div class="card-body p-0 table-responsive">
                 @php
                     $canUpdateBookingStatus = $adminUser->can(['full-quyen-quan-ly', 'cap-nhat-trang-thai-dat-tour']);
-                    $canDeleteBooking = $adminUser->can(['full-quyen-quan-ly', 'xoa-dat-tour']);
                     $canDownloadBookingConfirmation = $adminUser->can(['full-quyen-quan-ly', 'xem-dat-tour']);
-                    $showBookingActions = $canUpdateBookingStatus || $canDeleteBooking || $canDownloadBookingConfirmation;
+                    $showBookingActions = $canUpdateBookingStatus || $canDownloadBookingConfirmation;
                     $bookTourColumnCount = $showBookingActions ? 8 : 7;
                 @endphp
                 <table class="table table-hover table-striped m-0 book-tour-table">
@@ -266,7 +265,7 @@
                                         </div>
                                         <div class="mb-1">
                                             <i class="fas fa-calendar-check text-success mr-1" style="width:16px;"></i>
-                                            Ngày đi mong muốn: {{ $startDate }}
+                                            Ngày khởi hành: {{ $startDate }}
                                         </div>
                                         <div class="mb-1">
                                             <i class="fas fa-flag-checkered text-danger mr-1" style="width:16px;"></i>
@@ -407,13 +406,7 @@
                                                             <i class="fas fa-file-pdf mr-2"></i> Tải phiếu PDF
                                                         </a>
                                                     @endif
-                                                    @if($canDeleteBooking)
-                                                        <div class="dropdown-divider"></div>
-                                                        <a class="dropdown-item text-danger btn-confirm-delete py-2"
-                                                            href="{{ route('book.tour.delete', $book->id) }}">
-                                                            <i class="fas fa-trash-alt mr-2"></i> Xóa đơn đặt
-                                                        </a>
-                                                    @endif
+
                                                 </div>
                                             </div>
                                         </td>

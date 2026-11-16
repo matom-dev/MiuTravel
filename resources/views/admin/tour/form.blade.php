@@ -1,3 +1,7 @@
+@if(isset($tour) && $tour->exists)
+    <div class="alert alert-light border">@include('admin.tour.owner')</div>
+@endif
+<div class="alert alert-info">Lưu thông tin tour, sau đó thêm đợt khởi hành với ngày đi, ngày về và số chỗ tối đa tại trang chỉnh sửa.</div>
 <style>
     .tour-form-sidebar {
         position: sticky;

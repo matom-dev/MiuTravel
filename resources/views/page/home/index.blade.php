@@ -1,5 +1,5 @@
 @extends('page.layouts.page')
-@section('title', 'Cuộc đời là những chuyến đi | Miu Travel')
+@section('title', 'Miu Travel')
 @section('style')
 <style>
     :root {
@@ -1952,11 +1952,11 @@
         <div class="home-hero__copy">
             <div class="hero-badge">
                 <span class="dot"></span>
-                Tour linh hoạt theo lịch của bạn
+                Tour có lịch khởi hành cố định
             </div>
-            <h1>Đặt tour linh hoạt theo ngày bạn muốn</h1>
-            <p>Chọn tour yêu thích, tự chọn ngày khởi hành dự kiến và để Miu Travel hỗ trợ xác nhận lịch trình phù hợp
-                cho chuyến đi.</p>
+            <h1>Chọn lịch khởi hành, sẵn sàng khám phá</h1>
+            <p>Khám phá tour yêu thích với ngày đi, ngày về đã ấn định. Chọn đợt khởi hành còn chỗ
+                và cùng Miu Travel bắt đầu chuyến đi.</p>
             <div class="hero-cta-group">
                 <a href="{{ route('tour') }}" class="btn-hero-primary">
                     <i class="fa fa-calendar-check-o"></i>
@@ -2042,15 +2042,15 @@
             @endif
 
             <div class="destination-showcase__copy ftco-animate">
-                <h2 class="destination-showcase__title">Chuyên các Tour Quảng Bình</h2>
+                <h2 class="destination-showcase__title">Chuyên các Tour Quảng Trị</h2>
                 <p class="destination-showcase__desc">
-                    Với chính sách đa dạng hóa sản phẩm du lịch Quảng Bình, phục vụ tận tình và luôn mong
-                    muốn quý khách thực sự cảm nhận được sự khác biệt khi tham gia từng chuyến du lịch
-                    Quảng Bình.
+                    Không ngừng đa dạng hóa trải nghiệm du lịch Quảng Trị, Miu Travel đồng hành cùng quý khách bằng sự
+                    tận tâm, để mỗi hành trình là một cơ hội khám phá nét đẹp riêng của vùng đất và lưu giữ những kỷ
+                    niệm đáng nhớ.
                 </p>
                 <p class="destination-showcase__desc">
                     Luôn luôn sáng tạo, luôn luôn đổi mới, phục vụ những sản phẩm mà quý khách mong
-                    muốn đã trở thành tâm nguyện, cũng như phương châm của công ty chúng tôi.
+                    muốn đã trở thành tâm nguyện, cũng như phương châm của chúng tôi.
                 </p>
             </div>
 
@@ -2115,9 +2115,9 @@
         <div class="row justify-content-center pb-2">
             <div class="col-12 col-md-8 heading-section text-center ftco-animate">
                 <span class="home-section-kicker">Tour nổi bật</span>
-                <h2 class="home-section-title mb-2">Chọn tour trước, chọn ngày đi sau</h2>
-                <p style="color:#6b7280;font-size:15px;">Mỗi tour hiển thị rõ thời gian, địa điểm và giá để bạn dễ chọn
-                    lịch khởi hành mong muốn.</p>
+                <h2 class="home-section-title mb-2">Tour hấp dẫn, lịch khởi hành rõ ràng</h2>
+                <p style="color:#6b7280;font-size:15px;">Xem lịch trình, chọn đợt khởi hành còn chỗ với ngày đi, ngày về
+                    và giá đã công bố.</p>
             </div>
         </div>
 
@@ -2197,7 +2197,7 @@
                 <span class="home-service-body">
                     <span class="home-service-icon"><i class="fa fa-map-signs"></i></span>
                     <h3>Tour du lịch</h3>
-                    <p>Chọn tour theo điểm đến và thời gian, sau đó tự chọn ngày khởi hành mong muốn.</p>
+                    <p>Chọn tour theo điểm đến và thời gian, sau đó chọn đợt khởi hành còn chỗ.</p>
                     <span class="home-service-link">Xem chi tiết<i class="fa fa-angle-right"></i></span>
                 </span>
             </a>
@@ -2846,15 +2846,15 @@
             <div class="cta-modern__copy">
                 <div class="cta-modern__tag">
                     <span class="dot"></span>
-                    Tour linh hoạt
+                    Tour khởi hành cố định
                 </div>
-                <h2>Chọn tour và tự chọn ngày khởi hành</h2>
-                <p>Bạn chỉ cần chọn hành trình phù hợp, nhập ngày đi mong muốn và Miu Travel sẽ liên hệ xác nhận lại
+                <h2>Chọn tour và đợt khởi hành phù hợp</h2>
+                <p>Bạn chỉ cần chọn hành trình phù hợp, chọn đợt khởi hành và Miu Travel sẽ liên hệ xác nhận lại
                     lịch trình trước khi chốt booking.</p>
-                <div class="cta-modern__highlights" aria-label="Lợi ích đặt tour linh hoạt">
+                <div class="cta-modern__highlights" aria-label="Lợi ích đặt tour khởi hành cố định">
                     <div class="cta-modern__highlight">
                         <i class="fa fa-calendar-check-o"></i>
-                        Ngày đi linh hoạt
+                        Ngày đi, ngày về cố định
                     </div>
                     <div class="cta-modern__highlight">
                         <i class="fa fa-map-signs"></i>
@@ -2869,7 +2869,7 @@
             <div class="cta-modern__planner">
                 <div class="cta-modern__planner-title">
                     <i class="fa fa-paper-plane-o"></i>
-                    Lên lịch nhanh
+                    Tìm hành trình phù hợp
                 </div>
                 <form action="{{ route('tour') }}" method="GET" class="cta-modern__form">
                     <div class="cta-modern__field cta-modern__field--wide">
@@ -2895,11 +2895,16 @@
                         </div>
                     </div>
                     <div class="cta-modern__field">
-                        <label for="cta-tour-date">Ngày dự kiến</label>
-                        <div class="cta-modern__control">
+                        <label for="cta-tour-duration">Thời lượng tour</label>
+                        <div class="cta-modern__control cta-modern__control--select">
                             <i class="fa fa-calendar"></i>
-                            <input type="date" id="cta-tour-date" name="start_date" value="{{ request('start_date') }}"
-                                min="{{ now()->addDay()->format('Y-m-d') }}">
+                            <select id="cta-tour-duration" name="duration">
+                                <option value="">Tất cả thời lượng</option>
+                                <option value="1" @selected(request('duration') === '1')>1 ngày</option>
+                                <option value="2-3" @selected(request('duration') === '2-3')>2–3 ngày</option>
+                                <option value="4-5" @selected(request('duration') === '4-5')>4–5 ngày</option>
+                                <option value="6+" @selected(request('duration') === '6+')>Từ 6 ngày</option>
+                            </select>
                         </div>
                     </div>
                     <div class="cta-modern__field cta-modern__field--wide">

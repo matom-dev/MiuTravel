@@ -170,7 +170,7 @@ class Hotel extends Model
 
     public function location ()
     {
-        return $this->belongsTo(Location::class, 'h_location_id', 'id')->where('l_status', 1);
+        return $this->belongsTo(Location::class, 'h_location_id', 'id');
     }
 
     public function user ()

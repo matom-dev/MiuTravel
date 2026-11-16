@@ -16,6 +16,13 @@ class TourRequest extends FormRequest
      */
     public function authorize()
     {
+        if ($this->routeIs('tour.update') && $this->route('id')) {
+            return !Tour::whereKey($this->route('id'))->whereNotNull('agency_id')->exists();
+        }
+        // The POST update route has no name in older route definitions.
+        if ($this->is('admin/tour/update/*')) {
+            return !Tour::whereKey($this->route('id'))->whereNotNull('agency_id')->exists();
+        }
         return true;
     }
 

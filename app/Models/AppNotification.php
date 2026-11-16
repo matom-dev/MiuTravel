@@ -38,4 +38,10 @@ class AppNotification extends Model
     {
         return $query->whereNull('read_at');
     }
+
+    public function receiver()
+    {
+        return $this->belongsTo(User::class, 'receiver_id');
+    }
+
 }

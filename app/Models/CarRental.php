@@ -113,7 +113,7 @@ class CarRental extends Model
 
     public function location()
     {
-        return $this->belongsTo(Location::class, 'cr_location_id', 'id')->where('l_status', 1);
+        return $this->belongsTo(Location::class, 'cr_location_id', 'id');
     }
 
     public function user()

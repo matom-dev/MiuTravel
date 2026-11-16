@@ -32,6 +32,14 @@ class TourSchedule extends Model
         return $query->where('ts_status', 1);
     }
 
+    public function scopeAvailableForBooking($query)
+    {
+        return $query->active()
+            ->whereDate('ts_start_date', '>', today())
+            ->whereDate('registration_deadline', '>=', today())
+            ->where('ts_number_guests', '>', 0);
+    }
+
     public function tour()
     {
         return $this->belongsTo(Tour::class, 'ts_tour_id', 'id');
@@ -44,6 +52,28 @@ class TourSchedule extends Model
 
     public function getRemainingSeatsAttribute()
     {
-        return max(0, (int) $this->ts_number_guests - (int) $this->ts_number_registered - (int) $this->ts_follow);
+        $reserved = $this->bookTours()->where('b_status', '!=', BookTour::STATUS_CANCELLED)
+            ->selectRaw('SUM(COALESCE(b_number_adults, 0) + COALESCE(b_number_children, 0) + COALESCE(b_number_child6, 0) + COALESCE(b_number_child2, 0)) AS seats')
+            ->value('seats');
+
+        return max(0, (int) $this->ts_number_guests - (int) $reserved);
     }
+
+    public function guideAssignments()
+    {
+        return $this->hasMany(ScheduleGuideAssignment::class, 'tour_schedule_id');
+    }
+
+    public function getEffectiveGuidesAttribute()
+    {
+        if ($this->guideAssignments->isNotEmpty()) {
+            return $this->guideAssignments->map(fn ($assignment) => [
+                'guide' => $assignment->guide, 'role' => $assignment->role,
+            ]);
+        }
+        return $this->tour?->staffGuides->map(fn ($guide) => [
+            'guide' => $guide, 'role' => $guide->pivot->tga_role,
+        ]) ?? collect();
+    }
+
 }

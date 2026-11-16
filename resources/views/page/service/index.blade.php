@@ -616,11 +616,11 @@
         <div class="service-wrap">
             <div class="service-hero-grid">
                 <div>
-                    <span class="service-kicker"><i class="fa fa-compass"></i> Đi theo ngày bạn muốn</span>
+                    <span class="service-kicker"><i class="fa fa-compass"></i> Chọn lịch khởi hành phù hợp</span>
                     <h1 class="service-title">Từ chọn tour đến chuẩn bị chuyến đi, mọi thứ rõ ràng hơn.</h1>
                     <p class="service-lead">
-                        Miu Travel tập trung vào mô hình tour linh hoạt: khách chọn chương trình phù hợp, tự chọn ngày
-                        khởi hành mong muốn, hệ thống tính ngày về dự kiến và đội ngũ tư vấn xác nhận lại lịch trình
+                        Miu Travel tập trung vào mô hình tour khởi hành cố định: khách chọn chương trình phù hợp và đợt khởi hành còn chỗ,
+                        xem ngày đi, ngày về, giá và hạn đăng ký đã công bố
                         trước khi chốt booking.
                     </p>
                     <div class="service-actions">
@@ -634,11 +634,11 @@
                     <div class="service-hero-points">
                         <div class="service-point">
                             <strong>Tự chọn</strong>
-                            <span>Ngày khởi hành theo kế hoạch của khách.</span>
+                            <span>Đợt khởi hành đã mở bán.</span>
                         </div>
                         <div class="service-point">
-                            <strong>Tự tính</strong>
-                            <span>Ngày về dự kiến theo thời gian tour.</span>
+                            <strong>Cố định</strong>
+                            <span>Ngày đi và ngày về theo từng đợt.</span>
                         </div>
                         <div class="service-point">
                             <strong>Xác nhận</strong>
@@ -648,11 +648,11 @@
                 </div>
                 <div class="service-hero-card">
                     <div class="service-hero-photo"></div>
-                    <div class="service-hero-badge"><i class="fa fa-calendar-check-o"></i> Tour theo ngày mong muốn</div>
+                    <div class="service-hero-badge"><i class="fa fa-calendar-check-o"></i> Tour khởi hành cố định</div>
                     <div class="service-hero-body">
-                        <h2>Tour có thời gian rõ ràng, ngày đi do bạn chọn</h2>
+                        <h2>Tour có ngày đi, ngày về và số chỗ rõ ràng</h2>
                         <p>
-                            Ví dụ tour 3 ngày 2 đêm: bạn chọn ngày khởi hành, hệ thống tự tính ngày về dự kiến. Miu
+                            Ví dụ tour 3 ngày 2 đêm: bạn chọn đợt khởi hành đã công bố, xem số chỗ và ngày về. Miu
                             Travel liên hệ xác nhận lại trước khi hoàn tất booking.
                         </p>
                         <div class="hero-mini-grid">
@@ -661,7 +661,7 @@
                                 <span>Thời gian chương trình tour</span>
                             </div>
                             <div class="hero-mini">
-                                <strong>Ngày về dự kiến</strong>
+                                <strong>Ngày về</strong>
                                 <span>Hiển thị ngay khi đặt tour</span>
                             </div>
                         </div>
@@ -687,12 +687,12 @@
             <div class="service-grid">
                 <a href="{{ route('tour') }}" class="service-card service-card--tour">
                     <div class="service-card-photo" style="background-image:url({{ asset('page/images/services-1.jpg') }});">
-                        <span>Tour linh hoạt</span>
+                        <span>Tour khởi hành cố định</span>
                     </div>
                     <div class="service-card-body">
                         <span class="service-card-icon"><i class="fa fa-map-signs"></i></span>
-                        <h3>Tour linh hoạt</h3>
-                        <p>Chọn hành trình, thời gian tour và ngày khởi hành mong muốn. Hệ thống tính ngày về dự kiến khi đặt.</p>
+                        <h3>Tour khởi hành cố định</h3>
+                        <p>Chọn hành trình, thời gian tour và đợt khởi hành cố định. Ngày đi, ngày về và số chỗ hiển thị khi đặt.</p>
                         <span>Xem chi tiết <i class="fa fa-angle-right"></i></span>
                     </div>
                 </a>
@@ -738,10 +738,10 @@
             <div class="service-section-head">
                 <div>
                     <span class="service-kicker"><i class="fa fa-calendar-check-o"></i> Quy trình đặt tour</span>
-                    <h2 class="service-section-title">Mô hình đặt tour theo ngày khách chọn</h2>
+                    <h2 class="service-section-title">Đặt tour theo đợt khởi hành cố định</h2>
                     <p class="service-section-text">
-                        Miu Travel không áp ngày đi cố định trên tour. Chương trình tour có thời gian rõ ràng, còn ngày
-                        khởi hành được chọn theo kế hoạch của khách.
+                        Mỗi đợt khởi hành có ngày đi và ngày về cố định, kèm giá, số chỗ và hạn đăng ký.
+                        Bạn chọn trong các đợt đã công bố phù hợp với kế hoạch của mình.
                     </p>
                 </div>
             </div>
@@ -759,16 +759,16 @@
                         <div class="model-step-number">02</div>
                         <div class="model-step-icon"><i class="fa fa-calendar-plus-o"></i></div>
                     </div>
-                    <h3>Chọn ngày khởi hành</h3>
-                    <p>Khách nhập ngày đi mong muốn theo kế hoạch cá nhân, gia đình hoặc nhóm của mình.</p>
+                    <h3>Chọn đợt khởi hành còn chỗ</h3>
+                    <p>Xem ngày đi, ngày về, giá và hạn đăng ký để chọn một đợt khởi hành đang mở bán.</p>
                 </div>
                 <div class="model-step">
                     <div class="model-step-top">
                         <div class="model-step-number">03</div>
                         <div class="model-step-icon"><i class="fa fa-calculator"></i></div>
                     </div>
-                    <h3>Tự tính ngày về dự kiến</h3>
-                    <p>Hệ thống dựa trên thời gian tour, ví dụ 3 ngày 2 đêm, để tính ngày về cho booking.</p>
+                    <h3>Xem ngày về cố định</h3>
+                    <p>Ngày đi và ngày về được lấy từ đợt khởi hành đã chọn.</p>
                 </div>
                 <div class="model-step">
                     <div class="model-step-top">
@@ -789,7 +789,7 @@
                     <span class="service-kicker"><i class="fa fa-lightbulb-o"></i> Gợi ý hiện có</span>
                     <h2 class="service-section-title">Các lựa chọn hỗ trợ cho chuyến đi</h2>
                     <p class="service-section-text">
-                        Sau khi chọn tour và ngày đi, khách có thể tham khảo thêm nơi lưu trú và xe di chuyển để hoàn
+                        Sau khi chọn tour và đợt khởi hành, khách có thể tham khảo thêm nơi lưu trú và xe di chuyển để hoàn
                         thiện lịch trình.
                     </p>
                 </div>
@@ -851,10 +851,10 @@
             <div class="support-grid">
                 <div class="support-copy">
                     <span class="service-kicker"><i class="fa fa-headphones"></i> Hỗ trợ trước khi đi</span>
-                    <h2>Cần lịch trình riêng hoặc đi theo nhóm?</h2>
+                    <h2>Cần tư vấn chọn đợt khởi hành cho nhóm?</h2>
                     <p>
-                        Gửi nhu cầu về điểm đến, ngày đi mong muốn, số khách và ngân sách. Miu Travel sẽ tư vấn phương
-                        án phù hợp, sau đó xác nhận lại lịch trình trước khi chốt booking.
+                        Gửi nhu cầu về điểm đến, đợt khởi hành quan tâm, số khách và ngân sách. Miu Travel sẽ tư vấn phương
+                        án phù hợp trong các đợt đang mở bán và xác nhận thông tin trước khi chốt đặt tour.
                     </p>
                     <div class="service-actions">
                         <a href="{{ route('about.us') }}#lien-he" class="service-btn service-btn-primary">
@@ -865,7 +865,7 @@
                 <div class="support-list">
                     <div class="support-item">
                         <i class="fa fa-calendar-plus-o"></i>
-                        <div><strong>Ngày đi linh hoạt</strong><span>Khách chủ động chọn ngày khởi hành mong muốn.</span></div>
+                        <div><strong>Ngày đi cố định</strong><span>Khách chọn trong các đợt khởi hành đã mở bán.</span></div>
                     </div>
                     <div class="support-item">
                         <i class="fa fa-calculator"></i>

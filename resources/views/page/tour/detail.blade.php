@@ -868,7 +868,7 @@
                                 <span><i class="fa fa-building-o"></i> Tổ chức bởi <a href="{{ route('agency.public', $tour->agency->id) }}">{{ $tour->agency->name }}</a></span>
                                 <span><i class="fa fa-calendar-check-o"></i> Chọn đợt khởi hành khi đặt tour</span>
                             @else
-                                <span><i class="fa fa-calendar-check-o"></i> Khách tự chọn ngày khởi hành mong muốn</span>
+                                <span><i class="fa fa-calendar-check-o"></i> Khách chọn đợt khởi hành cố định</span>
                             @endif
                         </div>
                     </div>
@@ -961,6 +961,42 @@
                     </div>
                 @endif
 
+                <div class="content-card" id="departures">
+                    <h3>Lịch khởi hành cố định</h3>
+                    <div class="table-responsive"><table class="price-table">
+                        <thead><tr><th>Ngày đi / Ngày về</th><th>Hạn đăng ký</th><th>Số chỗ</th><th>Trạng thái</th></tr></thead>
+                        <tbody>
+                        @forelse($tour->activeSchedules()->whereDate('ts_start_date', '>', today())->get() as $departure)
+                            @php
+                                $remainingSeats = $departure->remaining_seats;
+                                $registrationClosed = !$departure->registration_deadline
+                                    || \Carbon\Carbon::parse($departure->registration_deadline)->endOfDay()->isPast();
+                                $isAlmostFull = $tour->is_bookable && !$registrationClosed
+                                    && $remainingSeats > 0 && $remainingSeats <= 5
+                                    && $remainingSeats * 100 <= (int) $departure->ts_number_guests * 20;
+                            @endphp
+                            <tr><td>{{ \Carbon\Carbon::parse($departure->ts_start_date)->format('d/m/Y') }} / {{ \Carbon\Carbon::parse($departure->ts_end_date)->format('d/m/Y') }}</td>
+                            <td>{{ $departure->registration_deadline ? \Carbon\Carbon::parse($departure->registration_deadline)->format('d/m/Y') : 'Chưa mở đăng ký' }}</td>
+                            <td>{{ $remainingSeats }}/{{ $departure->ts_number_guests }}</td>
+                            <td>
+                                @if($registrationClosed)
+                                    Đã đóng đăng ký
+                                @elseif(!$tour->is_bookable)
+                                    Tạm ngưng nhận đặt
+                                @elseif($remainingSeats < 1)
+                                    Hết chỗ
+                                @elseif($isAlmostFull)
+                                    <span class="badge badge-warning"><i class="fa fa-exclamation-circle" aria-hidden="true"></i> Sắp hết chỗ</span>
+                                @else
+                                    Còn chỗ
+                                @endif
+                            </td></tr>
+                        @empty
+                            <tr><td colspan="4">Chưa có đợt khởi hành mở bán.</td></tr>
+                        @endforelse
+                        </tbody>
+                    </table></div>
+                </div>
                 <div class="content-card" id="prices">
                     <div class="content-card__body">
                         <div class="section-label"><i class="fa fa-tags"></i> Bảng giá theo nhóm tuổi</div>
@@ -1066,7 +1102,7 @@
                                 @endforeach
                             </div>
                         @else
-                            <p class="empty-soft">Hướng dẫn viên phụ trách sẽ được Miu Travel xác nhận sau khi chốt ngày khởi hành mong muốn.</p>
+                            <p class="empty-soft">Hướng dẫn viên phụ trách sẽ được Miu Travel xác nhận theo đợt khởi hành đã chọn.</p>
                         @endif
                     </div>
                 </div>
@@ -1188,7 +1224,7 @@
                             </div>
                             <div class="mini-info-row">
                                 <i class="fa fa-calendar-check-o mi-icon"></i>
-                                <div><strong>Lịch khởi hành:</strong> {{ $tour->agency ? 'Chọn đợt khởi hành khi đặt tour' : 'Không áp ngày đi cố định' }}</div>
+                                <div><strong>Lịch khởi hành:</strong> Chọn đợt khởi hành khi đặt tour</div>
                             </div>
                         </div>
 
@@ -1198,7 +1234,7 @@
 
                         @if($tour->is_bookable)
                             <a href="{{ route('book.tour', ['id' => $tour->id, 'slug' => safeTitle($tour->t_title)]) }}" class="btn-book-main">
-                                <i class="fa fa-calendar-plus-o"></i> {{ $tour->agency ? 'Chọn đợt và đặt tour' : 'Đặt tour theo ngày mong muốn' }}
+                                <i class="fa fa-calendar-plus-o"></i> Chọn đợt và đặt tour
                             </a>
                         @else
                             <span class="btn-sold-out"><i class="{{ $tour->public_status_icon }}"></i> {{ $tour->status_label }}</span>

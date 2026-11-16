@@ -75,7 +75,11 @@
                                             <strong>{{ \Carbon\Carbon::parse($schedule->ts_start_date)->format('d/m/Y') }}</strong>
                                             <div class="small text-muted">Về: {{ \Carbon\Carbon::parse($schedule->ts_end_date)->format('d/m/Y') }}</div>
                                         </td>
-                                        <td>{{ optional($schedule->tour)->t_title ?: 'Tour không tồn tại' }}</td>
+                                        <td>{{ optional($schedule->tour)->t_title ?: 'Tour không tồn tại' }}
+                                            @foreach($schedule->effective_guides as $assignment)
+                                                <div class="small text-muted">{{ \App\Models\TourGuide::ASSIGNMENT_ROLES[$assignment['role']] ?? $assignment['role'] }}: {{ $assignment['guide']?->tg_name }}</div>
+                                            @endforeach
+                                        </td>
                                         <td class="text-center">
                                             <span class="badge badge-light border">Lịch tham khảo</span>
                                         </td>
@@ -98,7 +102,7 @@
             <div class="col-lg-5">
                 <div class="card shadow-sm">
                     <div class="card-header border-0">
-                        <h3 class="card-title font-weight-bold"><i class="fas fa-user-clock text-warning mr-1"></i> Ngày khách mong muốn</h3>
+                        <h3 class="card-title font-weight-bold"><i class="fas fa-user-clock text-warning mr-1"></i> Đơn theo ngày khởi hành</h3>
                     </div>
                     <div class="card-body">
                         @forelse($requestedBookings as $booking)
@@ -113,7 +117,7 @@
                                 </div>
                             </div>
                         @empty
-                            <div class="text-center text-muted py-5">Không có booking mong muốn khởi hành trong khoảng này.</div>
+                            <div class="text-center text-muted py-5">Không có đơn khởi hành trong khoảng này.</div>
                         @endforelse
                     </div>
                 </div>

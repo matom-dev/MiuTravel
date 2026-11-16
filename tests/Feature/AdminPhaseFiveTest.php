@@ -177,7 +177,7 @@ class AdminPhaseFiveTest extends TestCase
             ->assertSee('Lịch tham khảo')
             ->assertDontSee('14 còn lại')
             ->assertSee('MT-2026-000777')
-            ->assertSee('Ngày khách mong muốn');
+            ->assertSee('Đơn theo ngày khởi hành');
     }
 
     public function test_admin_can_preview_tour_and_article_without_seo_score(): void

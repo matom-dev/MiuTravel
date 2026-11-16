@@ -19,7 +19,13 @@
 </section>
 <section class="content">
     @if(session('success'))<div class="alert alert-success mx-3">{{ session('success') }}</div>@endif
-    @if($errors->any())<div class="alert alert-danger mx-3">Vui lòng kiểm tra các trường chưa hợp lệ. {{ $errors->first('agency') }}</div>@endif
+    @if($errors->any())<div class="alert alert-danger mx-3">Vui lòng kiểm tra các trường chưa hợp lệ. {{ $errors->first() }}</div>@endif
+    <div class="mx-3">@include('agency.platform-fee-notice')</div>
     @include('admin.tour.form')
+    @if($tour)
+        @include('agency.departures')
+    @else
+        <div class="alert alert-info mx-3">Lưu tour trước, sau đó nhập ngày đi, ngày về và số chỗ trong mục đợt khởi hành ngay bên dưới.</div>
+    @endif
 </section>
 @endsection

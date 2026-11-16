@@ -116,6 +116,9 @@ class GroupPermissionController extends Controller
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
 
+        if ($permissionGroup->permissions()->exists()) {
+            return redirect()->back()->with('error', 'Nhóm còn quyền đang sử dụng, không thể xóa.');
+        }
         try {
             $permissionGroup->delete();
             return redirect()->back()->with('success', 'Xóa thành công');

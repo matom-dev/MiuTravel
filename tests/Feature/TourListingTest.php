@@ -287,8 +287,8 @@ class TourListingTest extends TestCase
             ->assertSee('Hướng dẫn viên phụ trách')
             ->assertSee('Album ảnh')
             ->assertSee('Đánh giá và bình luận')
-            ->assertSee('Đặt tour theo ngày mong muốn')
-            ->assertSee('Không áp ngày đi cố định')
+            ->assertSee('Chọn đợt và đặt tour')
+            ->assertSee('Chọn đợt khởi hành khi đặt tour')
             ->assertDontSee('Ngày đi cố định')
             ->assertDontSee('Ngày về cố định');
     }

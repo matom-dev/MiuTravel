@@ -257,11 +257,11 @@
                                             <div class="t-info-row">
                                                 <div class="t-info-item">
                                                     <i class="fa fa-calendar" style="color:#f15d30;margin-right:3px;"></i>
-                                                    <strong>Ngày đi mong muốn:</strong> {{ $tour->b_start_date ? \Carbon\Carbon::parse($tour->b_start_date)->format('d/m/Y') : '---' }}
+                                                    <strong>Ngày khởi hành:</strong> {{ $tour->b_start_date ? \Carbon\Carbon::parse($tour->b_start_date)->format('d/m/Y') : '---' }}
                                                 </div>
                                                 <div class="t-info-item">
                                                     <i class="fa fa-flag-checkered" style="color:#f15d30;margin-right:3px;"></i>
-                                                    <strong>Ngày về dự kiến:</strong> {{ $tour->b_end_date ? \Carbon\Carbon::parse($tour->b_end_date)->format('d/m/Y') : '---' }}
+                                                    <strong>Ngày về:</strong> {{ $tour->b_end_date ? \Carbon\Carbon::parse($tour->b_end_date)->format('d/m/Y') : '---' }}
                                                 </div>
                                                 <div class="t-info-item">
                                                     <i class="fa fa-ticket" style="color:#f15d30;margin-right:3px;"></i>

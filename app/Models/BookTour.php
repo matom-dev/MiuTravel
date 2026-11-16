@@ -44,6 +44,8 @@ class BookTour extends Model
     protected $casts = [
         'b_start_date' => 'datetime',
         'b_end_date' => 'datetime',
+        'revenue_recognized_at' => 'datetime',
+        'commission_basis_points' => 'integer',
     ];
 
     public function vnpayPayments()
@@ -108,4 +110,39 @@ class BookTour extends Model
     {
         return in_array($status, self::ALLOWED_TRANSITIONS[(int) $this->b_status] ?? [], true);
     }
+
+    public function agency()
+    {
+        return $this->belongsTo(Agency::class, 'agency_id');
+    }
+
+
+    public function passengers()
+    {
+        return $this->hasMany(BookingPassenger::class, 'book_tour_id');
+    }
+
+
+    public function transactions()
+    {
+        return $this->hasMany(AgencyTransaction::class, 'book_tour_id');
+    }
+
+
+    protected static function booted(): void
+    {
+        static::creating(function (self $booking) {
+            // Capture even when the model is created outside BookingService.
+            $booking->agency_id = Tour::whereKey($booking->b_tour_id)->value('agency_id');
+        });
+        static::updating(function (self $booking) {
+            if ($booking->isDirty(['agency_id', 'b_tour_id'])) {
+                throw new \DomainException('Không được thay đổi tour hoặc đại lý của đơn đã tạo.');
+            }
+        });
+        static::deleting(function () {
+            throw new \DomainException('Đơn đặt được lưu để đối soát. Hãy hủy đơn thay vì xóa.');
+        });
+    }
+
 }

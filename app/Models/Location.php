@@ -53,4 +53,22 @@ class Location extends Model
     {
         return $query->where('l_status', 1);
     }
+
+    public function hotels()
+    {
+        return $this->hasMany(Hotel::class, 'h_location_id');
+    }
+
+
+    public function carRentals()
+    {
+        return $this->hasMany(CarRental::class, 'cr_location_id');
+    }
+
+
+    public function user()
+    {
+        return $this->belongsTo(User::class, 'l_user_id');
+    }
+
 }

@@ -7,10 +7,11 @@
             <div>
                 <h1 class="font-weight-bold mb-1">Preview tour</h1>
                 <div class="text-muted">{{ $tour->t_title }}</div>
+                @include('admin.tour.owner')
             </div>
             @php
                 $adminUser = Auth::guard('admins')->user();
-                $canEditTour = $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
+                $canEditTour = $tour->agency_id === null && $adminUser && $adminUser->can(['full-quyen-quan-ly', 'quan-ly-tour']);
             @endphp
             @if($canEditTour)
             <a href="{{ route('tour.update', $tour->id) }}" class="btn btn-outline-primary btn-sm"><i class="fas fa-edit mr-1"></i> Chỉnh sửa</a>

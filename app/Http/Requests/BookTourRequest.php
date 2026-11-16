@@ -61,9 +61,9 @@ class BookTourRequest extends FormRequest
             'b_email.max' => 'Email vượt quá số ký tự cho phép',
             'b_phone.required' => 'Vui lòng nhập số điện thoại liên hệ',
             'b_address.required' => 'Vui lòng nhập địa chỉ',
-            'b_start_date.required' => 'Vui lòng chọn ngày khởi hành mong muốn',
-            'b_start_date.date' => 'Ngày khởi hành mong muốn không hợp lệ',
-            'b_start_date.after' => 'Ngày khởi hành mong muốn phải lớn hơn ngày hiện tại',
+            'b_start_date.required' => 'Vui lòng chọn đợt khởi hành',
+            'b_start_date.date' => 'Ngày khởi hành không hợp lệ',
+            'b_start_date.after' => 'Ngày khởi hành phải lớn hơn ngày hiện tại',
             'b_number_adults.required' => 'Vui lòng nhập số người lớn',
             'b_number_children.required' => 'Vui lòng nhập số trẻ em',
 

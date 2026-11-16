@@ -124,6 +124,9 @@ class CategoryController extends Controller
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
 
+        if ($category->children()->exists() || \App\Models\Article::where('a_category_id', $id)->exists()) {
+            return redirect()->back()->with('error', 'Danh mục còn danh mục con hoặc bài viết, không thể xóa.');
+        }
         try {
             $category->delete();
             return redirect()->back()->with('success', 'Xóa thành công');

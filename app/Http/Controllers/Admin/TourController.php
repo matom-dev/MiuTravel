@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use Illuminate\Http\Request;
 use App\Http\Controllers\Controller;
 use App\Models\Tour;
+use App\Models\Agency;
 use App\Models\Location;
 use App\Models\TourGuide;
 use App\Models\BookTour;
@@ -48,7 +49,7 @@ class TourController extends Controller
     public function index(Request $request)
     {
         //
-        $tours = Tour::with(['location', 'guideAssignments.guide'])
+        $tours = Tour::with(['agency', 'location', 'guideAssignments.guide'])
             ->withCount([
                 'activeSchedules',
                 'guideAssignments',
@@ -60,6 +61,18 @@ class TourController extends Controller
         if ($request->filled('t_status') && array_key_exists((int) $request->t_status, Tour::STATUS)) {
             $tours->where('t_status', (int) $request->t_status);
         }
+
+        $agencyFilter = $request->input('agency_id');
+        if ($agencyFilter === 'agency') {
+            $tours->whereNotNull('agency_id');
+        } elseif ($agencyFilter === 'platform') {
+            $tours->whereNull('agency_id');
+        } elseif ($request->filled('agency_id')) {
+            $request->validate(['agency_id' => 'integer|min:1']);
+            $tours->where('agency_id', (int) $agencyFilter);
+        }
+
+        $agencies = Agency::withCount('tours')->orderBy('name')->orderBy('id')->get(['id', 'name']);
 
         $sort = $request->input('sort', 'latest');
         if ($sort === 'oldest') {
@@ -93,7 +106,7 @@ class TourController extends Controller
             $tour->confirmed_guests_count = (int) ($confirmedGuests[$tour->id] ?? 0);
         });
 
-        return view('admin.tour.index', compact('tours'));
+        return view('admin.tour.index', compact('tours', 'agencies'));
     }
 
     public function calendar(Request $request)
@@ -108,7 +121,7 @@ class TourController extends Controller
         $dateTo = $validated['date_to'] ?? now()->endOfMonth()->toDateString();
         $tourId = $validated['tour_id'] ?? null;
 
-        $schedules = TourSchedule::with('tour')
+        $schedules = TourSchedule::with(['tour.staffGuides', 'guideAssignments.guide'])
             ->whereDate('ts_start_date', '>=', $dateFrom)
             ->whereDate('ts_start_date', '<=', $dateTo)
             ->when($tourId, function ($query) use ($tourId) {
@@ -132,9 +145,25 @@ class TourController extends Controller
         return view('admin.tour.calendar', compact('schedules', 'requestedBookings', 'tours', 'dateFrom', 'dateTo', 'tourId'));
     }
 
+    private function ensurePlatformOwned(Tour $tour): void
+    {
+        abort_if($tour->agency_id !== null, 403, 'Tour thuộc đại lý. Admin chỉ được xem, duyệt hoặc tạm ngưng tour.');
+    }
+
+    public function schedule(Request $request, int $id, ?int $scheduleId = null)
+    {
+        $tour = Tour::findOrFail($id);
+        $this->ensurePlatformOwned($tour);
+        $data = $request->validate(\App\Services\TourScheduleService::rules());
+        $schedule = app(\App\Services\TourScheduleService::class)->save($tour, $data, $scheduleId);
+        $this->auditLogger->log('tour.schedule_saved', $tour, ['schedule_id' => $schedule->id], $request);
+
+        return back()->with('success', 'Đã lưu đợt khởi hành.');
+    }
+
     public function preview($id)
     {
-        $tour = Tour::with(['location', 'guideAssignments.guide'])->findOrFail($id);
+        $tour = Tour::with(['agency', 'location', 'guideAssignments.guide'])->findOrFail($id);
 
         return view('admin.tour.preview', compact('tour'));
     }
@@ -190,7 +219,7 @@ class TourController extends Controller
                 'status' => (int) $tour->t_status,
             ], $request);
             \DB::commit();
-            return redirect()->back()->with('success', 'Lưu dữ liệu thành công');
+            return redirect()->route('tour.update', $tour->id)->with('success', 'Đã lưu tour. Vui lòng bổ sung hoặc kiểm tra đợt khởi hành.');
         } catch (\Exception $exception) {
             \DB::rollBack();
             report($exception);
@@ -207,7 +236,8 @@ class TourController extends Controller
     public function edit($id)
     {
         //
-        $tour = Tour::with('guideAssignments')->findOrFail($id);
+        $tour = Tour::with(['agency', 'guideAssignments'])->findOrFail($id);
+        $this->ensurePlatformOwned($tour);
 
         if (!$tour) {
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
@@ -225,6 +255,7 @@ class TourController extends Controller
      */
     public function update(TourRequest $request, $id)
     {
+        $this->ensurePlatformOwned(Tour::findOrFail($id));
         //
         \DB::beginTransaction();
         try {
@@ -258,6 +289,8 @@ class TourController extends Controller
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
 
+        $this->ensurePlatformOwned($tour);
+
         $album = $tour->t_anbum_image ? $tour->t_anbum_image : [];
         if (isset($album[$index])) {
             $removedImage = $album[$index];
@@ -283,6 +316,12 @@ class TourController extends Controller
         $tour = Tour::find($id);
         if (!$tour) {
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
+        }
+
+        $this->ensurePlatformOwned($tour);
+
+        if ($tour->booktour()->exists()) {
+            return redirect()->back()->with('error', 'Tour đã có đơn đặt, hãy tạm ngưng tour thay vì xóa.');
         }
 
         try {

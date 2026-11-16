@@ -18,5 +18,6 @@
     <!-- Main content -->
     <section class="content">
         @include('admin.tour.form')
+        @include('admin.tour.schedules')
     </section>
 @stop

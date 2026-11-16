@@ -113,20 +113,7 @@ class BookTourController extends Controller
             return redirect()->back()->with('error', 'Dữ liệu không tồn tại');
         }
 
-        \DB::beginTransaction();
-        try {
-            $bookTour->delete();
-            $this->auditLogger->log('booking.deleted', $bookTour, [
-                'tour_id' => $bookTour->b_tour_id,
-                'status' => (int) $bookTour->b_status,
-            ]);
-            \DB::commit();
-
-            return redirect()->back()->with('success', 'Xóa thành công');
-        } catch (\Exception $exception) {
-            \DB::rollBack();
-            return redirect()->back()->with('error', 'Đã xảy ra lỗi không thể xóa dữ liệu');
-        }
+        return redirect()->back()->with('error', 'Đơn đặt được lưu để đối soát. Hãy hủy đơn thay vì xóa.');
     }
 
     public function updateStatus(Request $request, $status, $id)

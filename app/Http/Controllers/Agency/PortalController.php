@@ -9,6 +9,7 @@ use App\Models\BookTour;
 use App\Models\Location;
 use App\Models\Tour;
 use App\Models\TourSchedule;
+use App\Models\TourGuide;
 use App\Models\VnpayPayment;
 use App\Services\BookingService;
 use App\Services\MediaUploadService;
@@ -26,7 +27,13 @@ class PortalController extends Controller
 
     private function bookings(Request $r)
     {
-        return BookTour::whereIn('b_tour_id', $this->tours($r)->select('id'));
+        return BookTour::where('agency_id', $r->attributes->get('agency')->id);
+    }
+
+    private function bookingTours(Request $r)
+    {
+        return Tour::whereIn('id', $this->bookings($r)->select('b_tour_id'))
+            ->orWhere('agency_id', $r->attributes->get('agency')->id)->with('schedules')->latest()->get();
     }
 
     private function fail(string $message): never
@@ -36,9 +43,9 @@ class PortalController extends Controller
 
     public function index(Request $r)
     {
-        $filters = $r->validate(['q' => 'nullable|string|max:100', 'tour_id' => 'nullable|integer', 'schedule_id' => 'nullable|integer', 'status' => 'nullable|integer|between:1,5', 'from' => 'nullable|date', 'to' => 'nullable|date|after_or_equal:from', 'month' => 'nullable|integer|between:1,12', 'year' => 'nullable|integer|between:2000,2100']);
+        $filters = $r->validate(['chart_type' => 'nullable|in:collected,revenue', 'q' => 'nullable|string|max:100', 'tour_id' => 'nullable|integer', 'schedule_id' => 'nullable|integer', 'status' => 'nullable|integer|between:1,5', 'from' => 'nullable|date', 'to' => 'nullable|date|after_or_equal:from', 'month' => 'nullable|integer|between:1,12', 'year' => 'nullable|integer|between:2000,2100']);
         $agency = $r->attributes->get('agency');
-        $tours = $this->tours($r)->with('schedules')->latest()->get();
+        $tours = $this->bookingTours($r);
         $query = $this->bookings($r);
         if ($r->filled('tour_id')) {
             $query->where('b_tour_id', $filters['tour_id']);
@@ -75,13 +82,53 @@ class PortalController extends Controller
         $rows = $dated(clone $query, 'created_at')->get();
         $ids = (clone $query)->select('id');
         $transactions = $dated(AgencyTransaction::whereIn('book_tour_id', clone $ids), 'occurred_at')->get();
-        $online = $dated(VnpayPayment::whereIn('book_tour_id', clone $ids)->where('status', 'paid'), 'updated_at')->sum('amount');
-        $recognized = $dated((clone $query)->whereNotNull('revenue_recognized_at'), 'revenue_recognized_at')->get();
+        $onlinePayments = $dated(VnpayPayment::whereIn('book_tour_id', clone $ids)->where('status', 'paid'), 'updated_at')->get();
+        $online = $onlinePayments->sum('amount');
+        $recognized = $dated((clone $query)->where('b_status', BookTour::STATUS_COMPLETED)->whereNotNull('revenue_recognized_at'), 'revenue_recognized_at')->get();
         $revenue = $recognized->sum(fn ($b) => $b->total_price);
         $commission = $recognized->sum(fn ($b) => round($b->total_price * $b->commission_basis_points / 10000));
         $metrics = ['Lượt đăng ký' => $rows->count(), 'Hành khách' => $rows->sum('total_guests'), 'Chờ xử lý' => $rows->where('b_status', 1)->count(), 'Đã xác nhận' => $rows->whereIn('b_status', [2, 3, 4])->count(), 'Đã hủy' => $rows->where('b_status', 5)->count(), 'Giá trị đặt tour' => $rows->where('b_status', '!=', 5)->sum('total_price'), 'Tiền đã thu' => $transactions->where('type', 'receipt')->sum('amount') + $online, 'Tiền đã hoàn' => $transactions->where('type', 'refund')->sum('amount'), 'Doanh thu ghi nhận' => $revenue, 'Phí nền tảng' => $commission, 'Đại lý được hưởng' => $revenue - $commission];
         $metrics['Thực thu ròng'] = $metrics['Tiền đã thu'] - $metrics['Tiền đã hoàn'];
-        return view('admin.agency.reports', compact('agency', 'tours', 'metrics'));
+        $chartYear = (int) ($filters['year'] ?? now()->year);
+        $monthlyRevenue = array_fill(1, 12, 0);
+        $monthlyCommission = array_fill(1, 12, 0);
+        foreach ($recognized as $booking) {
+            $recognizedAt = \Carbon\Carbon::parse($booking->revenue_recognized_at);
+            if ($recognizedAt->year !== $chartYear) {
+                continue;
+            }
+            $month = $recognizedAt->month;
+            $monthlyRevenue[$month] += $booking->total_price;
+            $monthlyCommission[$month] += round($booking->total_price * $booking->commission_basis_points / 10000);
+        }
+        $revenueChart = [
+            'year' => $chartYear,
+            'labels' => array_map(fn ($month) => 'Tháng '.$month, range(1, 12)),
+            'revenue' => array_values($monthlyRevenue),
+            'commission' => array_values($monthlyCommission),
+            'net' => array_values(array_map(fn ($month) => $monthlyRevenue[$month] - $monthlyCommission[$month], range(1, 12))),
+        ];
+        $monthlyCollected = array_fill(1, 12, 0);
+        $monthlyRefunded = array_fill(1, 12, 0);
+        foreach ($transactions as $transaction) {
+            $date = \Carbon\Carbon::parse($transaction->occurred_at);
+            if ($date->year !== $chartYear) continue;
+            if ($transaction->type === 'receipt') $monthlyCollected[$date->month] += $transaction->amount;
+            if ($transaction->type === 'refund') $monthlyRefunded[$date->month] += $transaction->amount;
+        }
+        foreach ($onlinePayments as $payment) {
+            $date = \Carbon\Carbon::parse($payment->updated_at);
+            if ($date->year === $chartYear) $monthlyCollected[$date->month] += $payment->amount;
+        }
+        $revenueChart['collected'] = array_values($monthlyCollected);
+        $revenueChart['refunded'] = array_values($monthlyRefunded);
+        $revenueChart['cash_net'] = array_values(array_map(fn ($month) => $monthlyCollected[$month] - $monthlyRefunded[$month], range(1, 12)));
+        $revenueChart['type'] = $filters['chart_type'] ?? 'collected';
+        $chartColumns = $revenueChart['type'] === 'collected'
+            ? ['collected'=>'Tiền đã thu', 'refunded'=>'Tiền đã hoàn', 'cash_net'=>'Thực thu ròng']
+            : ['revenue'=>'Doanh thu ghi nhận', 'commission'=>'Phí nền tảng', 'net'=>'Đại lý được hưởng'];
+        $chartHasData = collect(array_keys($chartColumns))->contains(fn ($key) => collect($revenueChart[$key])->contains(fn ($value) => $value != 0));
+        return view('admin.agency.reports', compact('agency', 'tours', 'metrics', 'revenueChart', 'chartColumns', 'chartHasData'));
     }
 
     public function profilePage(Request $r)
@@ -92,11 +139,12 @@ class PortalController extends Controller
     public function toursPage(Request $r)
     {
         $agency = $r->attributes->get('agency');
-        $tours = $this->tours($r)->with('schedules')->latest()->get();
+        $tours = $this->tours($r)->with(['schedules.guideAssignments.guide', 'staffGuides'])->latest()->get();
+        $ownGuides = TourGuide::active()->where('tg_user_id', $agency->user_id)->get();
         $occupancy = $this->bookings($r)->where('b_status', '!=', BookTour::STATUS_CANCELLED)
             ->get()->groupBy('b_tour_schedule_id')->map(fn ($items) => $items->sum('total_guests'));
 
-        return view('admin.agency.tours', compact('agency', 'tours', 'occupancy'));
+        return view('admin.agency.tours', compact('agency', 'tours', 'occupancy', 'ownGuides'));
     }
 
     public function bookingsPage(Request $r)
@@ -110,7 +158,7 @@ class PortalController extends Controller
             'to' => 'nullable|date|after_or_equal:from',
         ]);
         $agency = $r->attributes->get('agency');
-        $tours = $this->tours($r)->with('schedules')->latest()->get();
+        $tours = $this->bookingTours($r);
         $query = $this->bookings($r)->with('tour', 'schedule');
         if ($r->filled('tour_id')) {
             $query->where('b_tour_id', $filters['tour_id']);
@@ -191,12 +239,14 @@ class PortalController extends Controller
 
     private function showTourForm(Request $r, ?Tour $tour)
     {
+        $tour?->load(['schedules.guideAssignments', 'staffGuides']);
         return view('admin.agency.tour-form', [
             'tour' => $tour,
             'agency' => $r->attributes->get('agency'),
             'locations' => Location::active()->orderBy('l_name')->get(),
             'status' => Tour::STATUS,
             'isAgencyForm' => true,
+            'ownGuides' => TourGuide::active()->where('tg_user_id', $r->attributes->get('agency')->user_id)->get(),
             'formAction' => $tour ? route('agency.tour.update', $tour->id) : route('agency.tour.create'),
         ]);
     }
@@ -285,21 +335,34 @@ class PortalController extends Controller
     public function schedule(Request $r, int $id, ?int $scheduleId = null)
     {
         $tour = $this->tours($r)->findOrFail($id);
-        $data = $r->validate(['ts_start_date' => 'required|date', 'ts_end_date' => 'required|date|after_or_equal:ts_start_date', 'registration_deadline' => 'required|date|before_or_equal:ts_start_date', 'ts_number_guests' => 'required|integer|between:1,10000', 'adult_price' => 'required|integer|between:0,2000000000', 'child_price' => 'required|integer|between:0,2000000000', 'ts_status' => 'required|in:0,1']);
-        DB::transaction(function () use ($tour, $scheduleId, $data) {
-            Tour::whereKey($tour->id)->lockForUpdate()->firstOrFail();
-            $schedule = $scheduleId ? $tour->schedules()->whereKey($scheduleId)->lockForUpdate()->firstOrFail() : new TourSchedule;
-            if ($tour->schedules()->whereDate('ts_start_date', $data['ts_start_date'])->when($scheduleId, fn ($q) => $q->where('id', '!=', $scheduleId))->exists()) {
-                $this->fail('Mỗi tour chỉ có một đợt khởi hành trong cùng ngày.');
+        $data = $r->validate(\App\Services\TourScheduleService::rules());
+        $staff = $r->validate([
+            'guide_ids' => 'sometimes|array',
+            'guide_ids.*' => 'integer|distinct',
+            'leader_ids' => 'sometimes|array',
+            'leader_ids.*' => 'integer|distinct',
+            'update_assignments' => 'sometimes|boolean',
+        ]);
+        DB::transaction(function () use ($r, $tour, $scheduleId, $data, $staff) {
+            $schedule = app(\App\Services\TourScheduleService::class)->save($tour, $data, $scheduleId);
+            if ($r->boolean('update_assignments')) {
+                $assignments = [];
+                foreach (['guide' => 'guide_ids', 'leader' => 'leader_ids'] as $role => $field) {
+                    foreach ($staff[$field] ?? [] as $guideId) {
+                        $guide = TourGuide::active()->whereKey($guideId)
+                            ->whereIn('tg_role', [$role, 'both'])
+                            ->where(fn ($q) => $q->where('tg_user_id', $r->attributes->get('agency')->user_id)
+                                ->orWhereIn('id', $tour->staffGuides()->select('tour_guides.id')))
+                            ->lockForUpdate()->first();
+                        if (! $guide) {
+                            $this->fail('Nhân sự không thuộc đại lý/tour hoặc không phù hợp vai trò.');
+                        }
+                        $assignments[] = ['tour_guide_id' => $guide->id, 'role' => $role];
+                    }
+                }
+                $schedule->guideAssignments()->delete();
+                $schedule->guideAssignments()->createMany($assignments);
             }
-            $reserved = $scheduleId ? $schedule->bookTours()->where('b_status', '!=', 5)->get()->sum('total_guests') : 0;
-            if ($data['ts_number_guests'] < $reserved) {
-                $this->fail('Sức chứa không được nhỏ hơn số chỗ đã đặt.');
-            }
-            if ($reserved && (substr($schedule->ts_start_date, 0, 10) !== $data['ts_start_date'] || substr($schedule->ts_end_date, 0, 10) !== $data['ts_end_date'])) {
-                $this->fail('Đợt đã có đăng ký không được đổi ngày đi/về.');
-            }
-            $schedule->forceFill($data + ['ts_tour_id' => $tour->id])->save();
         });
 
         return back()->with('success', 'Đã lưu đợt khởi hành.');

@@ -104,4 +104,10 @@ class User extends Authenticatable
     }
 
     public $timestamps = true;
+
+    public function bookings()
+    {
+        return $this->hasMany(BookTour::class, 'b_user_id');
+    }
+
 }

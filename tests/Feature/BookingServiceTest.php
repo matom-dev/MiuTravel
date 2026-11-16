@@ -55,7 +55,7 @@ class BookingServiceTest extends TestCase
         $notification = AppNotification::where('type', 'booking_created')->first();
         $this->assertNotNull($notification);
         $this->assertSame('admins', $notification->receiver_guard);
-        $this->assertStringContainsString('vừa đặt tour theo ngày khởi hành mong muốn', $notification->message);
+        $this->assertStringContainsString('vừa đặt tour khởi hành ngày', $notification->message);
         $this->assertSame($startDate, $notification->data['start_date']);
         $this->assertSame(now()->addDays(7)->format('Y-m-d'), $notification->data['end_date']);
         $this->assertSame(3, $notification->data['total_guests']);
@@ -73,7 +73,7 @@ class BookingServiceTest extends TestCase
         ]);
     }
 
-    public function test_it_calculates_end_date_from_legacy_schedule_text(): void
+    public function test_it_uses_departure_end_date_with_legacy_duration_text(): void
     {
         $user = User::factory()->create();
         $tour = $this->createTour([
@@ -184,7 +184,7 @@ class BookingServiceTest extends TestCase
         $this->assertTrue($mailJob->failOnTimeout);
     }
 
-    public function test_booking_form_explains_flexible_departure_and_confirmation_modal(): void
+    public function test_booking_form_explains_fixed_departure_and_confirmation_modal(): void
     {
         $user = User::factory()->create();
         $tour = $this->createTour([
@@ -196,14 +196,14 @@ class BookingServiceTest extends TestCase
         $this->actingAs($user, 'users')
             ->get(route('book.tour', ['id' => $tour->id, 'slug' => 'tour-da-nang']))
             ->assertOk()
-            ->assertSee('Ngày khởi hành mong muốn')
+            ->assertSee('Đợt khởi hành')
             ->assertSee('Thời gian tour')
             ->assertSee('3 ngày 2 đêm')
-            ->assertSee('Ngày về dự kiến')
+            ->assertSee('Ngày về')
             ->assertSee('Kiểm tra thông tin đặt tour')
             ->assertSee('Tổng số khách')
             ->assertSee('Tổng tiền')
-            ->assertSee('Miu Travel sẽ liên hệ xác nhận lại lịch trình trước khi chốt booking.');
+            ->assertSee('Mỗi hành khách chiếm một chỗ.');
     }
 
     public function test_it_confirms_booking_without_changing_legacy_seat_counters(): void
@@ -233,8 +233,8 @@ class BookingServiceTest extends TestCase
             'type' => 'booking_status_updated',
         ]);
         $notification = AppNotification::where('type', 'booking_status_updated')->first();
-        $this->assertStringContainsString('theo ngày khởi hành mong muốn', $notification->message);
-        $this->assertStringContainsString('ngày về dự kiến', $notification->message);
+        $this->assertStringContainsString('khởi hành ngày', $notification->message);
+        $this->assertStringContainsString('ngày về', $notification->message);
         $this->assertStringContainsString('Tổng tiền tạm tính', $notification->message);
         $this->assertSame($result['bookTour']->b_end_date->format('Y-m-d'), $notification->data['end_date']);
         $this->assertSame($result['bookTour']->total_price, (int) $notification->data['total_price']);
@@ -270,9 +270,9 @@ class BookingServiceTest extends TestCase
 
         foreach ($emailViews as $html) {
             $this->assertStringContainsString('Tour Da Nang linh hoat', $html);
-            $this->assertStringContainsString('Ngày khởi hành mong muốn', $html);
+            $this->assertStringContainsString('Ngày khởi hành', $html);
             $this->assertStringContainsString('10/09/2026', $html);
-            $this->assertStringContainsString('Ngày về dự kiến', $html);
+            $this->assertStringContainsString('Ngày về', $html);
             $this->assertStringContainsString('12/09/2026', $html);
             $this->assertStringContainsString('Số khách', $html);
             $this->assertStringContainsString('Tổng tiền tạm tính', $html);
@@ -326,7 +326,7 @@ class BookingServiceTest extends TestCase
         ], BookingStatusHistory::where('book_tour_id', $booking->id)->whereNotNull('old_status')->pluck('new_status')->all());
     }
 
-    public function test_it_allows_flexible_departure_booking_even_when_legacy_capacity_is_lower_than_guest_count(): void
+    public function test_it_uses_departure_capacity_instead_of_legacy_tour_counters(): void
     {
         $user = User::factory()->create();
         $tour = $this->createTour([
@@ -604,7 +604,7 @@ class BookingServiceTest extends TestCase
             'l_status' => 1,
         ]);
 
-        return Tour::create(array_merge([
+         $tour = Tour::create(array_merge([
             't_title' => 'Tour Da Nang',
             't_journeys' => 'Da Nang',
             't_schedule' => '3 ngay 2 dem',
@@ -618,6 +618,14 @@ class BookingServiceTest extends TestCase
             't_follow' => 0,
             't_status' => 1,
         ], $attributes));
+        foreach ([3, 5, 10] as $offset) {
+            $tour->schedules()->create([
+                'ts_start_date'=>today()->addDays($offset)->toDateString(),
+                'ts_end_date'=>today()->addDays($offset + $tour->effective_duration_days - 1)->toDateString(),
+                'ts_number_guests'=>100, 'ts_status'=>1,
+            ])->forceFill(['registration_deadline'=>today()->addDays($offset - 1)->toDateString()])->save();
+        }
+        return $tour;
     }
 
     private function createBooking(Tour $tour, User $user, array $attributes = []): BookTour

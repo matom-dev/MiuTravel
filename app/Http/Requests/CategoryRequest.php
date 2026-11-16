@@ -21,11 +21,30 @@ class CategoryRequest extends FormRequest
      *
      * @return array
      */
+    protected function prepareForValidation(): void
+    {
+        if (! $this->input('c_parent_id')) {
+            $this->merge(['c_parent_id' => null]);
+        }
+    }
+
     public function rules()
     {
         return [
             //
             'c_name' => 'required | max:191 | unique:categories,c_name,'.$this->id,
+            'c_parent_id' => ['nullable', 'integer', 'exists:categories,id', function ($attribute, $value, $fail) {
+                $seen = [];
+                $parent = (int) $value;
+                while ($parent) {
+                    if ($parent === (int) $this->route('id') || isset($seen[$parent])) {
+                        $fail('Danh mục cha không được tạo thành vòng lặp.');
+                        return;
+                    }
+                    $seen[$parent] = true;
+                    $parent = (int) \App\Models\Category::whereKey($parent)->value('c_parent_id');
+                }
+            }],
             'c_description' => ['nullable', 'max:150'],
             'images'  => 'nullable|image|mimes:jpeg,jpg,png',
         ];
