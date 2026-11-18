@@ -39,6 +39,45 @@ class AgencyPortalTest extends TestCase
         return app(BookingService::class)->createForTour($tour->id, User::factory()->create(), ['b_name' => 'Khách', 'b_email' => 'guest@example.com', 'b_phone' => '0901234567', 'b_address' => 'HCM', 'b_start_date' => $schedule->ts_start_date, 'b_number_adults' => 1, 'b_number_children' => 0, 'b_number_child6' => 0, 'b_number_child2' => 0])['book'];
     }
 
+    public function test_agency_can_delete_own_tour_without_bookings(): void
+    {
+        [$user, , $tour, $schedule] = $this->setupAgency();
+        $this->actingAs($user, 'admins')->get(route('agency.tours.index'))
+            ->assertOk()->assertSee(route('agency.tour.form.edit', $tour->id), false)->assertSee('agency-tour-card__excerpt');
+        $this->get(route('agency.tour.form.edit', $tour->id))
+            ->assertOk()->assertSee(route('agency.tour.delete', $tour->id), false)->assertSee('Xóa tour');
+        $this->delete(route('agency.tour.delete', $tour->id))
+            ->assertRedirect(route('agency.tours.index'))->assertSessionHas('success');
+        $this->assertDatabaseMissing('tours', ['id' => $tour->id]);
+        $this->assertDatabaseMissing('tour_schedules', ['id' => $schedule->id]);
+    }
+
+    public function test_agency_cannot_delete_foreign_or_platform_tours(): void
+    {
+        [$user] = $this->setupAgency();
+        [, , $foreignTour] = $this->setupAgency();
+        $platformTour = Tour::create(['t_title' => 'Tour nền tảng']);
+        foreach ([$foreignTour, $platformTour] as $tour) {
+            $this->actingAs($user, 'admins')->delete(route('agency.tour.delete', $tour->id))->assertNotFound();
+            $this->assertDatabaseHas('tours', ['id' => $tour->id]);
+        }
+    }
+
+    public function test_agency_cannot_delete_tour_with_bookings_even_if_cancelled(): void
+    {
+        [$user, , $tour, $schedule] = $this->setupAgency();
+        $booking = $this->book($tour, $schedule);
+        foreach ([$booking->b_status, BookTour::STATUS_CANCELLED] as $status) {
+            $booking->forceFill(['b_status' => $status])->save();
+            $this->actingAs($user, 'admins')->from(route('agency.tours.index'))
+                ->delete(route('agency.tour.delete', $tour->id))
+                ->assertRedirect(route('agency.tours.index'))->assertSessionHasErrors('agency');
+            $this->assertDatabaseHas('tours', ['id' => $tour->id]);
+            $this->assertDatabaseHas('tour_schedules', ['id' => $schedule->id]);
+            $this->assertDatabaseHas('book_tours', ['id' => $booking->id]);
+        }
+    }
+
     public function test_monthly_revenue_chart_scopes_agency_year_status_and_filters(): void
     {
         [$user, , $tour, $schedule] = $this->setupAgency();
@@ -191,7 +230,7 @@ class AgencyPortalTest extends TestCase
             ->assertDontSee($booking->display_code);
         $this->get(route('agency.tours.index'))->assertOk()
             ->assertSee($tour->t_title)
-            ->assertSee('Thêm đợt khởi hành')
+            ->assertSee('agency-tour-card__excerpt')
             ->assertDontSee($booking->display_code);
         $this->get(route('agency.bookings.index', ['tour_id' => $tour->id]))->assertOk()
             ->assertSee($booking->display_code)
@@ -322,7 +361,7 @@ class AgencyPortalTest extends TestCase
         $this->assertEquals('Đi thuyền', $created->t_activities[0]['title']);
         $this->assertNotEmpty($created->t_image);
         $this->assertCount(1, $created->t_anbum_image);
-        $this->get(route('agency.tour.form.edit', $created->id))->assertOk()->assertSee('Huế - Đà Nẵng');
+        $this->get(route('agency.tour.form.edit', $created->id))->assertOk()->assertDontSee('name="t_journeys"', false)->assertDontSee('name="registration_deadline"', false);
         $this->post(route('agency.tour.update', $foreignTour->id), [])->assertNotFound();
     }
 
@@ -446,7 +485,7 @@ class AgencyPortalTest extends TestCase
         $url = route('agency.schedule.update', [$tour->id, $schedule->id]);
         $this->actingAs($owner, 'admins')->post($url, $payload)->assertSessionHasNoErrors();
         $this->assertEquals($own->id, $schedule->fresh()->effective_guides->first()['guide']->id);
-        $this->get(route('agency.tours.index'))->assertOk()->assertSee('Departure guide')->assertDontSee('Other agency guide');
+        $this->get(route('agency.tour.form.edit', $tour->id))->assertOk()->assertSee('Departure guide')->assertDontSee('Other agency guide');
         $payload['guide_ids'] = [$foreign->id];
         $this->post($url, $payload)->assertSessionHasErrors();
         $this->assertEquals($own->id, $schedule->fresh()->effective_guides->first()['guide']->id);

@@ -251,6 +251,25 @@ class PortalController extends Controller
         ]);
     }
 
+    public function deleteTour(Request $r, int $id)
+    {
+        DB::transaction(function () use ($r, $id) {
+            $tour = $this->tours($r)->lockForUpdate()->findOrFail($id);
+            if ($tour->booktour()->exists()) {
+                $this->fail('Tour đã có đơn đặt, hãy tạm ngưng tour thay vì xóa.');
+            }
+
+            foreach ($tour->schedules()->get() as $schedule) {
+                $schedule->guideAssignments()->delete();
+                $schedule->delete();
+            }
+            $tour->guideAssignments()->delete();
+            $tour->delete();
+        });
+
+        return redirect()->route('agency.tours.index')->with('success', 'Đã xóa tour.');
+    }
+
     public function tour(Request $r, ?int $id = null)
     {
         $tour = $id ? $this->tours($r)->findOrFail($id) : new Tour;

@@ -9,7 +9,7 @@
                 <form method="post" action="{{ route('admin.tour.schedule.save', ['id'=>$tour->id, 'scheduleId'=>$schedule->exists ? $schedule->id : null]) }}">
                     @csrf
                     <div class="row">
-                        @foreach(['ts_start_date'=>'Ngày đi','ts_end_date'=>'Ngày về','registration_deadline'=>'Hạn đăng ký'] as $field=>$label)
+                        @foreach(['ts_start_date'=>'Ngày đi','ts_end_date'=>'Ngày về'] as $field=>$label)
                             <div class="col-md-4 form-group"><label>{{ $label }}</label><input class="form-control" type="date" name="{{ $field }}" value="{{ substr($schedule->$field ?? '',0,10) }}" required></div>
                         @endforeach
                         @foreach(['ts_number_guests'=>'Số chỗ tối đa','adult_price'=>'Giá người lớn (VND)','child_price'=>'Giá trẻ em (VND)'] as $field=>$label)

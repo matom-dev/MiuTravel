@@ -1,7 +1,7 @@
 <section class="card mt-4 mx-3 agency-departures" id="departures">
     <div class="card-header"><h2 class="h5 mb-0">Ngày đi, ngày về và số chỗ</h2></div>
     <div class="card-body">
-        <p>Mỗi đợt khởi hành có ngày đi, ngày về, hạn đăng ký và số chỗ riêng. Mỗi hành khách chiếm một chỗ.</p>
+        <p>Mỗi đợt khởi hành có ngày đi, ngày về và số chỗ riêng. Mỗi hành khách chiếm một chỗ.</p>
         @foreach($tour->schedules as $schedule)
             <details class="border rounded p-3 mb-3"><summary>Sửa đợt {{ substr($schedule->ts_start_date,0,10) }} — Còn {{ $schedule->remaining_seats }}/{{ $schedule->ts_number_guests }} chỗ</summary>
                 <div class="mt-3">@include('agency.schedule-form')</div>

@@ -2132,7 +2132,7 @@
             <div class="row" id="home-tour-grid" aria-busy="false">
                 @if($tours->count() > 0)
                     @foreach($tours as $tour)
-                        @include('page.common.itemTour', ['tour' => $tour, 'showTourIntro' => true])
+                        @include('page.common.itemTour', ['tour' => $tour])
                     @endforeach
                 @else
                     <div class="col-12 text-center py-5" style="color:#94a3b8;">

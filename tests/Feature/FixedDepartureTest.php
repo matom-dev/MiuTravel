@@ -28,6 +28,18 @@ class FixedDepartureTest extends TestCase
         ]);
     }
 
+    public function test_departure_without_registration_deadline_defaults_to_start_date(): void
+    {
+        $schedule = $this->departure();
+        $data = $schedule->only(array_keys(TourScheduleService::rules()));
+        unset($data['registration_deadline']);
+
+        $this->assertTrue(validator($data, TourScheduleService::rules())->passes());
+        $updated = app(TourScheduleService::class)->save($schedule->tour, $data, $schedule->id);
+
+        $this->assertSame(substr($updated->ts_start_date, 0, 10), substr($updated->registration_deadline, 0, 10));
+    }
+
     private function book(TourSchedule $schedule, array $data = []): BookTour
     {
         return app(BookingService::class)->createForTour($schedule->ts_tour_id, User::factory()->create(), array_merge([

@@ -183,9 +183,9 @@ class TourListingTest extends TestCase
         $this->assertSame([$newerTour->id, $olderTour->id], $tours->pluck('id')->take(2)->all());
     }
 
-    public function test_tour_directory_displays_sixteen_tours_per_page(): void
+    public function test_tour_directory_displays_twelve_tours_per_page(): void
     {
-        foreach (range(1, 17) as $number) {
+        foreach (range(1, 13) as $number) {
             $this->createTour(['t_title' => 'Tour phan trang '.$number]);
         }
 
@@ -193,10 +193,10 @@ class TourListingTest extends TestCase
         $tours = $response->viewData('tours');
 
         $response->assertOk();
-        $this->assertSame(16, $tours->count());
-        $this->assertSame(16, $tours->perPage());
-        $this->assertSame(17, $tours->total());
-        $this->assertSame('Tour phan trang 17', $tours->first()->t_title);
+        $this->assertSame(12, $tours->count());
+        $this->assertSame(12, $tours->perPage());
+        $this->assertSame(13, $tours->total());
+        $this->assertSame('Tour phan trang 13', $tours->first()->t_title);
 
         $secondPage = $this->get(route('tour', ['page' => 2]));
         $secondPageTours = $secondPage->viewData('tours');

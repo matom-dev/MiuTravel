@@ -250,16 +250,6 @@
                             </div>
                         </div>
 
-                        <div class="form-group {{ $errors->first('t_journeys') ? 'has-error' : '' }} mb-4">
-                            <label for="t_journeys" class="control-label font-weight-bold text-muted">Hành trình <sup class="text-danger">(*)</sup></label>
-                            <div>
-                                <input type="text" class="form-control px-3 py-2" id="t_journeys" placeholder="VD: Hà Nội - Hạ Long..." name="t_journeys" value="{{ old('t_journeys',isset($tour) ? $tour->t_journeys : '') }}" style="border-radius: 5px;">
-                                @if($errors->has('t_journeys'))
-                                    <span class="text-danger small mt-1 d-block"><i class="fas fa-exclamation-circle mr-1"></i>{{ $errors->first('t_journeys') }}</span>
-                                @endif
-                            </div>
-                        </div>
-
                         @php
                             $durationDaysValue = old('t_duration_days');
                             $durationNightsValue = old('t_duration_nights');

@@ -14,7 +14,7 @@ class TourScheduleService
         return [
             'ts_start_date' => 'required|date',
             'ts_end_date' => 'required|date|after_or_equal:ts_start_date',
-            'registration_deadline' => 'required|date|before_or_equal:ts_start_date',
+            'registration_deadline' => 'nullable|date|before_or_equal:ts_start_date',
             'ts_number_guests' => 'required|integer|between:1,10000',
             'adult_price' => 'required|integer|between:0,2000000000',
             'child_price' => 'required|integer|between:0,2000000000',
@@ -48,6 +48,7 @@ class TourScheduleService
                 && \Carbon\Carbon::parse($data['ts_start_date'])->startOfDay()->lte(today())) {
                 $fail('Ngày khởi hành mới phải sau ngày hiện tại.');
             }
+            $data['registration_deadline'] = $data['registration_deadline'] ?? $data['ts_start_date'];
             $schedule->forceFill($data + ['ts_tour_id' => $tour->id])->save();
 
             return $schedule;

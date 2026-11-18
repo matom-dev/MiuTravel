@@ -14,6 +14,7 @@ Route::prefix('admin/agency')->name('agency.')->middleware(AgencyAccess::class)-
     Route::get('/tours/create', [PortalController::class, 'createTourForm'])->name('tour.form.create');
     Route::get('/tours/{id}/edit', [PortalController::class, 'editTourForm'])->name('tour.form.edit');
     Route::post('/tours', [PortalController::class, 'tour'])->name('tour.create');
+    Route::delete('/tours/{id}', [PortalController::class, 'deleteTour'])->name('tour.delete');
     Route::post('/tours/{id}', [PortalController::class, 'tour'])->name('tour.update');
     Route::post('/tours/{id}/schedules', [PortalController::class, 'schedule'])->name('schedule.create');
     Route::post('/tours/{id}/schedules/{scheduleId}', [PortalController::class, 'schedule'])->name('schedule.update');

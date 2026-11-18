@@ -37,7 +37,8 @@ class AdminTourManagementTest extends TestCase
         ])->render();
 
         $this->assertStringContainsString('Tên tour', $html);
-        $this->assertStringContainsString('Hành trình', $html);
+        $this->assertStringNotContainsString('name="t_journeys"', $html);
+        $this->assertStringNotContainsString('name="registration_deadline"', $html);
         $this->assertStringContainsString('Số ngày', $html);
         $this->assertStringContainsString('Số đêm', $html);
         $this->assertStringContainsString('Giá người lớn', $html);
@@ -142,7 +143,6 @@ class AdminTourManagementTest extends TestCase
                 't_status' => Tour::STATUS_BOOKABLE,
                 't_price_adults' => 2000000,
                 't_price_children' => 1000000,
-                't_journeys' => 'Dong Hoi - Phong Nha',
                 't_duration_days' => 3,
                 't_duration_nights' => 2,
                 't_content' => '<p>Noi dung tour</p>',

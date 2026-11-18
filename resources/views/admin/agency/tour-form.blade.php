@@ -24,6 +24,11 @@
     @include('admin.tour.form')
     @if($tour)
         @include('agency.departures')
+        <form method="post" action="{{ route('agency.tour.delete', $tour->id) }}" class="mx-3 mb-4" onsubmit="return confirm('Bạn có chắc muốn xóa tour này? Thao tác này không thể hoàn tác.');">
+            @csrf
+            @method('DELETE')
+            <button type="submit" class="btn btn-outline-danger"><i class="fas fa-trash mr-1" aria-hidden="true"></i> Xóa tour</button>
+        </form>
     @else
         <div class="alert alert-info mx-3">Lưu tour trước, sau đó nhập ngày đi, ngày về và số chỗ trong mục đợt khởi hành ngay bên dưới.</div>
     @endif

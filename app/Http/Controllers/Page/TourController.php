@@ -17,7 +17,7 @@ use Mail;
 
 class TourController extends Controller
 {
-    private const TOUR_PER_PAGE = 16;
+    private const TOUR_PER_PAGE = 12;
 
     protected $bookingService;
 

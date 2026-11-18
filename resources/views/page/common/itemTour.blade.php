@@ -1,9 +1,7 @@
 @if($tour->is_publicly_visible)
 <?php
     $salePrice = $tour->t_price_adults - ($tour->t_price_adults * $tour->t_sale / 100);
-    $introText = trim(strip_tags($tour->t_content ?: $tour->t_description ?: ''));
-    $durationText = $tour->duration_text;
-    $tourLocation = $tour->location->l_name ?? 'Linh hoạt';
+    $introText = trim(preg_replace('/\s+/u', ' ', html_entity_decode(strip_tags(preg_replace('/<[^>]+>/', ' ', $tour->t_content ?: $tour->t_description ?: '')), ENT_QUOTES | ENT_HTML5, 'UTF-8')));
     $isBookable = $tour->is_bookable;
 ?>
 <div class="{{ !isset($itemTour) ? 'col-sm-6 col-lg-3' : '' }} ftco-animate fadeInUp ftco-animated {{ isset($itemTour) ? $itemTour : '' }}" style="margin-bottom: 20px;">
@@ -26,7 +24,7 @@
             <h3 class="tour-card__title">
                 <a href="{{ route('tour.detail', ['id' => $tour->id, 'slug' => safeTitle($tour->t_title)]) }}"
                    title="{{ $tour->t_title }}">
-                    {{ the_excerpt($tour->t_title, 80) }}
+                    {{ $tour->t_title }}
                 </a>
             </h3>
 
@@ -39,27 +37,18 @@
                 @endif
             </div>
 
-            @if(!empty($showTourIntro) && $introText !== '')
-                <p class="tour-card__intro">{{ the_excerpt($introText, 105) }}</p>
+            @if($introText !== '')
+                <p class="tour-card__intro">{{ $introText }}</p>
             @endif
 
-            {{-- Thông tin nổi bật --}}
-            <div class="tour-card__meta">
-                <div class="tour-card__meta-item">
-                    <i class="fa fa-map-marker"></i>
-                    <span>Địa điểm: {{ $tourLocation }}</span>
-                </div>
-                <div class="tour-card__meta-item">
-                    <i class="fa fa-clock-o"></i>
-                    <span>Thời gian: {{ $durationText }}</span>
-                </div>
-                @if($tour->agency)
+            @if($tour->agency)
+                <div class="tour-card__meta">
                     <div class="tour-card__meta-item">
                         <i class="fa fa-building-o"></i>
                         <span>Tổ chức bởi <a href="{{ route('agency.public', $tour->agency->id) }}">{{ $tour->agency->name }}</a></span>
                     </div>
-                @endif
-            </div>
+                </div>
+            @endif
 
             <div class="tour-card__actions">
                 <a href="{{ route('tour.detail', ['id' => $tour->id, 'slug' => safeTitle($tour->t_title)]) }}"

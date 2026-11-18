@@ -1,6 +1,6 @@
-<form method="post" action="{{ $schedule->exists ? route('agency.schedule.update',[$tour->id,$schedule->id]) : route('agency.schedule.create',$tour->id) }}">@csrf
+<form data-agency-departure data-duration-days="{{ $tour->effective_duration_days }}" method="post" action="{{ $schedule->exists ? route('agency.schedule.update',[$tour->id,$schedule->id]) : route('agency.schedule.create',$tour->id) }}">@csrf
     <div class="agency-fields">
-        @foreach(['ts_start_date'=>'Ngày đi','ts_end_date'=>'Ngày về','registration_deadline'=>'Hạn đăng ký'] as $field=>$label)
+        @foreach(['ts_start_date'=>'Ngày đi','ts_end_date'=>'Ngày về'] as $field=>$label)
             <label>{{ $label }}<input class="form-control" type="date" name="{{ $field }}" value="{{ old($field,substr($schedule->$field??'',0,10)) }}" required></label>
         @endforeach
         @foreach(['ts_number_guests'=>'Số chỗ tối đa','adult_price'=>'Giá người lớn','child_price'=>'Giá trẻ em'] as $field=>$label)
@@ -8,6 +8,7 @@
         @endforeach
         <label>Nhận đăng ký<select class="form-control" name="ts_status"><option value="1" @selected((string)old('ts_status',$schedule->ts_status??1)==='1')>Mở</option><option value="0" @selected((string)old('ts_status',$schedule->ts_status??1)==='0')>Đóng</option></select></label>
     </div>
+    <p class="text-muted small">Ngày về tự tính theo thời lượng {{ $tour->duration_text }} khi chọn ngày đi.</p>
     <input type="hidden" name="update_assignments" value="1">
     @php $availableGuides = $tour->staffGuides->merge($ownGuides ?? collect())->unique('id')->where('tg_status', 1); @endphp
     <div class="agency-fields mt-3">
@@ -24,3 +25,7 @@
     <small class="text-muted">Để trống cả hai mục để dùng nhân sự chung của tour.</small>
     <button class="btn btn-primary mt-3"><i class="fas fa-save mr-1"></i> Lưu đợt khởi hành</button>
 </form>
+
+@once
+    <script src="{{ asset('admin/dist/js/agency-departure-dates.js') }}" defer></script>
+@endonce

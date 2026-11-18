@@ -640,6 +640,10 @@ h6 { font-size: 0.95rem; }
     margin-bottom: 10px;
 }
 .tour-card__title a {
+    display: block;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
     color: var(--text-dark);
     text-decoration: none;
 }

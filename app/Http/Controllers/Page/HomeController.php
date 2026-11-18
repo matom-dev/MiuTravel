@@ -79,7 +79,6 @@ class HomeController extends Controller
         foreach ($tours as $tour) {
             $html .= view('page.common.itemTour', [
                 'tour' => $tour,
-                'showTourIntro' => true,
             ])->render();
         }
 
